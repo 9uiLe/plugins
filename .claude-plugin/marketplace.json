@@ -1,0 +1,27 @@
+{
+  "name": "9uile-plugins",
+  "owner": {
+    "name": "9uiLe",
+    "url": "https://github.com/9uiLe"
+  },
+  "metadata": {
+    "description": "Claude Code plugins by 9uiLe.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "tech-docs",
+      "source": "./plugins/tech-docs",
+      "description": "Generate ADRs, technical specifications, and general engineering documents as single-file HTML pages using a consistent design system.",
+      "version": "0.1.0",
+      "category": "documentation",
+      "tags": [
+        "documentation",
+        "adr",
+        "spec",
+        "design-system",
+        "html"
+      ]
+    }
+  ]
+}

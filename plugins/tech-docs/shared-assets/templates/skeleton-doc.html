@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{{TITLE}}</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<!-- Design system -->
+<link rel="stylesheet" href="system/tokens.css" />
+<link rel="stylesheet" href="system/components.css" />
+
+<!-- Syntax highlighting (必要な言語のみ追加して読み込む) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+
+<!-- Mermaid (使う場合のみ必要) -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+
+<style>
+  .doc-header {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--sp-10) var(--sp-8) var(--sp-4);
+  }
+  .doc-header h1 {
+    font-size: var(--fs-3xl);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-tight);
+    line-height: 1.15;
+    margin: 0 0 var(--sp-3);
+  }
+  .doc-header .lead { max-width: 720px; }
+  .doc-header__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-3);
+    margin-top: var(--sp-5);
+    font-size: var(--fs-sm);
+    color: var(--color-text-muted);
+  }
+  .doc-header__meta strong {
+    color: var(--color-text);
+    font-weight: var(--fw-medium);
+  }
+</style>
+</head>
+<body>
+
+<header class="doc-header">
+  <h1>{{TITLE}}</h1>
+  <p class="lead">{{LEAD — このドキュメントが何のためにあるか 1〜2 行で}}</p>
+  <div class="doc-header__meta">
+    <span><strong>Author</strong> · @{{owner}}</span>
+    <span><strong>Date</strong> · <span class="mono">YYYY-MM-DD</span></span>
+  </div>
+</header>
+
+<div class="doc-shell">
+  <aside class="doc-toc" id="toc">
+    <p class="doc-toc-label">On this page</p>
+  </aside>
+
+  <main class="doc-main prose" id="content">
+
+    <!--
+      章立ては自由。以下はよく使う節の例。
+      不要なものは丸ごと削除し、必要なものを追加する。
+    -->
+
+    <h2 id="summary">Summary</h2>
+    <p>{{要約}}</p>
+
+    <h2 id="details">Details</h2>
+    <p>{{本文}}</p>
+
+    <h2 id="references">References</h2>
+    <ul>
+      <li><a href="#">{{関連リンク}}</a></li>
+    </ul>
+
+    <hr />
+    <p class="muted" style="font-size:var(--fs-sm)">
+      Last updated: <span class="mono">YYYY-MM-DD</span> ·
+      Author: <span class="mono">@{{owner}}</span>
+    </p>
+
+  </main>
+</div>
+
+<script src="system/components.js"></script>
+<script>
+  window.addEventListener('load', function () {
+    DocsADR.initAll({
+      toc: { container: '#toc', content: '#content', selector: 'h2, h3' }
+    });
+  });
+</script>
+</body>
+</html>
