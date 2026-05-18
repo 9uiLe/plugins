@@ -2,8 +2,6 @@
 
 [Claude Code](https://claude.com/claude-code) 用プラグインを集めた Marketplace リポジトリです。
 
----
-
 ## インストール
 
 Claude Code 上で次を実行してください:
@@ -18,15 +16,11 @@ Claude Code 上で次を実行してください:
 /plugin install <plugin-name>@9uile-plugins
 ```
 
----
-
 ## 収録プラグイン
 
 | Name | Description |
 | --- | --- |
 | [tech-docs](./plugins/tech-docs) | ADR / 技術仕様書 / 汎用ドキュメントを、デザインシステム付きの 1 枚 HTML として生成する 3 つの Skill (`create-adr` / `create-spec` / `create-doc`) を提供します。 |
-
----
 
 ## リポジトリ構成
 
@@ -49,8 +43,6 @@ Claude Code 上で次を実行してください:
 
 新規プラグインを追加するときは `plugins/<name>/` を作り、`.claude-plugin/marketplace.json` の `plugins` 配列にエントリを追加します。
 
----
-
 ## 開発
 
 ローカルで動作確認するときは、リポジトリをローカルパスとして Marketplace に登録できます:
@@ -58,8 +50,6 @@ Claude Code 上で次を実行してください:
 ```
 /plugin marketplace add /path/to/this/repo
 ```
-
----
 
 ## ライセンス
 

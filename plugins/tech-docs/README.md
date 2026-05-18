@@ -2,8 +2,6 @@
 
 Claude Code 用プラグイン。ADR / 技術仕様書 / 汎用ドキュメントを、共通デザインシステム付きの **1 枚 HTML** として生成する 3 つの Skill を提供します。
 
----
-
 ## 何ができるか
 
 このプラグインを有効にすると、Claude Code 上で次の作業が自然言語で依頼できるようになります:
@@ -16,8 +14,6 @@ Claude Code 用プラグイン。ADR / 技術仕様書 / 汎用ドキュメン�
 
 出力は **CSS / JS が同梱された静的 HTML** なので、ブラウザでそのまま開けます。Vercel / GitHub Pages / S3 などにそのまま置けます。
 
----
-
 ## インストール
 
 ```bash
@@ -27,8 +23,6 @@ Claude Code 用プラグイン。ADR / 技術仕様書 / 汎用ドキュメン�
 ```
 
 ローカル開発時はリポジトリを clone してから `~/.claude/settings.json` の `plugins.installed` に直接パスを指定する方法もあります。詳しくは Claude Code の plugin ドキュメントを参照してください。
-
----
 
 ## 使い方
 
@@ -73,8 +67,6 @@ docs/adr/                              ← 出力先 (作業ディレクトリ�
 
 同じディレクトリに次の ADR / spec を追加すると、`system/` は使い回されます。
 
----
-
 ## デザインシステム
 
 `shared-assets/` 配下にデザインシステム本体を同梱しています。
@@ -91,8 +83,6 @@ docs/adr/                              ← 出力先 (作業ディレクトリ�
 
 ライブラリは追加で必要ありません。Prism (シンタックスハイライト) と Mermaid (フロー図) のみ CDN から読み込みます。
 
----
-
 ## サンプルを見たい
 
 ```bash
@@ -101,8 +91,6 @@ python3 -m http.server 8000
 # → http://localhost:8000/showcase.html (全コンポーネントの一覧)
 # → http://localhost:8000/adr-sample.html (MADR 形式の ADR サンプル)
 ```
-
----
 
 ## ライセンス
 
