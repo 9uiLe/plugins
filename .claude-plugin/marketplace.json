@@ -22,6 +22,20 @@
         "design-system",
         "html"
       ]
+    },
+    {
+      "name": "quality-architect",
+      "source": "./plugins/quality-architect",
+      "description": "Design and review software architecture against the ISO/IEC 25010 product quality model (8 characteristics, 31 subcharacteristics), with a reference library of verified academic and official citations.",
+      "version": "0.1.0",
+      "category": "development",
+      "tags": [
+        "iso-25010",
+        "software-quality",
+        "architecture",
+        "code-review",
+        "quality-attributes"
+      ]
     }
   ]
 }

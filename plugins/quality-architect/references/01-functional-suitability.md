@@ -1,0 +1,198 @@
+# 01. 機能適合性 / Functional Suitability
+
+> ISO/IEC 25010 製品品質モデルの「機能適合性」に関する、調査・アーキテクチャ設計・コードレビュー用リファレンス。
+
+---
+
+## 1. 定義
+
+### ISO/IEC 25010:2011（第1版）
+
+> **日本語:** 明示された条件のもとで使用するとき、規定されたニーズおよび暗黙のニーズを満足する機能を製品またはシステムが提供する程度。
+>
+> **英語原文:** "Degree to which a product or system provides functions that meet stated and implied needs when used under specified conditions."
+>
+> 出典: ISO/IEC 25010:2011, §4.1 (規格番号 ISO/IEC 25010:2011)
+
+### ISO/IEC 25010:2023（第2版）
+
+> **英語原文:** "Capability of a product to provide functions that meet stated and implied needs of intended users when used under specified conditions, concerned with whether the functions meet not only stated and implied needs, but also the functional specification."
+>
+> 出典: ISO/IEC 25010:2023 (規格番号 ISO/IEC 25010:2023)
+
+### 版間の差異（2011 vs 2023）
+
+| 観点 | 2011 版 | 2023 版 |
+|------|---------|---------|
+| 副特性の構成 | 機能完全性・機能正確性・機能適切性（3 副特性、変更なし） | 同左（副特性の構造は維持） |
+| 定義の強調点 | 「規定されたニーズ・暗黙のニーズ」 | 上記に加え「機能仕様への適合」を明示 |
+| 上位モデルの変化 | 品質特性 8 個 | 品質特性 9 個（Safety が追加）；Usability → Interaction Capability、Portability → Flexibility に改称 |
+
+機能適合性の副特性 3 つは両版で構造的に同一だが、2023 版は「機能仕様への適合」を定義に組み込むことで、仕様書に対する検証可能性をより強く要求している。
+
+---
+
+## 2. 副特性
+
+### 2.1 機能完全性 (Functional Completeness)
+
+**定義:**
+> 規定されたタスクおよび意図されたユーザ目標のすべてを、機能の集合が網羅する程度。
+> (ISO/IEC 25010:2011, §4.1.1)
+
+**調査観点:**
+- 要件一覧（SRS / バックログ）と実装済み機能の対応表（トレーサビリティマトリクス）が存在し、未実装項目がないか
+- ユースケース図・シナリオ記述に対して、それを実現するコードパスが存在するか
+- エッジケース・境界条件（null 入力、最大値、空コレクション等）が仕様に定義され、実装・テストに反映されているか
+- API コントラクト（OpenAPI 仕様等）に宣言されたエンドポイントがすべて実装されているか
+
+**設計タクティクス/パターン:**
+- **要件トレーサビリティマトリクス (RTM):** 要件 ID とテストケース・実装箇所を双方向に紐付け、抜け漏れを可視化する。(Gotel & Finkelstein, 1994; ISO/IEC/IEEE 29148:2018)
+- **仕様駆動開発 (Specification-Based Testing):** 等価分割・境界値分析・デシジョンテーブルによりカバレッジを体系化する。(ISO/IEC/IEEE 29119-4:2021)
+- **受け入れテスト駆動開発 (ATDD / BDD):** Gherkin 等で記述した受け入れ基準をテストコードに直接変換し、完全性の証跡とする。
+
+**コードレビュー チェックリスト:**
+- [ ] 各要件 ID に対応するテストケースが 1 件以上存在する
+- [ ] 機能一覧に対する実装カバレッジが 100% であることを RTM で確認できる
+- [ ] 「未実装」「TODO」「FIXME」コメントが残っている機能がないか
+- [ ] エラー・例外パスも含め、仕様に記述された全分岐が実装されているか
+- [ ] オプショナルな入力フィールドの省略パターンが仕様・実装・テストで一致しているか
+
+**計測指標（ISO/IEC 25023:2016 基準）:**
+| 指標名 | 算出式 | 説明 |
+|--------|--------|------|
+| 機能実装完全性率 | `(実装済み機能数 / 仕様定義機能数) × 100 [%]` | 目標値: 100% |
+| テスト要件カバレッジ | `(テストケースが対応する要件数 / 全要件数) × 100 [%]` | RTM から算出 |
+
+---
+
+### 2.2 機能正確性 (Functional Correctness)
+
+**定義:**
+> 必要な精度でもって正しい結果を製品またはシステムが提供する程度。
+> (ISO/IEC 25010:2011, §4.1.2)
+
+**調査観点:**
+- 出力値・戻り値が仕様に規定された期待値と一致するか（精度・丸め・型変換を含む）
+- 数値計算で浮動小数点誤差が許容精度内に収まっているか
+- 状態遷移・副作用（DB 書き込み、ファイル出力等）が仕様どおりに完結するか
+- 境界条件・異常系で仕様が規定した例外/エラーコードが返却されるか
+
+**設計タクティクス/パターン:**
+- **契約による設計 (Design by Contract):** メソッドに事前条件 (precondition)・事後条件 (postcondition)・クラス不変条件 (invariant) を明示し、実行時に正確性を保証する。(Meyer, 1992; Meyer, 1997)
+- **形式仕様 (Formal Specification):** Z 記法・Alloy・TLA+ などで期待動作を数学的に記述し、実装の正確性を証明または検証する。
+- **プロパティベーステスト (Property-Based Testing):** QuickCheck / Hypothesis などで任意入力に対する不変式を自動検証する。
+
+**コードレビュー チェックリスト:**
+- [ ] 計算ロジックの期待値と実際の出力を比較するユニットテストが存在する
+- [ ] 浮動小数点比較に適切な許容誤差 (epsilon) が設定されている
+- [ ] 文字列・日付・タイムゾーン変換で仕様に沿った変換ルールが使われている
+- [ ] 副作用（DB 更新・ファイル書き込み等）の後状態を検証するテストが存在する
+- [ ] 例外・エラー時の戻り値やエラーコードが仕様と一致している
+- [ ] `assert` / 契約アノテーション等で事後条件が明示されているか
+
+**計測指標（ISO/IEC 25023:2016 基準）:**
+| 指標名 | 算出式 | 説明 |
+|--------|--------|------|
+| 機能正確性率 | `(正確な結果を返す機能数 / テスト対象機能数) × 100 [%]` | 目標値: 100% |
+| 欠陥密度（機能正確性） | `不正確な機能起因の欠陥数 / KLOC` | 低いほど良い |
+
+---
+
+### 2.3 機能適切性 (Functional Appropriateness)
+
+**定義:**
+> 規定されたタスクおよび目標の達成を機能が促進する程度。
+> (ISO/IEC 25010:2011, §4.1.3)
+
+**調査観点:**
+- 実装された機能がユーザの主要タスクを直接支援しているか（過剰設計・無用な抽象化がないか）
+- ドメイン用語・業務プロセスと API 設計・UI 設計が一致しているか
+- 機能の粒度が適切か（大きすぎて再利用が困難、または小さすぎて呼び出し側が複雑になっていないか）
+- 機能間の依存関係・組み合わせが意図されたユースケースを効率的に実現できるか
+
+**設計タクティクス/パターン:**
+- **ドメイン駆動設計 (Domain-Driven Design):** ユビキタス言語・境界付きコンテキストによりドメインモデルと実装を整合させる。
+- **ユースケース主導アーキテクチャ (Use-Case Driven Architecture):** ユースケース記述を入力としてコンポーネント責務を決定し、機能と目標の対応を維持する。
+- **最小驚きの原則 (Principle of Least Astonishment):** APIの振る舞いをユーザの予測と一致させ、誤用を防ぐ。
+
+**コードレビュー チェックリスト:**
+- [ ] 追加された機能がバックログ/ユーザストーリーの受け入れ基準に直接対応しているか
+- [ ] 利用シナリオで不要な手順・呼び出しをユーザに強いていないか
+- [ ] ドメインモデルの用語がクラス名・メソッド名・変数名に反映されているか
+- [ ] 機能の組み合わせで意図したユースケースが自然に実現できるか（デモやシナリオテストで確認）
+- [ ] 「あったほうが良い機能」として追加されたが仕様に根拠のない機能がないか（スコープクリープの排除）
+
+**計測指標（ISO/IEC 25023:2016 基準）:**
+| 指標名 | 算出式 | 説明 |
+|--------|--------|------|
+| 機能適切性率 | `(目標達成を支援する機能数 / 全機能数) × 100 [%]` | ユーザ評価・ユースケースシナリオから算出 |
+| 不要機能比率 | `(スコープ外・未使用機能数 / 全機能数) × 100 [%]` | 低いほど良い |
+
+---
+
+## 3. 横断的な設計戦略
+
+1. **要件の双方向トレーサビリティを確立する**
+   仕様書（上流）から実装・テスト（下流）への順方向トレースと、コード変更から影響要件への逆方向トレースを RTM で管理する。変更の影響範囲分析に直結し、機能完全性・正確性の退行を防ぐ。(ISO/IEC/IEEE 29148:2018)
+
+2. **受け入れ基準を自動テストにバインドする**
+   ATDD/BDD によりユーザシナリオをそのまま実行可能なテストとして記述することで、機能適合性の証跡を継続的に生成できる。CI パイプラインに組み込み、デプロイ前に自動検証する。
+
+3. **契約による設計で正確性を局所化する**
+   各モジュールに事前条件・事後条件を宣言することで、正確性の責任境界を明確にし、システム全体の不正確性追跡コストを下げる。(Meyer, 1992)
+
+4. **機能のスコープを要求ソースに常に紐付ける**
+   コード上のすべての public API・機能フラグを要件 ID と紐付け、「なぜ存在するか」の根拠を残す。根拠のない機能はスコープクリープとして設計レビューで除去候補とする。
+
+5. **機能指標の継続的計測**
+   ISO/IEC 25023 の指標を CI/CD の品質ゲートに組み込み、機能カバレッジの退行を自動検知する。
+
+---
+
+## 4. レビュー時の重点チェックリスト（要約）
+
+- [ ] 要件トレーサビリティマトリクス（RTM）が最新状態に保たれているか
+- [ ] すべての要件 ID に対応するテストケースが存在するか（機能完全性）
+- [ ] 境界値・異常系を含む全入力パターンで期待出力が保証されているか（機能正確性）
+- [ ] 設計書/API 仕様に対する実装の差異（未実装・仕様差異）がゼロか
+- [ ] 仕様に根拠を持たない機能・エンドポイントが存在しないか（機能適切性）
+- [ ] ドメイン用語がコードに一貫して反映されているか
+- [ ] Contract/assertion/バリデーションで事後条件が実装レベルで保証されているか
+- [ ] CI パイプラインで機能カバレッジ指標が計測・閾値チェックされているか
+- [ ] リリース前に ISO/IEC 25040 の評価プロセス（要件確立・評価仕様・評価設計・実施）が踏まれているか
+
+---
+
+## 5. アンチパターン
+
+| アンチパターン | 問題 | 対処 |
+|---------------|------|------|
+| **ゴールドプレーティング (Gold Plating)** | 仕様に定義されていない機能を開発者の判断で追加し、スコープ・テストコストが膨張 | RTM で全機能を要件 ID に紐付け、根拠のない機能は設計レビューで除去 |
+| **要件の曖昧な合格基準** | 「正しく動く」などの検証不可能な要件により、機能正確性の判定ができない | ISO/IEC/IEEE 29148 の SMART 基準（具体的・測定可能・達成可能・関連性・期限付き）で要件を記述 |
+| **ハッピーパス偏重テスト** | 正常系のみカバーし、異常系・境界条件での機能正確性が未検証 | 等価分割・境界値分析・プロパティベーステストで全入力空間を体系的にカバー |
+| **RTM の形骸化** | RTM が作成時のみ更新され、変更・追加要件が未反映 | RTM 更新を PR マージ条件とし、自動リンクチェックを CI に組み込む |
+| **機能の過剰分割** | 微細すぎる機能に分割したため、呼び出し元が複数機能を組み合わせて初めてユーザ目標を達成できる | ユースケースシナリオを基準に機能粒度を設計し、機能適切性を評価 |
+| **仕様ドリフト** | 実装が仕様から乖離し、テスト・ドキュメントが実態を反映しなくなる | 仕様・実装・テストの三点セットを同一 PR で更新するルールを設ける |
+
+---
+
+## 6. リファレンス
+
+1. **ISO/IEC (2011).** *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — System and software quality models.* ISO/IEC 25010:2011. https://www.iso.org/standard/35733.html
+
+2. **ISO/IEC (2023).** *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Product quality model.* ISO/IEC 25010:2023. https://www.iso.org/standard/78176.html
+
+3. **ISO/IEC (2016).** *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Measurement of system and software product quality.* ISO/IEC 25023:2016. https://www.iso.org/standard/35747.html
+
+4. **ISO/IEC (2011).** *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Evaluation process.* ISO/IEC 25040:2011. https://www.iso.org/standard/35765.html
+
+5. **ISO/IEC/IEEE (2018).** *Systems and software engineering — Life cycle processes — Requirements engineering.* ISO/IEC/IEEE 29148:2018. https://www.iso.org/standard/72089.html
+
+6. **ISO/IEC/IEEE (2021).** *Software and systems engineering — Software testing — Part 4: Test techniques.* ISO/IEC/IEEE 29119-4:2021. https://www.iso.org/standard/79430.html
+
+7. **Meyer, B. (1992).** "Applying 'Design by Contract'." *IEEE Computer*, 25(10), 40–51. https://dl.acm.org/doi/10.1109/2.161279
+
+8. **Meyer, B. (1997).** *Object-Oriented Software Construction* (2nd ed.). Prentice Hall. ISBN: 978-0136291558.
+
+9. **Gotel, O. C. Z., & Finkelstein, A. C. W. (1994).** "An Analysis of the Requirements Traceability Problem." *Proceedings of the 1st IEEE International Conference on Requirements Engineering (ICRE'94)*, Colorado Springs, CO, 18–22 April 1994, pp. 94–101. DOI: 10.1109/ICRE.1994.292398. https://www.semanticscholar.org/paper/An-analysis-of-the-requirements-traceability-Gotel-Finkelstein/ebc86c81ace4607f3f59a9053ec542cf323140a2
