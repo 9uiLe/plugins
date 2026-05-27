@@ -38,6 +38,7 @@ SQuaRE シリーズの主な構成（本プラグインで参照する範囲）:
 | 06 | セキュリティ / Security | 機密性・インテグリティ・否認防止性・責任追跡性・真正性 | [`06-security.md`](./06-security.md) |
 | 07 | 保守性 / Maintainability | モジュール性・再利用性・解析性・修正性・試験性 | [`07-maintainability.md`](./07-maintainability.md) |
 | 08 | 移植性 / Portability | 適応性・設置性・置換性 | [`08-portability.md`](./08-portability.md) |
+| 09 | 静的評価レイヤー（方法論） | 揺らぎ防止・3 層モデル・言語プロファイル | [`09-static-evaluation.md`](./09-static-evaluation.md) |
 
 ---
 
@@ -66,7 +67,7 @@ SQuaRE シリーズの主な構成（本プラグインで参照する範囲）:
 ## 5. 使い方（スキルからの参照）
 
 - `quality-architecture` スキル: 要件から優先する品質特性を決め、該当する `0N-*.md` の「設計タクティクス/パターン」を用いて設計・評価する。
-- `quality-review` スキル: 対象コード/差分に対し、各 `0N-*.md` の「コードレビュー チェックリスト」を適用し、指摘ごとに当該ファイルの「リファレンス」を引用する。
+- `quality-review` スキル: 対象コード/差分に対し、各 `0N-*.md` の「コードレビュー チェックリスト」を適用し、指摘ごとに当該ファイルの「リファレンス」を引用する。まず `quality-gates.yml` の静的解析ツールで決定論パートを確定し（`09-static-evaluation.md`）、考察パートのみ LLM 判断とする。
 
 ---
 

@@ -1,0 +1,91 @@
+# quality-gates.yml — 静的評価レイヤーの言語プロファイル
+#
+# 設計（3 層モデル）:
+#   ① 何を測るか（特性→指標）        = references/ で定義（ISO/IEC 25010 由来・言語非依存・共通）
+#   ② どう測るか（指標→ツール/しきい値） = このファイル（言語ごとの "プロファイル"。ここだけ言語依存）
+#   ③ 判定・スコアカード化              = quality-review スキルが機械的に実施（共通）
+#
+# 使い方: quality-review スキルが対象言語を検出し、該当プロファイルの
+#   - deterministic: 実在ツールを実行 → 生の数値をしきい値と機械的に突き合わせ（AI 判断ゼロ＝決定論パート）
+#   - judgment:      ツール未成熟/本質的に主観な領域。AI/人手で評価し「推測」ラベルを付す（考察パート）
+#
+# 新しい言語を使うときは、その言語の profile を末尾に追記するだけ（references は共通のまま）。
+# しきい値はプロジェクト方針に合わせて調整可。下記 Swift の値は SwiftLint 既定値に揃えてある。
+
+version: 1
+
+swift:
+  # 環境にツールが無い場合は「未実行」と報告すること。数値を捏造しない。
+  setup:
+    install_hint: "brew install swiftlint swift-format peripheryapp/periphery/periphery lizard trivy"
+  deterministic:
+    functional_suitability:
+      - id: test-coverage
+        metric: ライン/リージョン カバレッジ
+        ref: "ISO/IEC 25023"
+        run: "swift test --enable-code-coverage"
+        report: |
+          macOS:  xcrun llvm-cov report .build/debug/<Pkg>PackageTests.xctest/Contents/MacOS/<Pkg>PackageTests \
+                    -instr-profile .build/debug/codecov/default.profdata
+          Linux:  llvm-cov report .build/debug/<Pkg>PackageTests.xctest \
+                    -instr-profile .build/debug/codecov/default.profdata
+        threshold: { min: 0.70 }        # プロジェクト方針。下回ったら severity=high
+    maintainability:
+      - id: cyclomatic-complexity
+        metric: 関数あたりの循環的複雑度
+        ref: "McCabe (1976) IEEE TSE; ISO/IEC 25023"
+        run: "swiftlint lint --quiet --reporter json"     # rule: cyclomatic_complexity
+        fallback: "lizard --languages swift -w"
+        threshold: { high: 10, critical: 20 }
+      - id: function-body-length
+        ref: "ISO/IEC 25010 解析性/修正性"
+        run: "swiftlint lint --quiet --reporter json"     # rule: function_body_length
+        threshold: { high: 50, critical: 100 }            # 行
+      - id: type-body-length
+        run: "swiftlint lint --quiet --reporter json"     # rule: type_body_length
+        threshold: { high: 250, critical: 350 }
+      - id: file-length
+        run: "swiftlint lint --quiet --reporter json"     # rule: file_length
+        threshold: { high: 400, critical: 1000 }
+      - id: dead-code
+        metric: 未使用宣言（モジュール性/解析性）
+        run: "periphery scan --quiet"
+        threshold: { max: 0 }
+      - id: format-conformance
+        metric: 整形規約逸脱（一意・完全に決定論的）
+        run: "swift-format lint --recursive Sources/ Tests/"   # 代替: swiftformat --lint .
+        threshold: { violations_max: 0 }
+    security:
+      - id: dependency-vulnerabilities
+        metric: SPM 依存に含まれる既知 CVE
+        ref: "OWASP MASTG-TEST-0085"
+        run: "trivy fs --scanners vuln --quiet ."          # Package.resolved を走査
+        threshold: { critical: 0, high: 0 }
+        note: >
+          Trivy / OWASP Dependency-Check の SPM 対応は experimental。
+          0 件でも見落としがあり得るため judgment 側でも補完する。
+  judgment:
+    # 静的ツールが未成熟、または本質的に主観/動的。AI/人手で評価し「推測」を明示。
+    security:
+      - "SAST 深掘り（機密性・真正性・否認防止性）: Semgrep(--config auto, Swift は experimental) / SWAN / OWASP MASVS-MASTG / MobSF を参考に人手評価"
+    reliability:
+      - "成熟性・障害許容性・回復性は XCTest / Instruments 等の動的検証。静的ゲート対象外"
+    performance_efficiency:
+      - "時間/資源効率は Instruments・XCTest measure 等の動的計測。静的ゲート対象外"
+    usability:
+      - "UI 快美性・習得性・適切度認識性は静的化不可。アクセシビリティは Accessibility Inspector で別途"
+    compatibility:
+      - "相互運用性/後方互換は契約テスト・スキーマ差分で別途（言語非依存ツール）"
+    portability:
+      - "適応性・置換性は設計レビュー。設置性は CI 上の clean-build 再現性で補助確認"
+
+# go:        # 例: 使う言語が増えたらここに追記（references は共通のまま）
+#   deterministic:
+#     maintainability:
+#       - id: cyclomatic-complexity
+#         run: "gocyclo -over 15 ."
+#         threshold: { high: 10, critical: 20 }
+#     security:
+#       - id: dependency-vulnerabilities
+#         run: "govulncheck ./..."
+#         threshold: { critical: 0, high: 0 }
