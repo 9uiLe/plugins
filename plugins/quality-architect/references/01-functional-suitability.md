@@ -8,17 +8,15 @@
 
 ### ISO/IEC 25010:2011（第1版）
 
-> **日本語:** 明示された条件のもとで使用するとき、規定されたニーズおよび暗黙のニーズを満足する機能を製品またはシステムが提供する程度。
->
-> **英語原文:** "Degree to which a product or system provides functions that meet stated and implied needs when used under specified conditions."
->
-> 出典: ISO/IEC 25010:2011, §4.1 (規格番号 ISO/IEC 25010:2011)
+製品またはシステムが、明示された条件のもとで使用される際に、利用者の明示的・暗黙的なニーズを満たす機能を提供できる度合いを指す。
+
+出典: ISO/IEC 25010:2011, §4.1
 
 ### ISO/IEC 25010:2023（第2版）
 
-> **英語原文:** "Capability of a product to provide functions that meet stated and implied needs of intended users when used under specified conditions, concerned with whether the functions meet not only stated and implied needs, but also the functional specification."
->
-> 出典: ISO/IEC 25010:2023 (規格番号 ISO/IEC 25010:2023)
+> **2023 改訂での変更:** 定義が改訂され、意図された利用者のニーズを満たすとともに、機能仕様への適合を明示的に要求する内容が加わった。
+
+出典: ISO/IEC 25010:2023
 
 ### 版間の差異（2011 vs 2023）
 
@@ -37,8 +35,8 @@
 ### 2.1 機能完全性 (Functional Completeness)
 
 **定義:**
-> 規定されたタスクおよび意図されたユーザ目標のすべてを、機能の集合が網羅する程度。
-> (ISO/IEC 25010:2011, §4.1.1)
+仕様が定めるタスクと利用者の意図する目標に対して、実装された機能群が漏れなく対応している度合い。
+(出典: ISO/IEC 25010:2011, §4.1.1)
 
 **調査観点:**
 - 要件一覧（SRS / バックログ）と実装済み機能の対応表（トレーサビリティマトリクス）が存在し、未実装項目がないか
@@ -69,8 +67,8 @@
 ### 2.2 機能正確性 (Functional Correctness)
 
 **定義:**
-> 必要な精度でもって正しい結果を製品またはシステムが提供する程度。
-> (ISO/IEC 25010:2011, §4.1.2)
+製品またはシステムが、要求される精度水準を満たした正確な結果を出力できる度合い。
+(出典: ISO/IEC 25010:2011, §4.1.2)
 
 **調査観点:**
 - 出力値・戻り値が仕様に規定された期待値と一致するか（精度・丸め・型変換を含む）
@@ -102,8 +100,8 @@
 ### 2.3 機能適切性 (Functional Appropriateness)
 
 **定義:**
-> 規定されたタスクおよび目標の達成を機能が促進する程度。
-> (ISO/IEC 25010:2011, §4.1.3)
+提供する機能が、利用者の定められたタスクや目標の達成を適切に支援できる度合い。
+(出典: ISO/IEC 25010:2011, §4.1.3)
 
 **調査観点:**
 - 実装された機能がユーザの主要タスクを直接支援しているか（過剰設計・無用な抽象化がないか）

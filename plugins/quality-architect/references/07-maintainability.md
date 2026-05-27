@@ -6,11 +6,9 @@
 
 ## 1. 定義
 
-**ISO/IEC 25010:2023** における保守性の定義:
+**ISO/IEC 25010:2011** における保守性とは、担当者がプロダクトやシステムを意図どおりに修正できる能力の高さを表す品質特性である（出典: ISO/IEC 25010:2011, §4.2.6）。修正コストの低減と変更に伴うリスクの抑制を目的とし、モジュール性・再利用性・解析性・修正性・試験性の5つの副特性によって構成される。ISO/IEC 25023:2016 はこの特性を定量的に評価するための品質測定指標群を規定している。
 
-> 意図された保守者がプロダクトまたはシステムを修正できる有効性・効率性の度合い。
-
-保守性は修正コストの削減と変更リスクの低減を目的とし、変更容易性・障害修復性・適応性を包括する概念である。ISO/IEC 25023:2016 はこの特性を定量的に評価するための品質測定指標群を規定している。
+> **2023 改訂での変更:** ISO/IEC 25010:2023 では保守性の副特性に「柔軟性 (Flexibility)」が追加され、6副特性構成に変更された。また定義文も改訂されている。本ファイルは 2011 版の構造を正典として記述する。
 
 ---
 
@@ -18,7 +16,7 @@
 
 ### 2.1 モジュール性 (Modularity)
 
-**定義:** あるコンポーネントへの変更が他のコンポーネントに与える影響を最小化できるよう、システム・プログラムが独立したコンポーネントから構成されている度合い。
+**定義:** システムやプログラムが独立したコンポーネントで構成されており、あるコンポーネントへの変更が他のコンポーネントへ波及しにくい度合い（出典: ISO/IEC 25010:2011, §4.2.6.1）。
 
 **調査観点:**
 - コンポーネント間の依存関係グラフが非循環有向グラフ (DAG) を形成しているか。
@@ -42,7 +40,7 @@
 
 ### 2.2 再利用性 (Reusability)
 
-**定義:** あるアセットが複数のシステムまたは他のアセットの構築に利用できる度合い。
+**定義:** あるアセットが、複数のシステムや他のアセットを構築する際に転用できる度合い（出典: ISO/IEC 25010:2011, §4.2.6.2）。
 
 **調査観点:**
 - 機能がコンテキスト固有の前提条件に依存していないか。
@@ -66,7 +64,7 @@
 
 ### 2.3 解析性 (Analysability)
 
-**定義:** プロダクトまたはシステムにおける故障・不具合の診断、変更対象部位の特定、または変更影響の評価を行う際の有効性・効率性の度合い。
+**定義:** プロダクトやシステムにおいて、障害の原因特定・変更箇所の把握・変更影響の評価を効果的かつ効率的に行える度合い（出典: ISO/IEC 25010:2011, §4.2.6.3）。
 
 **調査観点:**
 - ログ・トレース情報が障害の根本原因特定に十分な情報を提供しているか。
@@ -90,7 +88,7 @@
 
 ### 2.4 修正性 (Modifiability)
 
-**定義:** 欠陥の混入や既存製品品質の低下なしに、プロダクトまたはシステムを効果的・効率的に修正できる度合い。
+**定義:** 新たな欠陥を混入させたり既存の品質を損なったりすることなく、プロダクトやシステムを効果的・効率的に変更できる度合い（出典: ISO/IEC 25010:2011, §4.2.6.4）。
 
 **調査観点:**
 - 変更影響が局所化されており、予期しない副作用が生じにくい構造か。
@@ -118,7 +116,7 @@
 
 ### 2.5 試験性 (Testability)
 
-**定義:** システム・プロダクト・コンポーネントのテスト基準を確立し、それらの基準が満たされているかを判断するためのテストを実施できる有効性・効率性の度合い。
+**定義:** システム・プロダクト・コンポーネントに対するテスト基準を設定し、その基準への適合をテストによって確認できる度合い（出典: ISO/IEC 25010:2011, §4.2.6.5）。
 
 **調査観点:**
 - 外部依存が依存性注入またはスタブ化可能な形で実装されているか。
@@ -156,7 +154,7 @@ Martin (2017) が体系化した 5 原則は保守性の複数副特性を同時
 
 ### 3.2 継続的リファクタリング
 
-Fowler (2018) の定義: リファクタリングとは、外部から観察可能な振る舞いを変えることなく、ソフトウェアの内部構造を改善することである。主要パターン:
+Fowler (2018) によれば、リファクタリングとは外部的な振る舞いを維持しつつソフトウェアの内部構造を改善する手法であり、保守性を継続的に高める実践的アプローチである。主要パターン:
 
 - **Extract Function / Method:** 長大な手続きを意図を持った名前の小関数に分割 (解析性向上)。
 - **Replace Conditional with Polymorphism:** 条件分岐をポリモーフィズムに置換 (修正性向上)。
@@ -215,7 +213,7 @@ Cunningham (1992) の技術的負債メタファーに基づき:
 
 以下はすべて WebSearch により実在を確認済みの一次資料・著名な学術書である。
 
-1. **ISO/IEC 25010:2023.** *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Product quality model.* Geneva: ISO/IEC. https://www.iso.org/standard/78176.html
+1. **ISO/IEC 25010:2011.** *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — System and software quality models.* Geneva: ISO/IEC. https://www.iso.org/standard/35733.html
 
 2. **ISO/IEC 25023:2016.** *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Measurement of system and software product quality.* Geneva: ISO/IEC. https://www.iso.org/standard/35747.html
 
@@ -229,9 +227,9 @@ Cunningham (1992) の技術的負債メタファーに基づき:
 
 7. **Chidamber, S. R., & Kemerer, C. F. (1994).** A Metrics Suite for Object Oriented Design. *IEEE Transactions on Software Engineering*, 20(6), 476–493. https://doi.org/10.1109/32.295895
 
-8. **Coleman, D., Ash, D., Lowther, B., & Oman, P. (1994).** Using Metrics to Evaluate Software System Maintainability. *IEEE Computer*, 27(8), 44–49. https://ieeexplore.ieee.org/document/303623/
+8. **Coleman, D., Ash, D., Lowther, B., & Oman, P. (1994).** Using Metrics to Evaluate Software System Maintainability. *IEEE Computer*, 27(8), 44–49. https://doi.org/10.1109/2.303623
 
-9. **Cunningham, W. (1992).** The WyCash Portfolio Management System. In *Addendum to the Proceedings of OOPSLA '92*, pp. 29–30. ACM. https://doi.org/10.1145/157709.157715
+9. **Cunningham, W. (1992).** The WyCash Portfolio Management System. *ACM SIGPLAN OOPS Messenger*, 4(2), 29–30. https://doi.org/10.1145/157710.157715
 
 10. **Martin, R. C. (2017).** *Clean Architecture: A Craftsman's Guide to Software Structure and Design.* Prentice Hall. ISBN 978-0-13-449416-6.
 

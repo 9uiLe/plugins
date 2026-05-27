@@ -6,20 +6,18 @@
 
 ## 1. 定義
 
-### ISO/IEC 25010:2023 公式定義
+### ISO/IEC 25010:2011 定義
 
-**日本語（意訳）:**
-「明示された条件のもとで、使用するリソース量に対して、製品またはシステムがその機能を実行するときの性能の度合い。」
+**日本語（要約）:**
+明示された条件のもとで、製品またはシステムがその機能を実行する際に使用するリソース量に対する性能の度合い。（ISO/IEC 25010:2011, clause 6.3 に基づく要約）
 
-**英語（原文）:**
-> "Performance relative to the amount of resources used under stated conditions."
-> — ISO/IEC 25010:2023, clause 4.2.2
+**副特性の構成（ISO/IEC 25010:2011 準拠）:**
+時間効率性 (Time Behaviour)・資源効率性 (Resource Utilization)・容量満足性 (Capacity) の3つ。
 
-**旧版（ISO/IEC 25010:2011）との対応:**
-旧版でも同特性が定義されており、副特性の構成（時間効率性・資源効率性・容量満足性）は 2023 年版でも継承されている。
+> **2023 改訂での変更:** ISO/IEC 25010:2023 では本特性の基本定義と3副特性の構成は 2011 版から継承されている。特性名・副特性名の表記に微修正が加えられた。詳細は ISO/IEC 25010:2023 clause 4.2.2 を参照。
 
 **規格番号:**
-- ISO/IEC 25010:2023 — Systems and software engineering — Systems and Software Quality Requirements and Evaluation (SQuaRE) — Product quality model
+- ISO/IEC 25010:2011 — Systems and software engineering — Systems and Software Quality Requirements and Evaluation (SQuaRE) — System and software quality models
 - ISO/IEC 25023:2016 — Measurement of system and software product quality（計測指標の定義）
 
 ---
@@ -193,8 +191,9 @@ SPEC（Standard Performance Evaluation Corporation）のベンチマーク手法
 
 ## 6. リファレンス
 
-1. **ISO/IEC** (2023). *ISO/IEC 25010:2023 — Systems and software engineering — Systems and Software Quality Requirements and Evaluation (SQuaRE) — Product quality model*. International Organization for Standardization.
-   <https://www.iso.org/standard/78176.html>
+1. **ISO/IEC** (2011). *ISO/IEC 25010:2011 — Systems and software engineering — Systems and Software Quality Requirements and Evaluation (SQuaRE) — System and software quality models*. International Organization for Standardization.
+   <https://www.iso.org/standard/35733.html>
+   *(2023 改訂版: ISO/IEC 25010:2023 <https://www.iso.org/standard/78176.html>)*
 
 2. **ISO/IEC** (2016). *ISO/IEC 25023:2016 — Systems and software engineering — Systems and Software Quality Requirements and Evaluation (SQuaRE) — Measurement of system and software product quality*. International Organization for Standardization.
    <https://www.iso.org/standard/35747.html>
@@ -209,12 +208,12 @@ SPEC（Standard Performance Evaluation Corporation）のベンチマーク手法
    <https://link.springer.com/book/10.1007/978-3-540-31010-5>
 
 6. **Smith, C.U. & Williams, L.G.** (2002). *Performance Solutions: A Practical Guide to Creating Responsive, Scalable Software*. Addison-Wesley Professional. ISBN 0-201-72229-1.
-   <https://dl.acm.org/doi/10.5555/560806> *(関連書籍: ACM Digital Library)*
+   <http://www.perfeng.com/classic-site/psbook.htm>
 
 7. **Jain, R.** (1991). *The Art of Computer Systems Performance Analysis: Techniques for Experimental Design, Measurement, Simulation, and Modeling*. John Wiley & Sons. ISBN 0-471-50336-3.
    <https://www.cse.wustl.edu/~jain/books/perfbook.htm>
 
-8. **Menascé, D.A. & Almeida, V.A.F.** (2002). *Capacity Planning for Web Services: Metrics, Models, and Methods*. Prentice Hall. ISBN 0-13-065903-7.
+8. **Menascé, D.A. & Almeida, V.A.F.** (2001). *Capacity Planning for Web Services: Metrics, Models, and Methods*. Prentice Hall. ISBN 0-13-065903-7.
    <https://dl.acm.org/doi/10.5555/560806>
 
 9. **Gregg, B.** (2020). *Systems Performance: Enterprise and the Cloud* (2nd ed.). Addison-Wesley Professional. ISBN 978-0-13-682015-4.
@@ -225,3 +224,4 @@ SPEC（Standard Performance Evaluation Corporation）のベンチマーク手法
 
 11. **IEEE** (2008). *IEEE Std 829-2008 — IEEE Standard for Software and System Test Documentation*. IEEE.
     <https://ieeexplore.ieee.org/document/4578383>
+    *(注: 本標準は ISO/IEC/IEEE 29119-3:2013 によって廃止・置き換えられている)*

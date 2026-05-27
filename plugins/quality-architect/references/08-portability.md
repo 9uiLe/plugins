@@ -7,13 +7,12 @@
 
 ## 1. 定義
 
-**移植性 (Portability)** とは、一つの環境から別の環境へ、製品またはシステムを移し替えられる度合いである。
+**移植性 (Portability)** とは、ある製品・システム・コンポーネントを、現在の運用・使用環境から別の環境へ移し替えることができる有効性と効率性の度合いである。
 「環境」にはハードウェア・OS・ランタイム・クラウドプラットフォーム・構成設定・依存ライブラリなどあらゆる実行基盤が含まれる。
 
-> *ISO/IEC 25010:2011, Clause 4.2.8*:
-> "Degree of effectiveness and efficiency with which a system, product or component can be transferred from one hardware, software or other operational or usage environment to another."
+*出典: ISO/IEC 25010:2011, Clause 4.2.8 — 原文の意味を自組織の言葉で要約。*
 
-なお、ISO/IEC 25010:2023 では同特性が **柔軟性 (Flexibility)** に改称され、スケーラビリティが副特性として追加された。本資料は 2011 年版の副特性体系（適応性・設置性・置換性）を基盤とし、2023 年版の文脈も補足する。
+> **2023 改訂での変更:** ISO/IEC 25010:2023 では同特性が **柔軟性 (Flexibility)** に改称され、スケーラビリティが副特性として追加された。本資料は 2011 年版の副特性体系（適応性・設置性・置換性）を基盤とする。
 
 ---
 
@@ -22,7 +21,9 @@
 ### 2.1 適応性 (Adaptability)
 
 #### 定義
-異なるハードウェア・ソフトウェア・その他の運用環境または使用環境への適応に対して、製品やシステムが有効かつ効率的に適応できる度合い。
+製品やシステムが、異なるハードウェア・ソフトウェア・クラウド環境などへ切り替えるときに、追加の大がかりな作業なしに動作できる度合い。環境の多様性に対応する柔軟さを指す。
+
+*出典: ISO/IEC 25010:2011 §4.2.8.1 の趣旨を要約。*
 
 #### 調査観点
 - 特定 OS・CPU アーキテクチャ・クラウドベンダへの固有依存がないか
@@ -55,7 +56,9 @@
 ### 2.2 設置性 (Installability)
 
 #### 定義
-指定された環境において、製品やシステムをインストールまたはアンインストールできる度合い。
+指定された環境において、製品やシステムを正しくインストールあるいはアンインストールできるかどうかの度合い。セットアップの容易さ・再現性・後処理の完全性を含む。
+
+*出典: ISO/IEC 25010:2011 §4.2.8.2 の趣旨を要約。*
 
 #### 調査観点
 - インストール手順が自動化・文書化されているか
@@ -88,7 +91,9 @@
 ### 2.3 置換性 (Replaceability)
 
 #### 定義
-同じ環境において、同じ目的で別の指定ソフトウェア製品に置き換えられる度合い。
+同一環境において同一目的を果たす別のソフトウェア製品と相互に入れ替えられるかどうかの度合い。データ互換性・機能的等価性・移行コストが評価の焦点となる。
+
+*出典: ISO/IEC 25010:2011 §4.2.8.3 の趣旨を要約。*
 
 #### 調査観点
 - 公開インタフェース（API・プロトコル・データ形式）が標準仕様に準拠しているか
@@ -183,13 +188,13 @@ CNCF（Cloud Native Computing Foundation）は Kubernetes・Envoy・Prometheus �
 5. **Open Container Initiative — OCI Image Format Specification v1.1**. opencontainers, 2024.
    https://specs.opencontainers.org/image-spec/
 
-6. **Open Container Initiative — OCI Runtime Specification**. opencontainers.
+6. **Open Container Initiative — OCI Runtime Specification v1.2**. opencontainers, 2024.
    https://github.com/opencontainers/runtime-spec
 
 7. **Wiggins, A.** — *The Twelve-Factor App*. Heroku, 2012.
    https://12factor.net/
 
-8. **CNCF — Cloud Native Definition v1.1**. Cloud Native Computing Foundation, 2018 (rev. 2022).
+8. **CNCF — Cloud Native Definition v1.1**. Cloud Native Computing Foundation, 2018.
    https://github.com/cncf/toc/blob/main/DEFINITION.md
 
 9. **CNCF Cloud Native Glossary — Portability**. Cloud Native Computing Foundation.

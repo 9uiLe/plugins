@@ -6,7 +6,9 @@
 
 ## 1. 定義
 
-**互換性 (Compatibility)** とは、製品・システム・コンポーネントが、同一のハードウェアまたはソフトウェア環境を共有しながら、他の製品・システム・コンポーネントと情報交換を行い、かつ要求される機能を実行できる程度を指す（ISO/IEC 25010:2011, §4.2.3）。
+**互換性 (Compatibility)** とは、製品・システム・コンポーネントが共有環境において他の製品・システム・コンポーネントと情報をやり取りしつつ、自身に要求される機能を果たせる能力の高さを指す（ISO/IEC 25010:2011, §4.2.3）。
+
+> **2023 改訂での変更:** ISO/IEC 25010:2023 は 2011 版に置き換わる改訂版として発行された。互換性の副特性は **共存性** と **相互運用性** の 2 つのまま変わらないが、定義文の表現が整理されている。
 
 互換性は次の 2 つの副特性から構成される。
 
@@ -23,7 +25,7 @@
 
 #### 定義
 
-製品が、他製品と共通の環境・リソースを共有しつつ、いずれの製品にも悪影響を与えずに要求される機能を効率良く実行できる程度（ISO/IEC 25010:2011, §4.2.3.1）。
+共通の環境やリソースを他の製品と共有しながらも、それらの製品に悪影響を及ぼすことなく、要求される機能を効率よく果たせる能力の高さ（ISO/IEC 25010:2011, §4.2.3.1）。
 
 #### 調査観点
 
@@ -61,7 +63,7 @@
 
 #### 定義
 
-2 つ以上のシステム・製品・コンポーネントが情報を交換し、かつ交換された情報を使用できる程度（ISO/IEC 25010:2011, §4.2.3.2）。
+複数のシステム・製品・コンポーネント間でデータを送受信し、送受信した情報を双方が実際に活用できる能力の高さ（ISO/IEC 25010:2011, §4.2.3.2）。
 
 #### 調査観点
 
@@ -203,5 +205,5 @@
 10. **Robinson, I.** — *Consumer-Driven Contracts: A Service Evolution Pattern*. MartinFowler.com, 2006.  
     <https://martinfowler.com/articles/consumerDrivenContracts.html>
 
-11. **Schwarz, E., et al.** — *Ensuring Syntactic Interoperability Using Consumer-Driven Contract Testing*. Software Testing, Verification and Reliability, Wiley, 2025.  
-    <https://onlinelibrary.wiley.com/doi/abs/10.1002/stvr.70006>
+11. **Schwarz, G.-D., Quast, F., and Riehle, D.** — *Ensuring Syntactic Interoperability Using Consumer-Driven Contract Testing*. Software Testing, Verification and Reliability, Wiley, 2025.  
+    <https://onlinelibrary.wiley.com/doi/10.1002/stvr.70006>

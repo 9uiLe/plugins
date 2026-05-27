@@ -8,8 +8,10 @@
 
 **使用性 (Usability)** とは、特定の利用状況において、指定されたユーザが目標を達成するために製品またはシステムを使用する際の、有効性・効率・満足度の程度を指す。
 
-- **ISO/IEC 25010:2023** は使用性を製品品質の 9 特性のひとつとして定義し、6 つの副特性で構成する。
-- **ISO 9241-11:2018** は利用品質の観点から usability を「有効性 (effectiveness)、効率性 (efficiency)、満足性 (satisfaction)」の 3 軸で定義する。両規格は相補的に参照される。
+- **ISO/IEC 25010:2011** は使用性を製品品質の 8 特性のひとつとして定義し、6 つの副特性（§2 参照）で構成する。
+- **ISO 9241-11:2018** は利用品質の観点から、システム・製品・サービスが指定されたユーザによって指定された目標を「有効性 (effectiveness)・効率性 (efficiency)・満足性 (satisfaction)」の 3 軸で達成できる程度として usability を定義する。両規格は相補的に参照される。
+
+> **2023 改訂での変更:** ISO/IEC 25010:2023 では使用性 (Usability) が **相互作用能力 (Interaction Capability)** に改称され、副特性も再編された（ISO 標準番号: 78176）。本ファイルは 2011 版の図・副特性構造に準拠する。
 
 ---
 
@@ -18,7 +20,7 @@
 ### 2.1 適切度認識性 (Appropriateness Recognizability)
 
 **定義**  
-ユーザが製品やシステムの適切性を認識できる程度。
+特定のニーズに対して製品またはシステムが適切であることを、ユーザが識別できる程度。（ISO/IEC 25010:2011 §4.1.5.1 に基づく要約）
 
 **調査観点**
 - 初見ユーザが「この製品で自分のニーズが満たせるか」を理解できるか。
@@ -44,7 +46,7 @@
 ### 2.2 習得性 (Learnability)
 
 **定義**  
-指定されたユーザが、製品またはシステムの使用を習得できる程度。
+指定されたユーザが、製品またはシステムを効果的・効率的・安全に使用することを習得できる程度。（ISO/IEC 25010:2011 §4.1.5.2 に基づく要約）
 
 **調査観点**
 - 初回利用からタスク完了に要する時間。
@@ -63,14 +65,14 @@
 **計測指標**
 - 初回タスク完了率・完了時間
 - 学習曲線の傾き（セッション数 vs. タスク時間）
-- System Usability Scale (SUS) スコア（Brooke, 1996 — ACM Digital Library 所収）
+- System Usability Scale (SUS) スコア（Brooke, 1996 — Jordan et al. eds., *Usability Evaluation in Industry*, Taylor & Francis）
 
 ---
 
 ### 2.3 運用操作性 (Operability)
 
 **定義**  
-製品またはシステムを操作・制御しやすい程度。
+製品またはシステムを操作・制御することが容易で、ユーザが自律的に使用を継続できる程度。（ISO/IEC 25010:2011 §4.1.5.3 に基づく要約）
 
 **調査観点**
 - 日常的な繰り返し操作を最少のステップで実行できるか。
@@ -96,7 +98,7 @@
 ### 2.4 ユーザエラー防止性 (User Error Protection)
 
 **定義**  
-ユーザがエラーを起こすことを防止する程度。
+製品またはシステムが、ユーザの誤操作や不正入力が起きにくい構造・仕組みを備えている程度。（ISO/IEC 25010:2011 §4.1.5.4 に基づく要約）
 
 **調査観点**
 - 入力値の制約・バリデーションが事前に明示されているか。
@@ -124,7 +126,7 @@
 ### 2.5 ユーザインタフェース快美性 (User Interface Aesthetics)
 
 **定義**  
-ユーザインタフェースが快適で満足のいく相互作用を可能にする程度。
+ユーザインタフェースの視覚的表現が、ユーザに対して快適で満足のいく相互作用体験を提供できる程度。（ISO/IEC 25010:2011 §4.1.5.5 に基づく要約）
 
 **調査観点**
 - ビジュアル階層・余白・タイポグラフィが認知負荷を低減しているか。
@@ -151,7 +153,7 @@
 ### 2.6 アクセシビリティ (Accessibility)
 
 **定義**  
-最も広範な特性・能力を持つ人々が製品またはシステムを使用できる程度。障害のある人を含む。
+障害のある人を含む、できる限り幅広い特性・能力・状況を持つユーザが、製品またはシステムを使用できる程度。（ISO/IEC 25010:2011 §4.1.5.6 に基づく要約）
 
 **調査観点**
 - 支援技術（スクリーンリーダー・スイッチアクセス等）との互換性。
@@ -188,7 +190,7 @@ ISO 9241-210:2019 は、利用状況の理解 → ユーザ要件の明確化 �
 Nielsen (1993) は 5 名程度の参加者でユーザビリティ問題の約 85% を発見できることを示した。スプリントごとの小規模テストを推奨する。
 
 ### 3.3 ヒューリスティック評価
-Nielsen の 10 ヒューリスティクス（Nielsen Norman Group 公式, 1994/2020 改訂）はコストの低い専門家評価手法として広く適用される。
+Nielsen の 10 ヒューリスティクス（Nielsen Norman Group 公式, 1994 公開・2024 改訂）はコストの低い専門家評価手法として広く適用される。
 
 ### 3.4 デザインシステムとコンポーネント駆動開発
 コンポーネントライブラリへのアクセシビリティ・一貫性の組み込みにより、個別実装の品質ばらつきを抑制する。
@@ -228,8 +230,11 @@ CI パイプラインへの自動アクセシビリティ検査 (axe-core 等) �
 
 ### 国際規格
 
-1. **ISO/IEC 25010:2023** — *Systems and software engineering — SQuaRE — Product quality model.*  
-   ISO. https://www.iso.org/standard/78176.html
+1. **ISO/IEC 25010:2011** — *Systems and software engineering — SQuaRE — System and software quality models.* （本ファイルの準拠版）  
+   ISO. https://www.iso.org/standard/35733.html
+
+   > 2023 改訂版: **ISO/IEC 25010:2023** — *Systems and software engineering — SQuaRE — Product quality model.*  
+   > ISO. https://www.iso.org/standard/78176.html
 
 2. **ISO/IEC 25023:2016** — *Systems and software engineering — SQuaRE — Measurement of system and software product quality.*  
    ISO. https://www.iso.org/standard/35747.html
@@ -254,10 +259,10 @@ CI パイプラインへの自動アクセシビリティ検査 (axe-core 等) �
 ### 著名な学術書・公式技術資料
 
 8. **Nielsen, J.** (1993). *Usability Engineering.* Morgan Kaufmann. ISBN 978-0-12-518406-9.  
-   ACM Digital Library: https://dl.acm.org/doi/10.5555/529793
+   ACM Digital Library: https://dl.acm.org/doi/book/10.5555/529793
 
-9. **Nielsen, J.** (1994, revised 2020). *10 Usability Heuristics for User Interface Design.* Nielsen Norman Group.  
+9. **Nielsen, J.** (1994, revised 2024). *10 Usability Heuristics for User Interface Design.* Nielsen Norman Group.  
    https://www.nngroup.com/articles/ten-usability-heuristics/
 
 10. **Norman, D.** (2013). *The Design of Everyday Things: Revised and Expanded Edition.* Basic Books. ISBN 978-0-465-05065-9.  
-    (初版 1988, MIT Press. 強制機能・アフォーダンス・エラー防止の基礎的概念を提示)
+    (初版 1988, Basic Books, *The Psychology of Everyday Things* として刊行. 強制機能・アフォーダンス・エラー防止の基礎的概念を提示)
