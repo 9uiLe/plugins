@@ -54,6 +54,13 @@ LLM の判断は数値化できない残余に閉じ込めます。設計は 3 �
 新言語は `quality-gates.yml` に profile を 1 つ追記するだけ。現在は **Swift** プロファイルを同梱
 （SwiftLint / lizard / Periphery / swift-format / Trivy）。方法論は [`references/09-static-evaluation.md`](./references/09-static-evaluation.md)。
 
+完全に決定論化したい場合は、ツール実行〜しきい値判定〜JSON 出力を行うラッパースクリプトを使う:
+
+- [`scripts/quality-gate-swift.sh`](./scripts/quality-gate-swift.sh) — `quality-gate-result.json` を出力。スキルは数値を読むだけ。
+- [`examples/ci/github-actions-swift-quality.yml`](./examples/ci/github-actions-swift-quality.yml) — CI でツールを走らせ結果を artifact 化（ローカルにツールが無くても揺らぎを排除）。
+
+`quality-review` は CI 結果 JSON があれば最優先で採用し、無ければスクリプト、それも無ければ個別コマンドの順にフォールバックします。
+
 ## 対象とする品質モデル
 
 - 骨格: **ISO/IEC 25010:2011（JIS X 25010:2013）** — 8 特性 31 副特性。

@@ -1,0 +1,45 @@
+# ISO/IEC 25010 静的評価ゲート (Swift) の CI 例 — GitHub Actions
+#
+# 使い方: このファイルを対象リポジトリの .github/workflows/quality-gate.yml に置く。
+# 役割: 静的解析ツールを CI 上で実行し、決定論パートを確定する。
+#   - PR にツール出力(JSON)を artifact として残す → quality-review スキルに食わせると、
+#     スキルは数値を解釈するだけで済み、ローカルにツールが無くても揺らぎを排除できる。
+#   - 重大なしきい値超過があればジョブを fail させてマージを止める（任意）。
+#
+# 注: SwiftLint/swift-format のしきい値は対象リポジトリの .swiftlint.yml / .swift-format で制御する。
+
+name: quality-gate
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  static-quality-gate:
+    runs-on: macos-14   # SwiftLint/Periphery/coverage は macOS が無難。Linux なら swift:6.0 コンテナ
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          brew install swiftlint swift-format lizard trivy jq
+          brew install peripheryapp/periphery/periphery
+
+      - name: Run ISO/IEC 25010 quality gate (deterministic part)
+        env:
+          QG_CCN_MAX: "20"
+          QG_COVERAGE_MIN: "0.70"
+          QG_DEPVULN_SEVERITY: "HIGH,CRITICAL"
+        # プラグインを取得しているなら ${CLAUDE_PLUGIN_ROOT}/scripts/... を使う。
+        # ここでは例として相対パスを示す（scripts/ をリポジトリに同梱する場合）。
+        run: bash scripts/quality-gate-swift.sh .
+
+      - name: Upload quality-gate result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-gate-result
+          path: quality-gate-result.json
+
+      # スクリプトは fail があれば exit 1 を返すため、上の step が失敗すればジョブも失敗する。
+      # 「計測はするがマージは止めない」運用にしたい場合は run の末尾に `|| true` を付ける。
