@@ -1,20 +1,20 @@
 ---
 name: quality-review
-description: Review code or a diff comprehensively against the ISO/IEC 25010 product quality model (8 characteristics, 31 subcharacteristics) and produce findings with severity plus a quality scorecard. Use when the user asks for a quality-focused code review, a non-functional review, "品質観点でレビューして" / "25010 でレビュー" / "このコードの品質特性を評価して", or wants architecture/code assessed for reliability, security, maintainability, performance, etc. Every recommendation must cite the academic/official references in the reference library.
+description: Review code or a diff comprehensively against the ISO/IEC 25010:2023 product quality model (9 characteristics, 40 subcharacteristics) and produce findings with severity plus a quality scorecard. Use when the user asks for a quality-focused code review, a non-functional review, "品質観点でレビューして" / "25010 でレビュー" / "このコードの品質特性を評価して", or wants architecture/code assessed for reliability, security, maintainability, performance, etc. Every recommendation must cite the academic/official references in the reference library.
 ---
 
 # quality-review — ISO/IEC 25010 でコード/差分を網羅レビューする
 
-このスキルは **対象コードを 8 特性・31 副特性で網羅的にレビュー**し、
+このスキルは **対象コードを 9 特性・40 副特性で網羅的にレビュー**し、
 重大度付きの指摘とスコアカードを出力する。**各指摘の推奨には、学術論文／公式文書を必ず引用する。**
 
 AI の揺らぎを抑えるため、**測れる指標は静的解析ツールに委譲し（決定論パート）**、
 LLM の判断は数値化できない残余（考察パート）に閉じ込める。詳しくは
-`${CLAUDE_PLUGIN_ROOT}/references/09-static-evaluation.md`、設定は
+`${CLAUDE_PLUGIN_ROOT}/references/static-evaluation.md`、設定は
 `${CLAUDE_PLUGIN_ROOT}/quality-gates.yml` を参照する。
 
 リファレンス・ライブラリ: `${CLAUDE_PLUGIN_ROOT}/references/`
-（索引は `00-overview.md`、各特性は `01`〜`08`、静的評価方法論は `09`。各特性ファイルに「コードレビュー チェックリスト」がある）
+（索引は `00-overview.md`、各特性は `01`〜`09`、静的評価方法論は `static-evaluation.md`。各特性ファイルに「コードレビュー チェックリスト」がある）
 
 ---
 
@@ -35,7 +35,7 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
    - **ツールが未インストール/実行不可なら、その項目を「未実行(skipped)」と明記する。数値を推測・捏造しない。** 全項目 skipped のときは結果を `inconclusive` とし、決定論パートは「未実施」と報告する。
    - 取得した数値を `threshold` と機械的に突き合わせ、超過を決定論的な指摘とする（同じコードなら毎回同じ結果）。
 
-4. **特性ごとのチェック（8 特性を網羅・考察パート）**
+4. **特性ごとのチェック（9 特性を網羅・考察パート）**
    - 各特性について `${CLAUDE_PLUGIN_ROOT}/references/0N-*.md` を**実際に Read し**、「コードレビュー チェックリスト」を適用する。
    - **決定論パートで既に確定した項目は再判断しない**（数値をそのまま採用）。ここでは静的化できない観点のみを評価し、**「推測」であることを明示**する（profile の `judgment` を参照）。
    - 該当が薄い特性は「該当なし/低リスク」と明示してスキップしてよい（網羅したことを示す）。
@@ -51,7 +51,7 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
 
 6. **スコアカード（決定論／考察を分離）**
    - **決定論パート**: ツール名・実測値・しきい値・判定を表で示す（再現可能）。
-   - **考察パート**: 8 特性ごとの所見と相対評価（◎/○/△/× 等）。各所見が決定論パート由来か LLM 判断（推測）かを明示。
+   - **考察パート**: 9 特性ごとの所見と相対評価（◎/○/△/× 等）。各所見が決定論パート由来か LLM 判断（推測）かを明示。
    - Critical/High を上位に並べた指摘一覧を添える。
 
 7. **報告**
@@ -81,7 +81,7 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
 | --- | --- | --- | --- |
 | 機能適合性 | ○ | … | 決定論(カバレッジ) |
 | セキュリティ | △ | SAST 深掘りは推測 | 推測(judgment) |
-| …（8 特性すべて） | | | |
+| …（9 特性すべて） | | | |
 
 ### 指摘一覧（重大度順）
 #### [Critical] <タイトル> — セキュリティ/機密性
@@ -112,7 +112,7 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
 
 ## 5. やってはいけないこと
 
-- ❌ 8 特性の一部しか見ずに「レビュー完了」とする（網羅性を担保し、見ていない特性は明示）。
+- ❌ 9 特性の一部しか見ずに「レビュー完了」とする（網羅性を担保し、見ていない特性は明示）。
 - ❌ 根拠リファレンス無しの「べき論」だけの指摘。
 - ❌ 重大度を付けずに指摘を羅列する。
 - ❌ 推測を断定として書く。確証がなければその旨を示す。

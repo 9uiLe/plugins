@@ -1,14 +1,14 @@
 # 03. 互換性 / Compatibility
 
-> ISO/IEC 25010 製品品質モデルの「互換性」に関する、調査・アーキテクチャ設計・コードレビュー用リファレンス。
+> ISO/IEC 25010:2023 製品品質モデルの「互換性」に関する、調査・アーキテクチャ設計・コードレビュー用リファレンス。
 
 ---
 
 ## 1. 定義
 
-**互換性 (Compatibility)** とは、製品・システム・コンポーネントが共有環境において他の製品・システム・コンポーネントと情報をやり取りしつつ、自身に要求される機能を果たせる能力の高さを指す（ISO/IEC 25010:2011, §4.2.3）。
+**互換性 (Compatibility)** とは、製品・システム・コンポーネントが共有環境において他の製品・システム・コンポーネントと情報をやり取りしつつ、自身に要求される機能を果たせる能力の高さを指す（ISO/IEC 25010:2023）。
 
-> **2023 改訂での変更:** ISO/IEC 25010:2023 は 2011 版に置き換わる改訂版として発行された。互換性の副特性は **共存性** と **相互運用性** の 2 つのまま変わらないが、定義文の表現が整理されている。
+> **2011 版との違い:** 互換性の副特性は **共存性** と **相互運用性** の 2 つのまま変わらず、2023 でも副特性構成は不変。定義文の表現が整理されている。
 
 互換性は次の 2 つの副特性から構成される。
 
@@ -25,7 +25,7 @@
 
 #### 定義
 
-共通の環境やリソースを他の製品と共有しながらも、それらの製品に悪影響を及ぼすことなく、要求される機能を効率よく果たせる能力の高さ（ISO/IEC 25010:2011, §4.2.3.1）。
+共通の環境やリソースを他の製品と共有しながらも、それらの製品に悪影響を及ぼすことなく、要求される機能を効率よく果たせる能力の高さ（ISO/IEC 25010:2023）。
 
 #### 調査観点
 
@@ -63,7 +63,7 @@
 
 #### 定義
 
-複数のシステム・製品・コンポーネント間でデータを送受信し、送受信した情報を双方が実際に活用できる能力の高さ（ISO/IEC 25010:2011, §4.2.3.2）。
+複数のシステム・製品・コンポーネント間でデータを送受信し、送受信した情報を双方が実際に活用できる能力の高さ（ISO/IEC 25010:2023）。
 
 #### 調査観点
 
@@ -167,8 +167,11 @@
 
 ### 規格・標準
 
-1. **ISO/IEC 25010:2011** — *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — System and software quality models*. ISO/IEC, 2011.  
-   <https://cdn.standards.iteh.ai/samples/35733/2ca18b477b7845a5b8cae39d6de0c098/ISO-IEC-25010-2011.pdf> (サンプル)
+1. **ISO/IEC 25010:2023** — *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Product quality model*. ISO/IEC, 2023.  
+   <https://www.iso.org/standard/78176.html>
+
+1a. **ISO/IEC 25010:2011** — *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — System and software quality models*. ISO/IEC, 2011. （旧版、参考）  
+   <https://www.iso.org/standard/35733.html>
 
 2. **ISO/IEC 25023:2016** — *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Measurement of system and software product quality*. ISO/IEC, 2016.  
    <https://www.iso.org/standard/35747.html>

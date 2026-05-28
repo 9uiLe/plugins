@@ -1,32 +1,26 @@
 # 01. 機能適合性 / Functional Suitability
 
-> ISO/IEC 25010 製品品質モデルの「機能適合性」に関する、調査・アーキテクチャ設計・コードレビュー用リファレンス。
+> ISO/IEC 25010:2023 製品品質モデルの「機能適合性」に関する、調査・アーキテクチャ設計・コードレビュー用リファレンス。
 
 ---
 
 ## 1. 定義
 
-### ISO/IEC 25010:2011（第1版）
+### ISO/IEC 25010:2023（第2版・正典）
 
-製品またはシステムが、明示された条件のもとで使用される際に、利用者の明示的・暗黙的なニーズを満たす機能を提供できる度合いを指す。
-
-出典: ISO/IEC 25010:2011, §4.1
-
-### ISO/IEC 25010:2023（第2版）
-
-> **2023 改訂での変更:** 定義が改訂され、意図された利用者のニーズを満たすとともに、機能仕様への適合を明示的に要求する内容が加わった。
+製品またはシステムが、明示された条件のもとで使用される際に、利用者の明示的・暗黙的なニーズを満たす機能を提供できる度合い。2023 版では「機能仕様への適合」を定義に組み込み、仕様書に対する検証可能性をより強く要求している。
 
 出典: ISO/IEC 25010:2023
+
+> **2011 版との違い:** 副特性構成（機能完全性・機能正確性・機能適切性の 3 副特性）に変更なし。定義の強調点として、2023 版は「機能仕様への適合」を明示的に要求する内容を追加。上位モデル全体では品質特性数が 8 → 9 個に変更（Safety 追加、Usability → Interaction Capability、Portability → Flexibility に改称）されているが、本特性の副特性構成は 2023 でも不変。
 
 ### 版間の差異（2011 vs 2023）
 
 | 観点 | 2011 版 | 2023 版 |
 |------|---------|---------|
-| 副特性の構成 | 機能完全性・機能正確性・機能適切性（3 副特性、変更なし） | 同左（副特性の構造は維持） |
+| 副特性の構成 | 機能完全性・機能正確性・機能適切性（3 副特性） | 同左（副特性の構造は維持） |
 | 定義の強調点 | 「規定されたニーズ・暗黙のニーズ」 | 上記に加え「機能仕様への適合」を明示 |
 | 上位モデルの変化 | 品質特性 8 個 | 品質特性 9 個（Safety が追加）；Usability → Interaction Capability、Portability → Flexibility に改称 |
-
-機能適合性の副特性 3 つは両版で構造的に同一だが、2023 版は「機能仕様への適合」を定義に組み込むことで、仕様書に対する検証可能性をより強く要求している。
 
 ---
 
@@ -36,7 +30,7 @@
 
 **定義:**
 仕様が定めるタスクと利用者の意図する目標に対して、実装された機能群が漏れなく対応している度合い。
-(出典: ISO/IEC 25010:2011, §4.1.1)
+(出典: ISO/IEC 25010:2023)
 
 **調査観点:**
 - 要件一覧（SRS / バックログ）と実装済み機能の対応表（トレーサビリティマトリクス）が存在し、未実装項目がないか
@@ -68,7 +62,7 @@
 
 **定義:**
 製品またはシステムが、要求される精度水準を満たした正確な結果を出力できる度合い。
-(出典: ISO/IEC 25010:2011, §4.1.2)
+(出典: ISO/IEC 25010:2023)
 
 **調査観点:**
 - 出力値・戻り値が仕様に規定された期待値と一致するか（精度・丸め・型変換を含む）
@@ -101,7 +95,7 @@
 
 **定義:**
 提供する機能が、利用者の定められたタスクや目標の達成を適切に支援できる度合い。
-(出典: ISO/IEC 25010:2011, §4.1.3)
+(出典: ISO/IEC 25010:2023)
 
 **調査観点:**
 - 実装された機能がユーザの主要タスクを直接支援しているか（過剰設計・無用な抽象化がないか）
@@ -177,9 +171,9 @@
 
 ## 6. リファレンス
 
-1. **ISO/IEC (2011).** *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — System and software quality models.* ISO/IEC 25010:2011. https://www.iso.org/standard/35733.html
+1. **ISO/IEC (2023).** *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Product quality model.* ISO/IEC 25010:2023. https://www.iso.org/standard/78176.html
 
-2. **ISO/IEC (2023).** *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Product quality model.* ISO/IEC 25010:2023. https://www.iso.org/standard/78176.html
+2. **ISO/IEC (2011).** *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — System and software quality models.* ISO/IEC 25010:2011. https://www.iso.org/standard/35733.html （旧版、参考）
 
 3. **ISO/IEC (2016).** *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Measurement of system and software product quality.* ISO/IEC 25023:2016. https://www.iso.org/standard/35747.html
 

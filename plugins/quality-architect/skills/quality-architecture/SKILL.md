@@ -1,16 +1,16 @@
 ---
 name: quality-architecture
-description: Design or evaluate software/system architecture using the ISO/IEC 25010 product quality model (8 characteristics, 31 subcharacteristics). Use when the user asks to design an architecture, choose between architectural options, define or review non-functional/quality requirements, evaluate quality attributes, run an ATAM-style trade-off analysis, or asks "品質特性を踏まえて設計して" / "アーキテクチャを 25010 で検討して" / "非機能要件を洗い出して". Recommendations must cite the academic/official references in the reference library.
+description: Design or evaluate software/system architecture using the ISO/IEC 25010:2023 product quality model (9 characteristics, 40 subcharacteristics). Use when the user asks to design an architecture, choose between architectural options, define or review non-functional/quality requirements, evaluate quality attributes, run an ATAM-style trade-off analysis, or asks "品質特性を踏まえて設計して" / "アーキテクチャを 25010 で検討して" / "非機能要件を洗い出して". Recommendations must cite the academic/official references in the reference library.
 ---
 
 # quality-architecture — ISO/IEC 25010 でアーキテクチャを設計・評価する
 
-このスキルは **ISO/IEC 25010 製品品質モデル（8 特性・31 副特性）を共通言語**として、
+このスキルは **ISO/IEC 25010:2023 製品品質モデル（9 特性・40 副特性）を共通言語**として、
 要件から品質特性を優先付けし、各特性の設計タクティクスでアーキテクチャを構築・評価する。
 **すべての設計判断・推奨には、リファレンス・ライブラリ中の学術論文／公式文書を引用する。**
 
 リファレンス・ライブラリ: `${CLAUDE_PLUGIN_ROOT}/references/`
-（索引は `00-overview.md`、各特性は `01`〜`08`）
+（索引は `00-overview.md`、各特性は `01`〜`09`）
 
 ---
 
@@ -21,7 +21,7 @@ description: Design or evaluate software/system architecture using the ISO/IEC 2
    - 既にユーザーが情報を提供していれば二重に質問しない。
 
 2. **品質特性の優先付け（最重要）**
-   - 8 特性すべてを同等に扱わない。要件・ビジネス文脈から **重点特性を 2〜4 個に絞り、トレードオフ関係を明示**する。
+   - 9 特性すべてを同等に扱わない。要件・ビジネス文脈から **重点特性を 2〜4 個に絞り、トレードオフ関係を明示**する。
    - 優先付けは推測で決めず、不明なら 1 メッセージにまとめて確認する（例: 「可用性とコスト、どちらを優先しますか」）。
    - 代表的トレードオフ: セキュリティ⇄使用性、性能効率性⇄保守性、可用性⇄一貫性(CAP)、移植性⇄性能最適化。
 
@@ -71,7 +71,7 @@ description: Design or evaluate software/system architecture using the ISO/IEC 2
 
 ## 4. やってはいけないこと
 
-- ❌ 8 特性を機械的に全部並べただけで優先付けしない（重点を絞る）。
+- ❌ 9 特性を機械的に全部並べただけで優先付けしない（重点を絞る）。
 - ❌ トレードオフを示さずに「すべて満たせる」と書く。
 - ❌ 根拠リファレンス無しでパターン名だけ列挙する。
 - ❌ 版（2011/2023）を曖昧にしたまま Safety の扱いを省略する。

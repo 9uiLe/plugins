@@ -1,6 +1,7 @@
 # 05. 信頼性 / Reliability
 
-> ISO/IEC 25010 製品品質モデルの「信頼性」に関する、調査・アーキテクチャ設計・コードレビュー用リファレンス。
+> ISO/IEC 25010:2023 製品品質モデルの「信頼性」に関する、調査・アーキテクチャ設計・コードレビュー用リファレンス。
+> 本ドキュメントは **ISO/IEC 25010:2023** に準拠し、4 つの副特性（欠陥のなさ・可用性・障害許容性・回復性）を扱う。
 
 ---
 
@@ -15,12 +16,13 @@ Avizienis ら（2004）は *dependability*（信頼可能性）を包括的概�
 
 ## 2. 副特性
 
-### 2.1 成熟性 (Maturity)
+### 2.1 欠陥のなさ (Faultlessness)
+（2011 版では「成熟性 Maturity」）
 
-> **2023 改訂での変更:** ISO/IEC 25010:2023 では「成熟性 (Maturity)」が **欠陥のなさ (Faultlessness)** に名称変更された。概念は「通常運用において欠陥なく機能を遂行できる度合い」としてより明確に定義し直されている。
+> **2011 版との差異:** ISO/IEC 25010:2011 ではこの副特性を「成熟性 (Maturity)」と呼称していた。ISO/IEC 25010:2023 では **欠陥のなさ (Faultlessness)** に改称され、概念が「通常運用においてシステムが欠陥なく機能を遂行できる度合い」としてより明確に定義し直されている。
 
 #### 定義
-通常運用条件下において、システムが信頼性に関するニーズを満たす度合い。障害頻度の低さと、意図せぬ動作の少なさで表される。
+通常運用条件下において、システムが欠陥なく意図した機能を遂行できる度合い。障害頻度の低さと、意図せぬ動作の少なさで表される。（出典: ISO/IEC 25010:2023 の主旨に基づく要約）
 
 #### 調査観点
 - 過去の障害履歴・障害率の推移
@@ -178,8 +180,8 @@ Google SRE モデルでは、可用性目標（例: 99.9%）を超えた障害�
 | 4 | ヘルスチェックと自動フェイルオーバーが動作するか | 可用性 |
 | 5 | RTO / RPO が定義されリストア訓練が実施されているか | 回復性 |
 | 6 | バックアップ・WAL・冪等処理が実装されているか | 回復性 |
-| 7 | テストカバレッジと欠陥密度が目標値内か | 成熟性 |
-| 8 | 段階的ロールアウト戦略が存在するか | 成熟性 |
+| 7 | テストカバレッジと欠陥密度が目標値内か | 欠陥のなさ |
+| 8 | 段階的ロールアウト戦略が存在するか | 欠陥のなさ |
 | 9 | メトリクス・ログ・トレースが整備されているか | 横断 |
 | 10 | カオス実験計画または障害訓練が定期実施されているか | 横断 |
 
@@ -201,9 +203,10 @@ Google SRE モデルでは、可用性目標（例: 99.9%）を超えた障害�
 
 ## 6. リファレンス
 
-1. **ISO/IEC 25010:2011 / 25010:2023** — *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — System and software quality models*. ISO/IEC. 信頼性特性および副特性の定義の規範的出典。
+1. **ISO/IEC 25010:2023** — *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Product quality model*. ISO/IEC, November 2023. 信頼性特性および副特性（欠陥のなさ・可用性・障害許容性・回復性）の定義の規範的出典。URL: https://www.iso.org/standard/78176.html  
+   **参考**: ISO/IEC 25010:2011（第 1 版）では「欠陥のなさ」は「成熟性 (Maturity)」と呼称されていた。
 
-2. **ISO/IEC 25023:2016** — *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Measurement of system and software product quality*. ISO/IEC. 可用性・成熟性・障害許容性・回復性の計測指標定義を含む。URL: https://www.iso.org/standard/35747.html
+2. **ISO/IEC 25023:2016** — *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Measurement of system and software product quality*. ISO/IEC. 可用性・欠陥のなさ（旧:成熟性）・障害許容性・回復性の計測指標定義を含む。URL: https://www.iso.org/standard/35747.html
 
 3. **Avizienis, A., Laprie, J.-C., Randell, B., & Landwehr, C.** (2004). Basic Concepts and Taxonomy of Dependable and Secure Computing. *IEEE Transactions on Dependable and Secure Computing*, 1(1), 11–33. DOI: 10.1109/TDSC.2004.2  
    信頼可能性の包括的分類体系（fault–error–failure モデル）の基礎文献。

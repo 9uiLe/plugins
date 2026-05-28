@@ -1,7 +1,7 @@
 {
   "name": "quality-architect",
   "version": "0.1.0",
-  "description": "Design and review software architecture against the ISO/IEC 25010 product quality model. Provides two skills (quality-architecture / quality-review) backed by a per-characteristic reference library with verified academic and official citations.",
+  "description": "Design and review software architecture against the ISO/IEC 25010:2023 product quality model (9 characteristics, 40 subcharacteristics). Provides two skills (quality-architecture / quality-review) backed by a per-characteristic reference library with verified academic and official citations.",
   "author": {
     "name": "9uiLe"
   },

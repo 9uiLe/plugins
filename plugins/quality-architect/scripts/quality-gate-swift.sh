@@ -153,7 +153,7 @@ fi
 
 # --- 結果 JSON 出力 ---
 {
-  printf '{\n  "model":"ISO/IEC 25010:2011",\n  "language":"swift",\n  "overall":"%s",\n  "ran":%s,\n  "gates":[\n' \
+  printf '{\n  "model":"ISO/IEC 25010:2023",\n  "language":"swift",\n  "overall":"%s",\n  "ran":%s,\n  "gates":[\n' \
     "$VERDICT" "$RAN"
   for i in "${!ROWS[@]}"; do
     printf '    %s%s\n' "${ROWS[$i]}" "$([ $i -lt $((${#ROWS[@]}-1)) ] && echo ,)"

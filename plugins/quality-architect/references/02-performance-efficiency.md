@@ -1,23 +1,23 @@
 # 02. 性能効率性 / Performance Efficiency
 
-> ISO/IEC 25010 製品品質モデルの「性能効率性」に関する、調査・アーキテクチャ設計・コードレビュー用リファレンス。
+> ISO/IEC 25010:2023 製品品質モデルの「性能効率性」に関する、調査・アーキテクチャ設計・コードレビュー用リファレンス。
 
 ---
 
 ## 1. 定義
 
-### ISO/IEC 25010:2011 定義
+### ISO/IEC 25010:2023（第2版・正典）
 
 **日本語（要約）:**
-明示された条件のもとで、製品またはシステムがその機能を実行する際に使用するリソース量に対する性能の度合い。（ISO/IEC 25010:2011, clause 6.3 に基づく要約）
+明示された条件のもとで、製品またはシステムがその機能を実行する際に使用するリソース量に対する性能の度合い。（ISO/IEC 25010:2023 に基づく要約）
 
-**副特性の構成（ISO/IEC 25010:2011 準拠）:**
+**副特性の構成（ISO/IEC 25010:2023 準拠）:**
 時間効率性 (Time Behaviour)・資源効率性 (Resource Utilization)・容量満足性 (Capacity) の3つ。
 
-> **2023 改訂での変更:** ISO/IEC 25010:2023 では本特性の基本定義と3副特性の構成は 2011 版から継承されている。特性名・副特性名の表記に微修正が加えられた。詳細は ISO/IEC 25010:2023 clause 4.2.2 を参照。
+> **2011 版との違い:** 本特性の基本定義と3副特性の構成は 2011 版から継承されており、2023 でも副特性構成は不変。特性名・副特性名の表記に微修正が加えられた。詳細は ISO/IEC 25010:2023 clause 4.2.2 を参照。
 
 **規格番号:**
-- ISO/IEC 25010:2011 — Systems and software engineering — Systems and Software Quality Requirements and Evaluation (SQuaRE) — System and software quality models
+- ISO/IEC 25010:2023 — Systems and software engineering — Systems and Software Quality Requirements and Evaluation (SQuaRE) — Product quality model
 - ISO/IEC 25023:2016 — Measurement of system and software product quality（計測指標の定義）
 
 ---
@@ -191,9 +191,9 @@ SPEC（Standard Performance Evaluation Corporation）のベンチマーク手法
 
 ## 6. リファレンス
 
-1. **ISO/IEC** (2011). *ISO/IEC 25010:2011 — Systems and software engineering — Systems and Software Quality Requirements and Evaluation (SQuaRE) — System and software quality models*. International Organization for Standardization.
-   <https://www.iso.org/standard/35733.html>
-   *(2023 改訂版: ISO/IEC 25010:2023 <https://www.iso.org/standard/78176.html>)*
+1. **ISO/IEC** (2023). *ISO/IEC 25010:2023 — Systems and software engineering — Systems and Software Quality Requirements and Evaluation (SQuaRE) — Product quality model*. International Organization for Standardization.
+   <https://www.iso.org/standard/78176.html>
+   *(旧版: ISO/IEC 25010:2011 <https://www.iso.org/standard/35733.html>)*
 
 2. **ISO/IEC** (2016). *ISO/IEC 25023:2016 — Systems and software engineering — Systems and Software Quality Requirements and Evaluation (SQuaRE) — Measurement of system and software product quality*. International Organization for Standardization.
    <https://www.iso.org/standard/35747.html>
