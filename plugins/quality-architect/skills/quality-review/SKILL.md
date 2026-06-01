@@ -1,6 +1,6 @@
 ---
 name: quality-review
-description: Review code or a diff comprehensively against the ISO/IEC 25010:2023 product quality model (9 characteristics, 40 subcharacteristics) and produce findings with severity plus a quality scorecard. Use when the user asks for a quality-focused code review, a non-functional review, "品質観点でレビューして" / "25010 でレビュー" / "このコードの品質特性を評価して", or wants architecture/code assessed for reliability, security, maintainability, performance, etc. Every recommendation must cite the academic/official references in the reference library.
+description: Review EXISTING code, a diff, a PR, or a repository against the ISO/IEC 25010:2023 product quality model (9 characteristics, 40 subcharacteristics) and produce findings with severity plus a quality scorecard. Use when the user asks for a quality-focused code review, a non-functional review of an implementation, an audit of a PR/diff/repository, or says 「品質観点でレビューして」「25010 でレビュー」「このコードの品質特性を評価して」「実装をレビューして」「PR を品質特性で見て」「指摘して」. ALWAYS runs the deterministic static-analysis layer (CI artifact → wrapper script → individual tool commands → mark as skipped) BEFORE producing any LLM judgement; see `references/static-evaluation.md`. If the user is asking to DESIGN a new architecture (not review existing code), use the `quality-architecture` skill instead. Every recommendation must cite the academic/official references in the reference library.
 ---
 
 # quality-review — ISO/IEC 25010 でコード/差分を網羅レビューする
@@ -16,6 +16,35 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
 リファレンス・ライブラリ: `${CLAUDE_PLUGIN_ROOT}/references/`
 （索引は `00-overview.md`、各特性は `01`〜`09`、静的評価方法論は `static-evaluation.md`。各特性ファイルに「コードレビュー チェックリスト」がある）
 
+**スキル選択と決定論ファースト原則は `00-overview.md §5.1（プラグイン共通の絶対規律）` がカノン。本ファイルの §0 と §1 step 3 はその反映であり、矛盾があれば §5.1 を優先する。**
+
+---
+
+## 0. このスキルを使ってよいかの判定（必須・最初に実行）
+
+### 0.1 設計依頼の逆ハンドオフ
+
+ユーザが「設計したい／新規アーキテクチャを考えたい／非機能要件をこれから決めたい／ADR を書きたい」と言っており、対象として既存コードを与えていない場合は、本スキルではなく `quality-architecture` に切り替える。
+
+### 0.2 プロジェクト資産の検出（必須・LLM 出力の前に Bash で実行）
+
+対象リポジトリのルートで次の Bash を必ず実行し、**出力（または「リポジトリパス未指定」の旨）をレポート冒頭の「### 0. プロジェクト資産インベントリ」に転記する**:
+
+```bash
+{ test -f quality-gate-result.json && echo "HAS quality-gate-result.json"; \
+  test -f .swiftlint.yml && echo "HAS .swiftlint.yml"; \
+  test -f .periphery.yml && echo "HAS .periphery.yml"; \
+  test -f Mintfile && echo "HAS Mintfile"; \
+  test -f Package.swift && echo "HAS Package.swift"; \
+  ls .github/workflows 2>/dev/null | grep -iE 'quality|lint|coverage' | sed 's/^/HAS workflow: /'; \
+  ls scripts 2>/dev/null | grep -iE 'quality-gate' | sed 's/^/HAS script: /'; \
+} 2>&1 | sort -u
+```
+
+- 対象がチャットに貼り付けられた差分のみで作業ディレクトリが該当リポジトリではない場合は、転記欄に `対象パス未指定（チャット入力のみ）` と書き、§1 step 3 のフォールバック（個別 `run` または全 skipped）に進む。
+- 上のコマンドで `HAS quality-gate-result.json` が出た場合、§1 step 3 では **必ずそれを最優先で Read** する（再実行しない）。
+- 上のコマンドで `HAS .swiftlint.yml` や `HAS Package.swift` が出た場合、**プロジェクト側の `.swiftlint.yml` のしきい値を尊重** し、プラグイン同梱の `quality-gates.yml` の値は二次扱いとする。
+
 ---
 
 ## 1. 進め方（必ずこの順番で）
@@ -29,10 +58,17 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
    - **対象言語を特定**する（不明なら確認）。`quality-gates.yml` に該当 profile があるか確認する。
 
 3. **静的評価レイヤー（決定論パート）を先に実行**
-   - **CI の結果があればそれを最優先**: 対象リポジトリの CI が `quality-gate-result.json`（`examples/ci/` 参照）を出力していれば、それを Read して数値をそのまま採用する（最も再現性が高い）。
-   - 無ければ**ラッパースクリプトを実行**: Swift なら `bash ${CLAUDE_PLUGIN_ROOT}/scripts/quality-gate-swift.sh <対象>` を Bash で実行し、出力 JSON を採用する。スクリプトがツール実行・パース・しきい値判定まで行うため、LLM の解釈揺れが入らない。
-   - スクリプトも無い/対象言語の profile が無い場合のみ、`quality-gates.yml` の `run` コマンドを個別に実行する。
-   - **ツールが未インストール/実行不可なら、その項目を「未実行(skipped)」と明記する。数値を推測・捏造しない。** 全項目 skipped のときは結果を `inconclusive` とし、決定論パートは「未実施」と報告する。
+   - **【必須チェックポイント】このステップに入る前に、§0.2 のインベントリ結果を踏まえ、AskUserQuestion を 1 回発行する**。文面テンプレ:
+     > 「決定論パートの実行方針を確認します。検出した資産: <0.2 の転記内容>。
+     >  1. 既存 `quality-gate-result.json` を採用（再実行なし・最速）
+     >  2. `${CLAUDE_PLUGIN_ROOT}/scripts/quality-gate-swift.sh` を実行（`swift test --enable-code-coverage`, `trivy fs` 等を走らせる。数分かかる）
+     >  3. 個別 `run` コマンドを実行（部分的に skipped になり得る）
+     >  4. 静的解析をスキップして LLM 考察のみで進める（決定論パートは「未実施」と明記される）」
+   - **auto-mode（質問を省略してよい唯一の条件）**: 0.2 で `HAS quality-gate-result.json` が出ており、かつそのファイルの mtime が 24 時間以内、かつユーザが事前に「CI 結果でよい／最速で」を明言している場合のみ、選択肢 1 を採用して質問を省く。それ以外は **必ず質問する**。
+   - **CI の結果があればそれを最優先**: 選択肢 1 が選ばれたら `quality-gate-result.json` を Read して数値をそのまま採用する（最も再現性が高い）。
+   - **無ければ／選択肢 2 ならラッパースクリプトを実行**: Swift なら `bash ${CLAUDE_PLUGIN_ROOT}/scripts/quality-gate-swift.sh <対象>` を Bash で実行し、出力 JSON を採用する。スクリプトがツール実行・パース・しきい値判定まで行うため、LLM の解釈揺れが入らない。
+   - 選択肢 3 ならスクリプトを使わず `quality-gates.yml` の `run` コマンドを個別に実行する。
+   - **ツールが未インストール／実行不可なら、その項目を「未実行(skipped)」と明記する。数値を推測・捏造しない。** 全項目 skipped のとき、または選択肢 4 が選ばれたときは結果を `inconclusive` とし、決定論パートは「未実施」と報告する（**「未実施」を `pass` と誤読させない**）。
    - 取得した数値を `threshold` と機械的に突き合わせ、超過を決定論的な指摘とする（同じコードなら毎回同じ結果）。
 
 4. **特性ごとのチェック（9 特性を網羅・考察パート）**
@@ -59,29 +95,42 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
 
 ---
 
-## 2. 出力フォーマット（目安）
+## 2. 出力フォーマット（必須）
+
+以下の章立てを **省略・空欄不可** で出力する。特に「決定論パート」「スコアカード」は省略禁止。
 
 ```
 ## 品質レビュー（ISO/IEC 25010）
 
+### 0. プロジェクト資産インベントリ
+（§0.2 のコマンド出力をそのまま転記。何も無い場合は「該当資産なし」と明記）
+
 ### サマリ
 - 対象 / 範囲 / 版(2011|2023) / 言語・適用 profile
+- 決定論パートの source: ci-artifact / wrapper / individual / none(全 skipped)
 - 最重要指摘 Top N
 
 ### 決定論パート（静的解析ツール由来・再現可能）
-| 指標 | ツール | 実測値 | しきい値 | 判定 |
+| 指標 | ツール | measured（実測値） | threshold（しきい値） | 判定 |
 | --- | --- | --- | --- | --- |
-| 循環的複雑度(最大) | SwiftLint | 23 | high:10/crit:20 | ✗ Critical |
+| 循環的複雑度(最大) | lizard | 23 | ≤10 high / ≤20 critical | ✗ Critical |
 | 依存脆弱性(Crit/High) | Trivy | 0 | 0 | ✓ |
-| カバレッジ | swift test | 0.62 | min:0.70 | ✗ High |
-| …（未実行のものは「未実行」と明記） | | | | |
+| カバレッジ | swift test | 0.62 | ≥ 0.70 | ✗ High |
+| ハードコード密度 | （未実行） | 未実行 (skipped: ツール未導入) | — | skipped |
+
+注意:
+- **measured 列はいかなる行でも空欄にしない**。数値、または `未実行 (skipped: <理由>)` のいずれかを必ず書く。
+- `未実行` を書いた行は判定 `skipped`（pass ではない）。全行 skipped の表は許容するが、サマリで `inconclusive` を必ず宣言する。
+- 数値しきい値を本文の指摘で引用する場合、その指標は **必ずこの表に行を持つ**。表に行が無いしきい値引用は §5 違反。
 
 ### スコアカード（考察パート）
 | 特性 | 評価 | 主な所見 | 根拠 |
 | --- | --- | --- | --- |
-| 機能適合性 | ○ | … | 決定論(カバレッジ) |
+| 機能適合性 | ○ | … | 決定論(カバレッジ measured=0.62) |
 | セキュリティ | △ | SAST 深掘りは推測 | 推測(judgment) |
 | …（9 特性すべて） | | | |
+
+所見で数字を引用する場合は決定論パートの行を参照する。
 
 ### 指摘一覧（重大度順）
 #### [Critical] <タイトル> — セキュリティ/機密性
@@ -89,6 +138,7 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
 - 問題: …
 - 推奨: …
 - 根拠: （ISO/IEC 25010; OWASP ASVS など）
+- 数値根拠: 決定論パートの行（例: `循環的複雑度(最大)` 行、measured=23）／無ければ「数値根拠なし(推測)」と明記
 ```
 
 ---
@@ -119,3 +169,7 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
 - ❌ 差分の意図を無視した一般論レビュー。
 - ❌ **ツールを実行せずに複雑度・カバレッジ・脆弱性件数などの数値を“推測”で書く**。未実行なら「未実行」と明記する。
 - ❌ 決定論パートで確定した数値を、考察パートで主観的に上書きする。
+- ❌ §0.2 のプロジェクト資産インベントリを実行・転記せずに §1 以降に進む。
+- ❌ §1 step 3 の AskUserQuestion（決定論パート実行方針の確認）を発行せずに静的解析ツールを実行する／LLM 単独レビューを書く。
+- ❌ 本文や指摘で数値しきい値（V(G) ≤ 10, カバレッジ ≥ 0.70 等）を引用したのに、§2 決定論パート表に対応行（measured 値または skipped）が存在しない。
+- ❌ 全行 skipped の決定論パート表を出しながら、サマリで `inconclusive` を宣言せずに重大度付き指摘を断定的に書く。
