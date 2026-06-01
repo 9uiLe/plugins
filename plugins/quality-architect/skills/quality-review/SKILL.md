@@ -32,12 +32,13 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
 
 ```bash
 { test -f quality-gate-result.json && echo "HAS quality-gate-result.json"; \
+  test -f coupling-gate-result.json && echo "HAS coupling-gate-result.json"; \
   test -f .swiftlint.yml && echo "HAS .swiftlint.yml"; \
   test -f .periphery.yml && echo "HAS .periphery.yml"; \
   test -f Mintfile && echo "HAS Mintfile"; \
   test -f Package.swift && echo "HAS Package.swift"; \
-  ls .github/workflows 2>/dev/null | grep -iE 'quality|lint|coverage' | sed 's/^/HAS workflow: /'; \
-  ls scripts 2>/dev/null | grep -iE 'quality-gate' | sed 's/^/HAS script: /'; \
+  ls .github/workflows 2>/dev/null | grep -iE 'quality|lint|coverage|coupling' | sed 's/^/HAS workflow: /'; \
+  ls scripts 2>/dev/null | grep -iE 'quality-gate|coupling-gate' | sed 's/^/HAS script: /'; \
 } 2>&1 | sort -u
 ```
 
@@ -58,15 +59,20 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
    - **対象言語を特定**する（不明なら確認）。`quality-gates.yml` に該当 profile があるか確認する。
 
 3. **静的評価レイヤー（決定論パート）を先に実行**
-   - **【必須チェックポイント】このステップに入る前に、§0.2 のインベントリ結果を踏まえ、AskUserQuestion を 1 回発行する**。文面テンプレ:
+   - **【必須チェックポイント】このステップに入る前に、§0.2 のインベントリ結果を踏まえ、AskUserQuestion を 1 回発行する**（**二重質問禁止 — 1 ゲート / 1 セッション**）。文面テンプレ:
      > 「決定論パートの実行方針を確認します。検出した資産: <0.2 の転記内容>。
-     >  1. 既存 `quality-gate-result.json` を採用（再実行なし・最速）
+     >  1. 既存 `quality-gate-result.json` (+ あれば `coupling-gate-result.json`) を採用（再実行なし・最速）
      >  2. `${CLAUDE_PLUGIN_ROOT}/scripts/quality-gate-swift.sh` を実行（`swift test --enable-code-coverage`, `trivy fs` 等を走らせる。数分かかる）
      >  3. 個別 `run` コマンドを実行（部分的に skipped になり得る）
-     >  4. 静的解析をスキップして LLM 考察のみで進める（決定論パートは「未実施」と明記される）」
-   - **auto-mode（質問を省略してよい唯一の条件）**: 0.2 で `HAS quality-gate-result.json` が出ており、かつそのファイルの mtime が 24 時間以内、かつユーザが事前に「CI 結果でよい／最速で」を明言している場合のみ、選択肢 1 を採用して質問を省く。それ以外は **必ず質問する**。
-   - **CI の結果があればそれを最優先**: 選択肢 1 が選ばれたら `quality-gate-result.json` を Read して数値をそのまま採用する（最も再現性が高い）。
+     >  4. 静的解析をスキップして LLM 考察のみで進める（決定論パートは「未実施」と明記される）
+     >
+     > **追加オプション（保守性 / モジュール性の深掘りが必要な場合のみ）**: 上記に加えて結合の深掘り (07a 補論) シグナルも計測する。
+     >  - 2a / 3a. 上記 2 / 3 と同時に `${CLAUDE_PLUGIN_ROOT}/scripts/coupling-gate-swift.sh` も実行（`git log --since`, `jscpd`, `semgrep` 等を走らせる）。出力 `coupling-gate-result.json` を考察パートで参照。
+     >  - 既定はオフ。`07-maintainability.md` の検出 finding に対する severity 下方修正候補がある場合のみ提案する」
+   - **auto-mode（質問を省略してよい唯一の条件）**: 0.2 で `HAS quality-gate-result.json` が出ており、かつそのファイルの mtime が 24 時間以内、かつユーザが事前に「CI 結果でよい／最速で」を明言している場合のみ、選択肢 1 を採用して質問を省く。それ以外は **必ず質問する**。`coupling-gate-result.json` の存在は auto-mode を発火させない（追加判断材料は§3 で考慮）。
+   - **CI の結果があればそれを最優先**: 選択肢 1 が選ばれたら `quality-gate-result.json` を Read して数値をそのまま採用する（最も再現性が高い）。`HAS coupling-gate-result.json` も検出されていれば、それも Read して merge contract (§2) に従い 07-maintainability 指摘に attach する。
    - **無ければ／選択肢 2 ならラッパースクリプトを実行**: Swift なら `bash ${CLAUDE_PLUGIN_ROOT}/scripts/quality-gate-swift.sh <対象>` を Bash で実行し、出力 JSON を採用する。スクリプトがツール実行・パース・しきい値判定まで行うため、LLM の解釈揺れが入らない。
+   - **2a / 3a が選択された場合**: 続けて `bash ${CLAUDE_PLUGIN_ROOT}/scripts/coupling-gate-swift.sh --since=<window>` を実行し、`coupling-gate-result.json` を取得。**シグナル数値は `推測` ラベル付きで採用**（07a §5 / §9 H5）。観測ウィンドウ `--since=<window>` を本文に必ず併記（H5）。
    - 選択肢 3 ならスクリプトを使わず `quality-gates.yml` の `run` コマンドを個別に実行する。
    - **ツールが未インストール／実行不可なら、その項目を「未実行(skipped)」と明記する。数値を推測・捏造しない。** 全項目 skipped のとき、または選択肢 4 が選ばれたときは結果を `inconclusive` とし、決定論パートは「未実施」と報告する（**「未実施」を `pass` と誤読させない**）。
    - 取得した数値を `threshold` と機械的に突き合わせ、超過を決定論的な指摘とする（同じコードなら毎回同じ結果）。
@@ -139,7 +145,20 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
 - 推奨: …
 - 根拠: （ISO/IEC 25010; OWASP ASVS など）
 - 数値根拠: 決定論パートの行（例: `循環的複雑度(最大)` 行、measured=23）／無ければ「数値根拠なし(推測)」と明記
+- （任意）07a 補足: 結合の深掘り (07a) シグナルが attach されている場合のみ。例: `Khononov Distance: cross-service (推測; module_unit=spm-target, --since=6.months)` — 重大度の **下方修正のみ** 可（07a §9 H9）。
 ```
+
+### 2.1 結合の深掘り (07a) シグナルの merge contract
+
+`HAS coupling-gate-result.json` が検出されているか、§1 step 3 で 2a/3a が選ばれた場合のみ、本セクションを適用する。**未検出/未選択時は本セクションを丸ごとスキップ**（既存挙動を保つ）。
+
+- **dedup キー**: `(path:line, finding_kind)`。同一の保守性 finding に対し、07-maintainability 由来の row と 07a 由来の補足 row が衝突した場合は **1 件に統合**する。
+- **precedence**: 既存 07/08 の決定論パート行が **verdict precedence**（PASS/FAIL の確定権）を持つ。07a 由来の SIGNAL は **補足として attach** され、verdict の反転や severity 上方修正には使えない（07a §9 H9 規律）。
+- **severity 下方修正のみ可**: 例えば 07-maintainability で `CBO=15` が `High` 判定された場合、`coupling-gate-result.json` の `intrusive_hits=0` + `distance-level=intra-namespace` + `volatility-proxy=stable` が同時に成立しているなら、当該 finding の severity を `Medium` に **下げる根拠** にはなる。逆に CBO=8（PASS）を 07a 由来で `High` に **上げてはならない**。
+- **intrusive override の特例**: `coupling-gate-result.json.intrusive_override = true` の場合、Khononov BALANCE 観点での「常時 FAIL」を補足コメントに明記する。ただし 07/08 のしきい値判定がそれによって反転するわけではない（precedence ルール維持）。
+- **観測ウィンドウの明示**: 07a 由来の volatility 数値を引用するときは `--since=<window>` を 1 件 1 件の attach 内に併記する（H5）。一括省略禁止。
+- **共有要素の明示**: Integration Strength 段を attach に書くときは `(symbol: ...) / (type: ...) / (contract: ...)` を併記する。書けないなら段名を attach に書かず、SIGNAL 数値のみ参照する（H3）。
+- **Khononov の決定論扱い禁止**: 07a シグナルは全て `推測` ラベル付きで採用。考察パート由来の所見扱いとし、決定論パート表の行として記載しない（**07a SIGNAL は §2 決定論パート表に行を追加しない**。考察パートの所見・指摘内 attach に閉じる）。
 
 ---
 
@@ -148,6 +167,7 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
 - すべての推奨に **出典を併記**する。出典は `0N-*.md` の「リファレンス」節の**学術論文・公式文書のみ**。
 - ブログ・出典不明の主張を根拠にしない。リファレンスに無い指摘は推測である旨を明示する。
 - セキュリティ指摘は可能なら該当する OWASP/NIST 項目番号、保守性指摘はメトリクス（循環的複雑度・結合度等）を添える。
+- **保守性指摘で結合度 / 凝集 / 連結度（Connascence）/ モジュール境界を扱う場合は、補論 `references/07a-coupling-deep-dive.md` を引用する**。本ファイル §0.2 で `HAS coupling-gate-result.json` が出ている場合は、決定論パートで proxy 数値（`observed_change_frequency`, `distance_level`, `intrusive_hits` 等）を採用する（`07a` §5 / §9 H5 規律により観測ウィンドウ `--since=<window>` を本文併記）。
 
 ---
 
@@ -173,3 +193,6 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
 - ❌ §1 step 3 の AskUserQuestion（決定論パート実行方針の確認）を発行せずに静的解析ツールを実行する／LLM 単独レビューを書く。
 - ❌ 本文や指摘で数値しきい値（V(G) ≤ 10, カバレッジ ≥ 0.70 等）を引用したのに、§2 決定論パート表に対応行（measured 値または skipped）が存在しない。
 - ❌ 全行 skipped の決定論パート表を出しながら、サマリで `inconclusive` を宣言せずに重大度付き指摘を断定的に書く。
+- ❌ **Khononov の `Pain = Strength × Distance × Volatility` を本文に書く**。書籍本文中の verbatim 出現は未確認（講演ソースのみ）。canonical 表現は `references/07a-coupling-deep-dive.md` §6.1 の `BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY` を使う（07a §9 H2 規律）。
+- ❌ **Robert C. Martin の Instability `I = Ce / (Ce + Ca)` を Khononov Integration Strength の代理として引用する**。Khononov 2024 は依存をカウントするアプローチを名指しで否定している（07a §9 H2 規律）。
+- ❌ **Khononov 由来の指摘で `07-maintainability.md` / `08-flexibility.md` の既存しきい値・PASS/FAIL 判定を上書きする**。補論が寄与できるのは **重大度の下方修正 (downgrade) のみ**（07a §9 H9 規律）。verdict 反転や severity 上方修正は禁則。

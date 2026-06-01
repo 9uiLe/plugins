@@ -17,7 +17,11 @@ version: 1
 swift:
   # 環境にツールが無い場合は「未実行」と報告すること。数値を捏造しない。
   setup:
-    install_hint: "brew install swiftlint swift-format peripheryapp/periphery/periphery lizard trivy"
+    install_hint: "brew install swiftlint swift-format peripheryapp/periphery/periphery lizard trivy jscpd"
+  # 結合の深掘り (references/07a-coupling-deep-dive.md) のための module 単位宣言。
+  # `distance_level` 決定論計算の前提（07a §9 H4）。
+  # 未宣言時は distance basis: path-depth fallback ラベル併記が必須。
+  module_unit: spm-target          # 例: "spm-target", "spm-product", "directory:Sources/<dir>"
   deterministic:
     functional_suitability:
       - id: test-coverage
@@ -64,6 +68,95 @@ swift:
         note: >
           Trivy / OWASP Dependency-Check の SPM 対応は experimental。
           0 件でも見落としがあり得るため judgment 側でも補完する。
+  # 結合の深掘り (07a 補論) シグナル。`deterministic:` と区別される。
+  # - 生成された数値は 推測 ラベル付きで採用 (静的評価 §3.6.4)。
+  # - ツール未導入時は skipped (数値捏造禁止)。
+  # - Strength ラダー割当は 07a §6 の decision table に委譲 (本ブロックは "入力" のみ)。
+  # - aggregate スコアを単独 verdict 根拠に使わない (07a §3.2 / H2)。
+  planned-deterministic:
+    coupling:
+      - id: distance-level
+        metric: 2 部品間の Khononov Distance 段（1=Methods → 5=Systems、07a §4）
+        ref: "Khononov 2024, Ch.8 / 07a §4 / 07a §9 H4"
+        module_unit_required: true                            # spm-target 単位で計算
+        run: "swift package describe --type json"             # 出力からモジュール境界を抽出
+        post_process: "scripts/coupling-gate-swift.sh --signal distance"
+        threshold:
+          bands:
+            - { max: 1, label: "intra-method",     severity: info }
+            - { max: 2, label: "intra-object",     severity: info }
+            - { max: 3, label: "intra-namespace",  severity: info }
+            - { max: 4, label: "cross-service",    severity: medium }
+            - { max: 5, label: "cross-system",     severity: high }
+        note: >
+          module_unit: 未宣言の場合は計算せず、結果に
+          `distance basis: path-depth fallback` ラベルを付与する。
+      - id: volatility-proxy
+        metric: モジュール変更頻度 proxy (observed_change_frequency)
+        ref: "Khononov 2024, Ch.9 / 07a §5 / 07a §9 H5"
+        observation_window: "--since=6.months"               # 本文に必ず併記
+        run: "git log --since=6.months --pretty=format: --name-only | sort | uniq -c | sort -rn"
+        fallback: "code-maat -l <git.log> -c svn"             # code-maat 利用時
+        post_process: "scripts/coupling-gate-swift.sh --signal volatility"
+        threshold:
+          bands:
+            - { max: 5,   label: "stable",     severity: info }
+            - { max: 20,  label: "moderate",   severity: info }
+            - { max: 100, label: "volatile",   severity: medium }
+            - { max: null, label: "hot-spot",  severity: high }
+        note: >
+          observed_change_frequency は Khononov Volatility の proxy であり、BALANCE 判定での
+          採用時は 推測 ラベル必須 (07a §5.3 / H5)。観測ウィンドウは本文併記必須。
+      - id: intrusive-hits
+        metric: モジュール境界を跨ぐ private/internal シンボル参照件数
+        ref: "Khononov 2024, Ch.7 / 07a §3 / 07a §9 H3"
+        run: "semgrep --config p/swift --json"                # experimental rule set 利用
+        fallback: "scripts/coupling-gate-swift.sh --signal intrusive"
+        threshold:
+          bands:
+            - { max: 0, label: "clean",    severity: info }
+            - { max: 5, label: "watch",    severity: high }
+            - { max: null, label: "intrusive", severity: critical }
+        note: >
+          intrusive_hits > 0 は BALANCE モデル (07a §6) で常に最先頭の override 句となる
+          (どれだけ Distance / Volatility が良くても Intrusive は FAIL)。
+          07a §6 decision table 参照。
+      - id: cross-boundary-duplicates
+        metric: モジュール境界を跨ぐ重複コードブロック数
+        ref: "Khononov 2024, Ch.7 (Functional Coupling) / 07a §3"
+        run: "jscpd --reporters json --silent ."
+        threshold:
+          bands:
+            - { max: 0,  label: "none",        severity: info }
+            - { max: 3,  label: "watch",       severity: medium }
+            - { max: null, label: "functional", severity: high }
+        note: >
+          cross-module 重複は Functional Coupling の主要シグナル。
+          共有要素 (重複コード対の path:line) を併記しない断定は禁則 (H3)。
+      - id: shared-model-surface
+        metric: モジュール境界を越えて公開される共有モデル型数
+        ref: "Khononov 2024, Ch.7 (Model Coupling) / 07a §3"
+        run: "swift package describe --type json"             # public type の境界跨ぎ抽出
+        post_process: "scripts/coupling-gate-swift.sh --signal shared-model"
+        threshold:
+          bands:
+            - { max: 0,   label: "contract-only", severity: info }
+            - { max: 10,  label: "model-low",     severity: info }
+            - { max: null, label: "model-heavy",  severity: medium }
+        note: >
+          DTO 専用なら "model-low"、ドメインロジック付き型なら 1 件でも "model-heavy" 扱い。
+          07a §6 decision table のラダー割当入力。
+    aggregate:
+      # リポジトリ全体の概観目的のみ。verdict 根拠に単独で使わない。
+      - id: balance-pairs-ratio
+        metric: BALANCE = TRUE となるモジュール対の割合
+        ref: "Khononov 2024, Ch.10 / 07a §6.1"
+        formula: "count(STRENGTH XOR DISTANCE OR NOT VOLATILITY) / count(all_module_pairs)"
+        post_process: "scripts/coupling-gate-swift.sh --aggregate balance"
+        threshold: { min: 0.7 }                              # 概観しきい値、verdict 根拠不可
+        note: >
+          aggregate スコアは Khononov 2024 が名指しで否定する "count-based" 系メトリクスに近い。
+          概観目的 (dashboard 表示等) に限定し、指摘の severity 根拠としては引用しない (H2)。
   judgment:
     # 静的ツールが未成熟、または本質的に主観/動的。AI/人手で評価し「推測」を明示。
     security:
@@ -78,6 +171,12 @@ swift:
       - "相互運用性/後方互換は契約テスト・スキーマ差分で別途（言語非依存ツール）"
     portability:
       - "適応性・置換性は設計レビュー。設置性は CI 上の clean-build 再現性で補助確認"
+    coupling_deep_dive:
+      # 07a 補論で 判断のみ と分類される項目。BALANCE 適用時は 推測 ラベル必須。
+      - "Khononov Integration Strength 段 (Intrusive/Functional/Model/Contract) の確定: 共有要素 (symbol/type/contract path) 併記が必須 (H3)。SIGNAL は planned-deterministic で計測するが、段の割当は decision table + 人手レビューに委譲"
+      - "動的 Connascence (CoE/CoTi/CoV/CoI) は静的シグナルだけで断定不可 (H6)。runtime 観測・並行性解析の参照を併記し 推測 ラベル付与"
+      - "Socio-Technical Distance (Conway's Law 整合): CODEOWNERS / git author 分布から概観可能だが組織判断との突合せが必須"
+      - "Volatility の essential vs accidental 区別 (07a §5.2): 業務由来 (essential) と設計起因 (accidental) の切り分けはドメイン理解必須"
 
 # go:        # 例: 使う言語が増えたらここに追記（references は共通のまま）
 #   deterministic:
