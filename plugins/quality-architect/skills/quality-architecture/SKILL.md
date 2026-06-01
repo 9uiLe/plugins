@@ -1,6 +1,6 @@
 ---
 name: quality-architecture
-description: Design or evaluate software/system architecture using the ISO/IEC 25010:2023 product quality model (9 characteristics, 40 subcharacteristics). Use when the user asks to design an architecture, choose between architectural options, define or review non-functional/quality requirements, evaluate quality attributes, run an ATAM-style trade-off analysis, or asks "品質特性を踏まえて設計して" / "アーキテクチャを 25010 で検討して" / "非機能要件を洗い出して". Recommendations must cite the academic/official references in the reference library.
+description: Design NEW or PROPOSED software/system architecture using the ISO/IEC 25010:2023 product quality model (9 characteristics, 40 subcharacteristics). Use ONLY when the user asks to design an architecture from requirements, choose between architectural options, define non-functional/quality requirements for a system not yet built, or run an ATAM-style trade-off analysis on a design proposal. Japanese triggers: 「アーキテクチャを設計して」「品質特性を踏まえて設計して」「非機能要件を洗い出して」「ATAM でトレードオフ分析して」「複数の設計案を比較して」. DO NOT use this skill to review existing code, an implementation, a diff, a PR, or a repository — for those, use the `quality-review` skill (it runs deterministic static analysis first). Triggers that belong to `quality-review`, NOT this skill: 「コードをレビュー」「実装をレビュー」「品質観点でレビュー」「PR を 25010 で評価」「このコードの品質特性を評価」「指摘して」. Recommendations must cite the academic/official references in the reference library.
 ---
 
 # quality-architecture — ISO/IEC 25010 でアーキテクチャを設計・評価する
@@ -10,7 +10,38 @@ description: Design or evaluate software/system architecture using the ISO/IEC 2
 **すべての設計判断・推奨には、リファレンス・ライブラリ中の学術論文／公式文書を引用する。**
 
 リファレンス・ライブラリ: `${CLAUDE_PLUGIN_ROOT}/references/`
-（索引は `00-overview.md`、各特性は `01`〜`09`）
+（索引は `00-overview.md`、各特性は `01`〜`09`、静的評価方法論は `static-evaluation.md`）
+
+**スキル選択と決定論ファースト原則は `00-overview.md §5.1（プラグイン共通の絶対規律）` がカノン。本ファイルの §0 と §3.5 はその反映であり、矛盾があれば §5.1 を優先する。**
+
+---
+
+## 0. このスキルを使ってよいかの判定（必須・最初に実行）
+
+このスキルは **新規／提案中のアーキテクチャ設計** 専用である。**既存コード／差分／PR／実装のレビュー**は姉妹スキル `quality-review` の領域で、決定論ファーストの静的解析手順がそこにのみ定義されている。
+
+### 0.1 客観条件（最優先・LLM の主観判断より上位）
+
+次の **いずれか** に当てはまる場合、本スキルでは出力しない。ユーザに 1 行で通知してから `quality-review` への切替を提案する:
+
+- ユーザが入力として `git diff` の差分、特定 PR 番号／URL、既存ファイルパス、既存ディレクトリ、リポジトリ全体のいずれかを **対象として与えている**。
+- 対象リポジトリに `quality-gate-result.json`（CI 出力）が存在する。
+
+通知テンプレ:
+> 「対象として既存コードが指定されているため、`quality-review` スキルでの実行を推奨します。`quality-review` は静的解析を先に走らせる決定論パートを持ち、再現性が高い結果が出ます。`quality-review` で進めますか、それともこのまま設計議論として続けますか？」
+
+### 0.2 補助シグナル（参考・単独ではハンドオフ発火しない）
+
+対象リポジトリに次のファイルがある場合、上記 0.1 と組み合わせて「レビュー領域」を示す補助信号として扱う。**これらが存在するだけでは設計タスクを止めない**（brownfield の設計依頼を妨げない）:
+
+- `.swiftlint.yml` / `.swift-format` / `.periphery.yml` / `Mintfile`
+- `.github/workflows/*quality*.y*ml` / `scripts/quality-gate-*.sh`
+
+これらが存在し、かつユーザ依頼に「レビュー／評価／指摘／監査／見て」が含まれる場合は 0.1 と同じくハンドオフを提案する。
+
+### 0.3 設計タスクが確定した場合の数値の扱い
+
+本スキルに留まる場合、対象コードに対する **実測数値** を本文に書いてはならない（V(G)・カバレッジ・CBO・LCOM・CVE 件数 など）。文献値を引用するときは必ず `（参考値: McCabe 1976）` のように **「参考値」と明示** し、対象コードへの判定として書かない。実測判定が必要になった瞬間、それは review 領域であり `quality-review` に切り替える。詳細は §3.5。
 
 ---
 
@@ -69,6 +100,17 @@ description: Design or evaluate software/system architecture using the ISO/IEC 2
 
 ---
 
+## 3.5 数値しきい値の引用規律（厳守）
+
+本スキルは設計時用のため、対象コードに対する **実測値を本文に書かない**。文献値や規格値を引用する場合は次のルールに従う。
+
+- ✅ `（参考値: V(G) ≤ 10, McCabe 1976）`、`（参考値: 分岐カバレッジ ≥ 0.80, ISO/IEC 25023）` のように **「参考値」と明示** して使う（要件・SLA・設計目標を議論するため）。
+- ❌ `この実装は V(G) ≤ 10 を満たすべき (McCabe 1976)` のように **対象コードへの判定** として書く。これは review 領域であり、`quality-review` に切り替える。
+- ❌ `おそらく V(G) は 15 程度` のように **推測した実測値を断定** する。
+- 実測判定が必要になった瞬間 → §0 のルーティングに戻り `quality-review` に移譲する。
+
+---
+
 ## 4. やってはいけないこと
 
 - ❌ 9 特性を機械的に全部並べただけで優先付けしない（重点を絞る）。
@@ -76,3 +118,5 @@ description: Design or evaluate software/system architecture using the ISO/IEC 2
 - ❌ 根拠リファレンス無しでパターン名だけ列挙する。
 - ❌ 版（2011/2023）を曖昧にしたまま Safety の扱いを省略する。
 - ❌ 過剰設計：要求にない品質特性のための仕組みを足し込まない。
+- ❌ 既存コード／差分／PR のレビュー依頼を本スキルで処理する（→ `quality-review` にハンドオフ。§0 参照）。
+- ❌ 対象コードに対する判定値として数値しきい値を引用する（V(G) ≤ 10, カバレッジ ≥ 0.70 等）。設計時は `（参考値: ...）` ラベル必須。実測値が必要なら `quality-review` に切り替える。
