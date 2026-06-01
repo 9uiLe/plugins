@@ -36,6 +36,7 @@ references/
 ├── 05-reliability.md               信頼性
 ├── 06-security.md                  セキュリティ
 ├── 07-maintainability.md           保守性
+├── 07a-coupling-deep-dive.md       結合の深掘り補論（Khononov 2024 — Integration Strength × Distance × Volatility / Connascence / BALANCE）
 ├── 08-flexibility.md               柔軟性（旧: 移植性）
 ├── 09-safety.md                    安全性（2023 で新設）
 └── static-evaluation.md            静的評価レイヤーの方法論

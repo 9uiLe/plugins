@@ -18,6 +18,8 @@
 
 **定義:** システムやプログラムが独立したコンポーネントで構成されており、あるコンポーネントへの変更が他のコンポーネントへ波及しにくい度合い（出典: ISO/IEC 25010:2023）。
 
+> 結合の **3 次元モデル (Integration Strength × Distance × Volatility)** と Connascence による深掘り語彙は補論 [`07a-coupling-deep-dive.md`](./07a-coupling-deep-dive.md) を参照。本ファイルのしきい値・PASS/FAIL は補論の知見によって **上書きされない**（補論 §9 H9: 重大度は下方修正のみ可）。
+
 **調査観点:**
 - コンポーネント間の依存関係グラフが非循環有向グラフ (DAG) を形成しているか。
 - 変更波及範囲 (change impact area) がモジュール境界内に収まっているか。
@@ -236,3 +238,5 @@ Cunningham (1992) の技術的負債メタファーに基づき:
 10. **Martin, R. C. (2017).** *Clean Architecture: A Craftsman's Guide to Software Structure and Design.* Prentice Hall. ISBN 978-0-13-449416-6.
 
 11. **Fowler, M. (2018).** *Refactoring: Improving the Design of Existing Code* (2nd ed.). Addison-Wesley Professional. ISBN 978-0-13-475759-9.
+
+12. **Khononov, V. (2024).** *Balancing Coupling in Software Design: Universal Design Principles for Architecting Modular Software Systems.* Addison-Wesley Professional. ISBN 978-0-13-735348-4. （結合の深掘り補論 [`07a-coupling-deep-dive.md`](./07a-coupling-deep-dive.md) を参照）

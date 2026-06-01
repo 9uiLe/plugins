@@ -1,0 +1,343 @@
+# 07a. 結合の深掘り — Khononov『Balancing Coupling in Software Design』補論
+
+> 本ファイルは [`07-maintainability.md`](./07-maintainability.md) §2.1 モジュール性、
+> および [`08-flexibility.md`](./08-flexibility.md) §2.3 置換性 の **補論** であり、
+> ISO/IEC 25010 のフレームを **上書きせず** に「結合 (coupling) を量と質の両面から扱う深掘り語彙」を提供する。
+> 一次出典: **Khononov, V. (2024). _Balancing Coupling in Software Design: Universal Design Principles for Architecting Modular Software Systems._ Addison-Wesley Professional. ISBN 978-0-13-735348-4.**
+> 邦訳: **島田 浩二 訳『ソフトウェア設計の結合バランス — 持続可能な成長を支えるモジュール化の原則』インプレス (impress top gear), 2025年10月. ISBN 978-4-295-02296-1.**
+
+---
+
+## §1. スコープと位置づけ
+
+- **本ファイルは 25010 副特性ファイル (`07`, `08`) の補論である**。25010 の特性・副特性定義・サマリ表・しきい値（CBO ≤ 10、V(G) ≤ 10、分岐カバレッジ ≥ 80 %、重複密度 < 5 % など）は **本ファイルでは一切書き換えない**。本書由来の知見は **重大度の下方修正 (severity downgrade) の根拠** としてのみ用いる。**verdict の反転や上方修正に用いてはならない**（§9 H9 規律）。
+- **25010 のバージョン前提**: 本ファイルは **ISO/IEC 25010:2023（第 2 版）** を前提とする。**JIS X 25010:2013（2011 版）** 文脈で運用される現場では、Adaptability / Replaceability が Portability 配下に、Modifiability が Maintainability 直下に配置されるため、§8 の写像表は別途 2011 版用に読み替えが必要になる。
+- **本ファイルが定義する用語の権限範囲**: 「Integration Strength」「Distance」「Volatility」「BALANCE モデル」は Khononov (2024) に基づく用語。CK メトリクスの "Coupling Between Objects (CBO)"（Chidamber & Kemerer 1994）や Stevens et al. (1974) の Module Coupling とは **語が同じでも別概念** である。§2 の用語衝突回避表に従い、本文では必ず修飾語付きで表記する（例: "Khononov Integration Strength", "CK CBO", "Stevens Module Coupling"）。
+- **位置づけ**: `quality-architecture` スキル (設計時) は §3〜§8 を「設計タクティクスの参考」として引用する。`quality-review` スキル (既存コード時) は §3〜§8 を「保守性・柔軟性指摘の補強リファレンス」として引用する。**ルーティングルールは 00-overview §5.1 を上書きしない**（新規入口を作らない）。
+
+---
+
+## §2. 用語衝突回避表（必須・最初に読む）
+
+| 用語 | 出典 | 意味 | 計測単位 | 本ファイル中の表記 |
+| --- | --- | --- | --- | --- |
+| Coupling (CK CBO) | Chidamber & Kemerer (1994) | クラスが依存する他クラス数 | クラス | **"CK CBO"** または **"CBO"** |
+| Coupling (Stevens Module Coupling) | Stevens, Myers & Constantine (1974) | モジュール対が共有するシグナルの種類（6 ラダー） | モジュール対 | **"Stevens Module Coupling"** |
+| Coupling-Balance (Khononov Integration Strength × Distance × Volatility) | Khononov (2024) | 部品間 lattice の品質モデル | 多次元・部品対 | **"Khononov Integration Strength"**（"Strength" のみは禁止） |
+| Adaptability (ISO/IEC 25010:2023 §8 副特性) | ISO/IEC 25010:2023 | 異なる環境への適応容易性 | 設計属性 | **"25010 Adaptability"** |
+| Adaptability (Khononov informal) | Khononov (2024) | volatility に追随できるモジュール分解 | 設計属性 | **"volatility-aligned decomposition"**（25010 Adaptability との混同回避のため改名表記） |
+
+**この 3 つの "Coupling" は集約不能である**: CBO スコアが低くても Stevens Module Coupling が Content レベル（最悪）なら結合は悪い。逆に CBO が高くても Khononov Integration Strength が Contract レベル（最良）なら結合は健全な可能性がある。**スコアの単純集計・平均化を禁ずる**。
+
+---
+
+## §3. Integration Strength（Khononov, Ch.7）— 4 段階ラダー
+
+「**Integration Strength** は 2 つのコンポーネントが共有する知識の量を表す」。共有知識が多いほど、片方の変更が他方に伝播する可能性が高い（Khononov 2024, Ch.7）。
+
+### §3.1 ラダー定義（強→弱）
+
+| 段階 | 共有される対象 | 影響範囲 | 典型例 |
+| --- | --- | --- | --- |
+| **1. Intrusive Coupling** | 私的・内部実装（公開コントラクトを介さない） | 任意の内部変更が破壊 | 内部 DB スキーマ・private API への直接アクセス、リフレクション利用、内部状態の reach-in |
+| **2. Functional Coupling** | 機能要件・ビジネスロジックの重複 | 仕様変更が両側に同時修正を要求 | 同じ業務ルールの並走実装、重複した計算ロジック |
+| **3. Model Coupling** | ドメインモデル（型・概念）の共有（ロジックは非共有） | モデルの破壊的変更が伝播 | 共有 DTO 型、共通ドメインオブジェクトの参照 |
+| **4. Contract Coupling** | 明示的コントラクト（インターフェース / API スキーマ）のみ | コントラクト互換であれば内部変更が伝播しない | OpenAPI 経由、メッセージスキーマ経由、純粋なインターフェース呼び出し |
+
+出典: coupling.dev の関連解説 ([Integration Strength](https://coupling.dev/posts/dimensions-of-coupling/integration-strength/)) は上記 4 段階を Khononov 2024 Ch.7 由来として明記。
+
+### §3.2 重要な引用規律
+
+- **Integration Strength 段を断定する場合、その判定根拠となる "shared element"（共有された具体的シンボル / 型名 / コントラクトパス）を同段落内に併記すること**（§9 H3）。共有要素を示さない断定は禁則。
+- **Robert C. Martin の Instability `I = Ce / (Ce + Ca)` を Khononov Integration Strength の代理として引用してはならない**。Khononov 2024 は依存を「数える」アプローチ自体を "Dependencies, like words, should be weighed, not counted" として **名指しで否定** している（出典: [coupling.dev/posts/core-concepts/balance/](https://coupling.dev/posts/core-concepts/balance/)）。§9 H2 規律参照。
+
+---
+
+## §4. Distance（Khononov, Ch.8）— 5 段階
+
+「**Distance** は 2 つのコンポーネントが共有する実行環境・カプセル化境界の遠さを表す。距離が大きいほど、片方の変更を他方に伝播させるコストが大きい」（Khononov 2024, Ch.8）。
+
+### §4.1 ラダー定義（近→遠）
+
+| 段階 | 境界 | 典型例 |
+| --- | --- | --- |
+| **1. Methods** | 同一クラス/型内のメソッド間 | 同一クラス内の helper |
+| **2. Objects** | 同一名前空間内の異オブジェクト間 | 同一モジュール内の class A → class B |
+| **3. Namespaces / Packages** | 同一サービス内の異名前空間 | `domain.order` → `domain.payment` |
+| **4. (Micro)Services** | 異サービス間（公式表記はカッコ付き） | Order Service → Payment Service |
+| **5. Systems** | 異システム間（多くの場合、組織境界を跨ぐ） | 自社サービス → 外部 SaaS |
+
+**公式表記**: 第 4 段は **"(Micro)Services"**（カッコ付き）であり、"Microservices" と単独表記しない（出典: [coupling.dev/posts/related-topics/distance/](https://coupling.dev/posts/related-topics/distance/)）。
+
+### §4.2 補助概念
+
+- **Socio-Technical Distance**: 「コンポーネントを所有する人/チームの距離」を表す追加要素（"Additional Factors Affecting Distance"）。これは **Distance のラダーとは別軸** として扱う。Conway's Law と密接。本ファイルでは「判断のみ」項目として §9 で扱う。
+- **検証済み引用**: "The cost of a change of related components is **inversely proportional** to the distance between them."（出典同上）
+
+### §4.3 引用規律
+
+- **`distance_level` を断定する場合、`module_unit:` （モジュール単位の宣言）が明示されていることを併記する**（§9 H4）。`module_unit:` 未宣言の場合は `distance basis: path-depth fallback` ラベルを併記し、決定論性が部分的であることを明示する。
+
+---
+
+## §5. Volatility（Khononov, Ch.9）— 変更確率
+
+「**Volatility** はコンポーネントが将来変更される確率を表す。変更されない（または変更されにくい）コンポーネントへの結合は安価で、頻繁に変更されるコンポーネントへの結合は高価である」（Khononov 2024, Ch.9）。
+
+### §5.1 DDD サブドメイン写像（Khononov による）
+
+| サブドメイン | Volatility | 解釈 |
+| --- | --- | --- |
+| Core | 最も高い | 競合優位の源泉。頻繁に変更される。 |
+| Supporting | 中程度 | 業務固有だが変更頻度は中。 |
+| Generic | 最も低い | 汎用機能。長期的に安定。 |
+
+### §5.2 Essential vs Accidental Volatility（Brooks 風区別）
+
+- **Essential Volatility**: 業務 / ドメイン由来の変更圧力（避けられない）。
+- **Accidental Volatility**: 設計判断の結果として生じる変更圧力（取り除ける）。
+- 設計判断の対象は **accidental volatility の削減** であって、essential volatility そのものを抑えようとしてはならない。
+
+### §5.3 観測値としての Volatility（Phase 2 シグナル化）
+
+- 実装計測は VCS の co-change / churn による近似となる（観測ウィンドウ依存）。
+- 本ファイルでは観測ウィンドウ付き計測値を **`observed_change_frequency`** と呼び、これを Khononov Volatility の **proxy（近似指標）** として扱う。
+- proxy 由来の BALANCE 判定には **`推測` ラベルを必ず付与**する（§9 H5、H6）。
+- **計測には `--since=<window>` を本文に必ず併記する**。windowless な churn 値は引用禁止（§9 H5）。
+
+---
+
+## §6. BALANCE モデル（Khononov, Ch.10-11）
+
+### §6.1 公式論理モデル（verified）
+
+coupling.dev に明示される簡易論理モデル:
+
+```
+MODULARITY  = STRENGTH XOR DISTANCE
+COMPLEXITY  = STRENGTH AND DISTANCE
+BALANCE     = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY
+```
+
+出典: [coupling.dev/posts/core-concepts/balance/](https://coupling.dev/posts/core-concepts/balance/)
+
+**読み方**:
+- 強い結合 (high strength) と長い距離 (high distance) が **両立** すると complexity が爆発する。
+- 強い結合と短い距離、または弱い結合と長い距離なら modularity が成立する（XOR）。
+- volatility が低ければ（変更されないなら）両方が成立しなくても許容される（NOT VOLATILITY による緩和）。
+
+### §6.2 「Pain 式」に関する注意（重要）
+
+「`Pain = Strength × Distance × Volatility`」という乗算形の式が、KanDDDinsky 2022 講演スライドなど **二次ソース** に登場する。しかし、**書籍本文中の verbatim 出現は本ファイル執筆時点で公開情報からは確認できていない**。
+
+そのため本ファイルでは:
+- **Khononov 2024 の canonical 表現は §6.1 の論理モデル (XOR/AND/NOT)** とする。
+- **`Pain = S × D × V` 形を Khononov 出典として本文に記載してはならない**（§9 H2 規律）。
+- ユーザが原典（紙版・邦訳版）で当該式の出現を確認した場合、§6 を「verbatim 引用」に更新可能（運用更新項目）。
+
+### §6.3 Rebalancing 戦略（Ch.11）
+
+- **Strength を下げる**: Intrusive → Functional → Model → Contract に再設計（公開コントラクト導入、内部依存除去）。
+- **Distance を縮める**: モジュール / サービス境界を再編し、結合の強い 2 部品を同一境界内に寄せる。
+- **Volatility を下げる**: 安定化（API を凍結する、変更頻度の高い部分を抽出する）。
+- BALANCE = TRUE になるまで、3 次元のうち最も改修コストの低い軸から調整する。
+
+### §6.4 「Decouple everything は誤り」原則
+
+Khononov 2024 は「decouple everything」アプローチを **明示的に否定** する。過剰な疎結合は distributed monolith を生み、Distance だけが伸びて Strength が下がらない反パターンとなる（出典: coupling.dev/posts/core-concepts/balance/）。
+
+### §6.5 SIGNAL → Integration Strength ラダー割当 — Decision Table (Phase 2)
+
+`quality-gates.yml` の `swift.planned-deterministic.coupling:` で計測される SIGNAL から、
+Integration Strength ラダー段（Intrusive / Functional / Model / Contract）を割り当てる **decision table**。
+本 table は **共有要素併記が成立している場合に限り適用可能**（H3 規律。`(symbol|type|contract-path)` を併記しない断定は禁則）。
+
+#### §6.5.1 Decision Table（上から優先順）
+
+| 優先順位 | 条件（SIGNAL ベース） | 割当 Integration Strength | severity 入力 | BALANCE 含意 |
+| --- | --- | --- | --- | --- |
+| **1（先頭固定 override）** | `intrusive_hits > 0` | **Intrusive Coupling** | critical / high | **常に FAIL**。Distance / Volatility がいかに良くても override される |
+| 2 | `cross_boundary_duplicates > 0` **OR** `shared_model_surface` 内で **public API かつドメインロジック付き型** が境界跨ぎ参照されている | **Functional Coupling** | high / medium | Strength=High。Distance×Volatility との XOR 判定対象 |
+| 3 | `shared_model_surface` 内で **DTO 専用** の型が境界跨ぎ参照されている（ロジック非共有） | **Model Coupling** | medium / info | Strength=Mid |
+| 4 | 境界跨ぎは **`contract_layer_present = true`**（OpenAPI / Protobuf / 明示インターフェース）経由のみ。共有モデル型なし、duplicates=0、intrusive_hits=0 | **Contract Coupling** | info | Strength=Low。BALANCE 達成しやすい |
+
+#### §6.5.2 適用ルール（厳守）
+
+- **共有要素（shared element）併記必須**: 割当を断定する箇所には `(symbol: <name>) / (type: <FQN>) / (contract: <path>)` のいずれかを直近 5 行以内に併記すること。違反時は割当を **`推測` ラベル付き** に格下げする（H3）。
+- **`intrusive_hits > 0` の override は無条件**: Distance が 1（Methods 内）であっても、Volatility が「stable」であっても、`intrusive_hits > 0` であれば BALANCE = FALSE が確定する（07a §3 H3 連動）。
+- **module_unit 未宣言時の制限**: `module_unit:` が `quality-gates.yml` で宣言されていない場合、Distance に依存する条件（優先順位 2 の「境界跨ぎ」判定）は **`distance basis: path-depth fallback` ラベル付き** で出力する（H4）。
+- **観測ウィンドウ必須**: Volatility 系シグナル（`observed_change_frequency`）を判定根拠に用いる場合、`--since=<window>` を直近 5 行以内に併記する（H5）。
+- **decision table の結果は段の「決定論的判定」ではなく「シグナル由来の推奨割当」**: 共有要素の意味的判別（DTO か否か、ドメインロジック付きか）はレビュアの判断を必要とする。本 table は **「段の候補を絞る決定論的入力」** であって「段そのものの確定」ではない（07a §3 H3 規律）。
+
+#### §6.5.3 BALANCE 適用順序（intrusive override 句先頭固定）
+
+```
+IF intrusive_hits > 0:
+    BALANCE = FALSE  (Intrusive override; rebalance: Strength を下げる)
+ELSE:
+    STRENGTH_LEVEL  = decision_table(SIGNAL inputs)  -- 上記 §6.5.1
+    DISTANCE_LEVEL  = swift package describe 由来 (module_unit 宣言下)
+    VOLATILITY_BAND = observed_change_frequency / --since=<window>
+    BALANCE = (STRENGTH_LEVEL XOR DISTANCE_LEVEL) OR NOT VOLATILITY_BAND
+              -- 07a §6.1 canonical 表現
+ENDIF
+```
+
+**運用注意**: 本 §6.5 の table は Phase 2 試作段階の **decision support** であり、Khononov 2024 本書中に同等の table が verbatim 出現するわけではない。本 table は coupling.dev で明示される BALANCE 論理モデル（§6.1）と Integration Strength 4 段定義（§3）を運用化するために本リポジトリで合成したものである。**Khononov 2024 出典として引用してはならない**。本リポジトリ独自の運用 layer として明示する。
+
+---
+
+## §7. 古典タクソノミー（補論）
+
+Khononov 2024 は古典理論を Ch.5 と Ch.6 で取り込み直しており、両者を併用すべきである。
+
+### §7.1 Stevens Module Coupling（Stevens, Myers & Constantine 1974, Ch.5）
+
+強い順:
+
+1. **Content Coupling**: 他モジュールの内部にアクセス
+2. **Common Coupling**: グローバル変数の共有
+3. **External Coupling**: 外部フォーマット・プロトコルへの依存
+4. **Control Coupling**: 制御フラグの受け渡し
+5. **Stamp Coupling**: 必要以上の構造体共有
+6. **Data Coupling**: 必要最小限のパラメータのみ受け渡し（最良）
+
+原典: Stevens, W. P., Myers, G. J., & Constantine, L. L. (1974). Structured Design. *IBM Systems Journal*, 13(2), 115–139. https://doi.org/10.1147/sj.132.0115
+
+二次解説: [coupling.dev/posts/related-topics/module-coupling/](https://coupling.dev/posts/related-topics/module-coupling/)
+
+### §7.2 Page-Jones Connascence（Khononov 2024, Ch.6）
+
+**静的 Connascence**（弱→強）:
+
+| 略号 | 名称 | 内容 |
+| --- | --- | --- |
+| CoN | Connascence of Name | 同じ名前への合意 |
+| CoT | Connascence of Type | 同じ型への合意 |
+| CoM | Connascence of Meaning | 同じ意味（マジック値）への合意 |
+| CoP | Connascence of Position | 同じ位置（引数順序）への合意 |
+| CoA | Connascence of Algorithm | 同じアルゴリズムへの合意 |
+
+**動的 Connascence**（弱→強。動的は常に静的より強い）:
+
+| 略号 | 名称 | 内容 |
+| --- | --- | --- |
+| CoE | Connascence of Execution | 実行順序 |
+| CoTi | Connascence of Timing | タイミング |
+| CoV | Connascence of Value | 実行時の値 |
+| CoI | Connascence of Identity | 同一インスタンス参照 |
+
+**三性質** (Page-Jones, 1996):
+- **Strength**: 検出と保守のコスト
+- **Locality**: 距離（カプセル化境界）
+- **Degree**: 影響範囲のサイズ
+
+**Rule of Locality**（Weirich による要約）: 距離が縮まるほど、強い結合形態が許容される（同じ関数内なら CoP も問題にならない）。
+
+原典:
+- Page-Jones, M. (1992). Comparing Techniques by Means of Encapsulation and Connascence. *Communications of the ACM*, 35(9), 147–151. https://doi.org/10.1145/130994.131004
+- Page-Jones, M. (1996). *What Every Programmer Should Know About Object-Oriented Design.* Dorset House. ISBN 978-0-932633-31-9.
+
+二次参照（**定義参照のみ可、推奨根拠としては不可** — §9 H7）:
+- [connascence.io](https://connascence.io) （community wiki）
+
+---
+
+## §8. ISO/IEC 25010:2023 副特性写像
+
+| Khononov 概念 | 25010:2023 副特性 | 寄与方向 |
+| --- | --- | --- |
+| Integration Strength（低い） | 07 Modularity | 直接寄与 |
+| Distance（適切） | 07 Modifiability, 07 Analysability | 直接寄与 |
+| Volatility 認識 | 07 Modifiability, 08 Adaptability | 設計予測能力に寄与 |
+| Contract Coupling | 08 Replaceability | 直接寄与 |
+| Connascence（静的・弱い） | 07 Modularity, 07 Testability | 直接寄与 |
+| BALANCE 達成 | 07 全副特性, 08 Adaptability | 統合的寄与 |
+| Stevens Module Coupling（Data まで弱い） | 07 Modularity | 直接寄与 |
+| Khononov の **volatility-aligned decomposition** | 25010 Adaptability の操作的補強 | 補強的寄与（用語衝突注意） |
+
+**2011 版（JIS X 25010:2013）運用時の読み替え**:
+- 25010:2023 の Adaptability / Replaceability は 2011 版では Portability の副特性に配置される。
+- 25010:2023 の Modifiability は 2011 版でも Maintainability 直下。
+- 本ファイルの「07」「08」言及は 2023 版前提なので、2011 版運用時は対応する 2011 副特性に読み替えること。
+
+---
+
+## §9. やってはいけないこと（H1〜H10 規律）
+
+本ファイルおよび本ファイルを引用するスキル出力で必ず守るべき規律。**grep で機械検証可能な形** にしてある。
+
+### H1. verbatim 引用の章節指定
+- 07a §3〜§6 で Khononov 概念を引用するとき、**章番号（Ch.7 / Ch.8 / Ch.9 / Ch.10）を必ず併記**する。「Khononov の Integration Strength」のような章指定なし参照は引用根拠として弱い。
+
+### H2. Pain 式・Instability 代理の禁則
+- ❌ `Pain = Strength × Distance × Volatility` を **Khononov 2024 出典** として本文に書くこと。書籍本文中の verbatim 出現は本ファイル時点で未確認。canonical 表現は §6.1 の XOR/AND/NOT 論理モデル。
+- ❌ Robert C. Martin の Instability `I = Ce / (Ce + Ca)` を Khononov Integration Strength の代理として引用すること。Khononov は依存をカウントするアプローチを名指しで否定している（"Dependencies, like words, should be weighed, not counted"）。
+
+### H3. Integration Strength の shared element 併記
+- Integration Strength 段（Intrusive / Functional / Model / Contract のいずれか）を断定する場合、**共有要素の具体名**（シンボル名・型名・コントラクトパス）を **直近 5 行以内** に併記する。
+- 共有要素を示さない断定は禁則。**違反時は `推測` ラベルを自動付与する**。
+
+### H4. distance_level 確定条件
+- `distance_level` を 1〜5 のいずれかに確定する場合、**`module_unit:` 宣言が明示されていることを併記**する。
+- 未宣言時は **`distance basis: path-depth fallback`** ラベルを併記し、決定論性が部分的であることを明示する。
+
+### H5. volatility 観測ウィンドウ必須
+- volatility 数値（`observed_change_frequency` 等）を引用する場合、**`--since=<window>`（または同等の観測ウィンドウ表記）を本文に必ず併記**する。
+- windowless な churn 値の引用は禁則。
+
+### H6. 動的 Connascence の静的シグナル断定禁止
+- 動的 Connascence（CoE / CoTi / CoV / CoI）を **静的シグナルのみで断定してはならない**。
+- 動的検証（実行プロファイル / ログ分析 / 並行性解析ツール）への参照を併記し、必ず **`推測` ラベル** を付与する。
+
+### H7. citation surface の制限
+- 本ファイルおよび引用元の §10 References に列挙された **学術論文・公式文書のみ** を根拠引用に用いる。
+- **coupling.dev / connascence.io は「定義参照のみ可、推奨根拠としては不可」**。「これは Khononov 2024 由来の概念である」と書く目的での参照は可。「したがって X を採用すべき」と書く根拠としての引用は不可（quality-architecture §3 の citation discipline と整合）。
+
+### H8. 25010 バージョン明示
+- 本ファイルを引用する出力では、**25010 のバージョン（2011 / 2023）を冒頭で明示**する。本ファイルは 2023 版前提。2011 版運用時は §8 の写像表を読み替える。
+
+### H9. 既存しきい値の片方向ルール
+- 既存 `07-maintainability.md` および `08-flexibility.md` の **しきい値・PASS/FAIL 判定を本ファイル由来の知見で上書きしてはならない**。
+- 本ファイルが寄与できるのは **重大度の下方修正 (severity downgrade) のみ**。verdict 反転や severity 上方修正には用いない。
+- 例: 07-maintainability で `CBO=15` が `High` 判定された場合、本ファイルの BALANCE モデルで「短い Distance + 低い Volatility なので balanced」と評価できれば **`Medium` に下げる根拠** にはなる。逆に CBO=8（PASS）を本ファイル由来で `High` に上げることは禁則。
+
+### H10. Pain 言及時の sandwich rule
+- 「pain」「balance」「結合の苦痛」等の表現を本文中で使う場合、**同段落内に §6.1 の canonical 表現（XOR/AND/NOT）を併記**する。
+- Pain 式の単独引用は禁則（H2 と連動）。
+
+---
+
+## §10. References（学術・公式のみ）
+
+以下は WebSearch / WebFetch により実在を確認済みの一次資料・著名な学術書である。**citation surface は本表のみ**（H7 規律）。
+
+1. **Khononov, V. (2024).** *Balancing Coupling in Software Design: Universal Design Principles for Architecting Modular Software Systems.* Addison-Wesley Professional. ISBN 978-0-13-735348-4. Product page: https://www.informit.com/store/balancing-coupling-in-software-design-universal-design-9780137353484
+   - 邦訳: 島田 浩二 訳『ソフトウェア設計の結合バランス — 持続可能な成長を支えるモジュール化の原則』インプレス (impress top gear), 2025 年 10 月. ISBN 978-4-295-02296-1. https://www.kinokuniya.co.jp/f/dsg-01-9784295022961
+
+2. **Stevens, W. P., Myers, G. J., & Constantine, L. L. (1974).** Structured Design. *IBM Systems Journal*, 13(2), 115–139. https://doi.org/10.1147/sj.132.0115
+
+3. **Page-Jones, M. (1992).** Comparing Techniques by Means of Encapsulation and Connascence. *Communications of the ACM*, 35(9), 147–151. https://doi.org/10.1145/130994.131004
+
+4. **Page-Jones, M. (1996).** *What Every Programmer Should Know About Object-Oriented Design.* Dorset House. ISBN 978-0-932633-31-9.
+
+5. **Parnas, D. L. (1972).** On the Criteria To Be Used in Decomposing Systems into Modules. *Communications of the ACM*, 15(12), 1053–1058. https://doi.org/10.1145/361598.361623
+
+6. **Chidamber, S. R., & Kemerer, C. F. (1994).** A Metrics Suite for Object Oriented Design. *IEEE Transactions on Software Engineering*, 20(6), 476–493. https://doi.org/10.1109/32.295895
+
+7. **Martin, R. C. (2017).** *Clean Architecture: A Craftsman's Guide to Software Structure and Design.* Prentice Hall. ISBN 978-0-13-449416-6. （Instability 公式 `I = Ce / (Ce + Ca)` の出典 — 本ファイルは Khononov 2024 が同公式を Strength 代理として用いることを批判している事実を参照する目的でのみ引用する）
+
+8. **Snowden, D. J., & Boone, M. E. (2007).** A Leader's Framework for Decision Making. *Harvard Business Review*, 85(11), 68–76. https://hbr.org/2007/11/a-leaders-framework-for-decision-making （Cynefin 一次出典 — Khononov 2024 Ch.2 で参照）
+
+9. **International Organization for Standardization (2023).** *ISO/IEC 25010:2023 — Systems and software Quality Requirements and Evaluation (SQuaRE) — Product quality model.* https://www.iso.org/standard/78176.html （本ファイルの 25010 副特性写像 §8 の前提）
+
+**二次参考（H7 規律により定義参照のみ可、推奨根拠としては不可）**:
+
+- coupling.dev. *Dimensions of Coupling.* Vlad Khononov's blog. https://coupling.dev/posts/core-concepts/balance/ , https://coupling.dev/posts/dimensions-of-coupling/integration-strength/ , https://coupling.dev/posts/related-topics/distance/ , https://coupling.dev/posts/related-topics/module-coupling/
+- connascence.io. Community wiki. https://connascence.io
+
+**未確認 (caveat)**:
+- 「`Pain = Strength × Distance × Volatility`」の書籍本文中 verbatim 出現は、本ファイル執筆時点で公開情報からは確認できていない（講演ソース由来）。原典確認後に §6.2 を更新する運用とする。
+- 書籍中の「精緻な数学モデル」（coupling.dev が言及）の具体形は未確認。
+- 「`M = S^D`」表記の書籍内代数表現は未確認。
+- 紙版邦訳（インプレス 2025-10）の **正確な発売日**: `book.impress.co.jp` が 403 で取得不能。honto eBook 販売開始日 2025-10-17 と Kinokuniya「2025 年 10 月」表記の独立 2 ソースでクロス検証済み。

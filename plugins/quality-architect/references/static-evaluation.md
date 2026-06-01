@@ -52,6 +52,38 @@ LLM が `run` コマンドを組み立て、出力をパースする工程には
 - **しきい値の根拠**: 複雑度 20・カバレッジ 0.70 等は ISO 規格の値ではなく**プロジェクト方針**。
   規格由来の絶対基準と混同しないこと（env / `.swiftlint.yml` で調整）。
 
+## 3.6 結合の深掘り（Khononov 補論）のための拡張概念
+
+[`07a-coupling-deep-dive.md`](./07a-coupling-deep-dive.md) で扱う **Integration Strength × Distance × Volatility** の 3 次元モデルを静的シグナル化するには、`§3` の決定論／考察 2 区分だけでは粒度が足りない。以下の 3 概念を追加する。
+
+### 3.6.1 `module_unit:` 宣言
+
+- **何のためか**: `distance_level` は「2 つのコンポーネントが共有する境界の遠さ」を表す（07a §4）。**何を 1 つのモジュールとみなすか** を宣言しないと、distance を確定できない。
+- **形式**: `quality-gates.yml` の各言語プロファイルに `module_unit:` フィールドを追加する。例: Swift なら `spm-target`、Go なら `package`、JS/TS なら `pnpm-workspace-package` または `npm-package`、Python なら `top-level-package`。
+- **未宣言時の規約**: `module_unit:` が宣言されていない場合、`distance_level` を 1〜5 のいずれかに確定してはならない。**`distance basis: path-depth fallback`** ラベルを併記し、決定論性が **部分的** であることを明示する（07a §9 H4 規律）。
+
+### 3.6.2 `band` しきい値（連続値の段階化）
+
+- **何のためか**: Khononov 由来のシグナルは「>10 で FAIL」のような単一しきい値より、**「band 0 / band 1 / band 2 / band 3」のような連続値の段階化** が適切な場合がある（例: `intrusive_hits` は 0 と 1 で意味が異なる、`observed_change_frequency` は 0–5/6–20/21– などの帯域で意味が変わる）。
+- **形式**: `threshold` を `{ bands: [{ max: 0, label: "balanced" }, { max: 5, label: "watch" }, ...] }` 形式で表現する。各 band にラベル（`balanced` / `watch` / `imbalanced` / `knot` 等）と severity マッピングを持たせる。
+- **既存しきい値との共存**: 既存の `{ high: 10, critical: 20 }` 形式は無編集で残す。`band` 形式は補論シグナル専用。**既存しきい値の上書きや書き換えは禁則**（07a §9 H9）。
+
+### 3.6.3 `aggregate` しきい値（リポジトリ全体の集計）
+
+- **何のためか**: BALANCE モデル（07a §6）はモジュール **対** に対する論理判定だが、リポジトリ全体の状態を一目で見るには対ごとの判定を集約した指標が要る。例: 「`STRENGTH AND DISTANCE = TRUE` となっているモジュール対の割合」「`intrusive_hits > 0` の境界数」。
+- **形式**: `aggregate: { metric: <name>, formula: <expression>, threshold: ... }` をプロファイル内に持つ。
+- **注意**: aggregate スコアを **単独の verdict 根拠** として使わない。Khononov 2024 は count-based なメトリクスを名指しで否定している（07a §3.2、H2）。aggregate は **概観目的** に限る。
+
+### 3.6.4 `planned-deterministic:` ブロックと `deterministic:` ブロックの区別
+
+- **何のためか**: `intrusive_hits` / `distance_level` / `observed_change_frequency` のような補論シグナルは、ツールチェーンが **完全には整備されていない領域** にまたがる。Semgrep の Swift サポートは experimental、jscpd / code-maat / git-of-theseus はリポジトリ規模により実行コストが大きい、など。
+- **形式**: `quality-gates.yml` プロファイル内で `deterministic:` とは別に **`planned-deterministic:`** ブロックを設ける。`planned-deterministic:` の項目は:
+  - 通常の `deterministic:` と同じく `run:` `threshold:` を持つ。
+  - ただし **生成された数値は `推測` ラベル付きで採用** する（量子化された判断であって最終判定ではない）。
+  - 観測ウィンドウ依存のシグナル（volatility 系）は `--since=<window>` を本文に必ず併記する（07a §9 H5）。
+  - ツール未導入時は `deterministic:` と同じく `skipped` 扱い（数値捏造禁止）。
+- **`deterministic:` への昇格条件**: 当該シグナルに対する pinned コマンド・固定パーサー・閾値根拠の 3 点が揃った時点で、プロジェクトは `planned-deterministic:` 項目を `deterministic:` へ移動できる。**移動の判断はユーザの明示同意の下でのみ行う**（auto-mode で自動昇格してはならない）。
+
 ## 4. 各特性の静的化可否（一般則）
 
 | 特性 | 静的化 | 代表指標（決定論パートに載せられるもの） |
@@ -65,9 +97,11 @@ LLM が `run` コマンドを組み立て、出力をパースする工程には
 | 保守性 | ◎ | 循環的複雑度・結合度・重複・サイズ・デッドコード |
 | 柔軟性 | ○ 部分 | OS 依存 API 検出、ビルド再現性、設定の外部化 |
 | 安全性 | △ | 安全状態遷移・フェイルセーフの静的検査は限定的（本体は安全解析・動的検証） |
+| **結合の深掘り（07a 補論）** | **混在** | Khononov Distance（`module_unit:` 宣言下で決定論）/ Volatility proxy（`--since` 固定下で観測値、`推測` 付与）/ Integration Strength 段（判断のみ）/ 静的 Connascence（部分決定論）/ 動的 Connascence（判断のみ） |
 
 > 「測れないものを数値化しない」ことも揺らぎ対策である。ユーザ従事性・習得性・実可用性・
 > ハザード対応の妥当性などは考察パートに残し、ゲートのスコアには含めない。
+> **結合の深掘り (07a) では、Integration Strength 段の確定を「判断のみ」として扱う**（共有要素併記が必須・断定不可、07a §9 H3 規律）。Phase 2 で `planned-deterministic:` に置く SIGNAL は「Strength ラダー割当の入力」であって「Strength そのもの」ではない。
 
 ---
 

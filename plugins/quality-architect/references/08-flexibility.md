@@ -97,6 +97,10 @@
 
 *出典: ISO/IEC 25010:2023 の趣旨を要約。*
 
+> 置換性は Khononov (2024) Ch.7 の **Contract Coupling**（公開コントラクトのみ共有する最弱結合）と対応関係にある。詳細は補論 [`07a-coupling-deep-dive.md`](./07a-coupling-deep-dive.md) §3 を参照。
+>
+> ⚠️ **用語衝突注意**: 本ファイルの「2.1 適応性 (Adaptability)」は ISO/IEC 25010:2023 の副特性である。Khononov 2024 が informal に用いる「adaptability」は別概念であり、補論内では混同回避のため **"volatility-aligned decomposition"** と表記される（07a §2 用語衝突回避表）。25010 Adaptability の評価には本ファイルの基準を用い、補論の知見は補強としてのみ用いる。
+
 #### 調査観点
 - 公開インタフェース（API・プロトコル・データ形式）が標準仕様に準拠しているか
 - 競合製品・後継バージョンとのデータ互換性はあるか
