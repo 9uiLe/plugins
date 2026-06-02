@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
-# coupling-gate-swift.sh — 結合の深掘り (07a 補論) シグナル計測器（Swift）
+# coupling-gate-swift.sh — 結合の深掘り (07a 補論) シグナル計測器（Swift）【EXPERIMENTAL / Phase 2】
+#
+# ⚠️ EXPERIMENTAL: 本スクリプトは Phase 2 試作の experimental layer。出力は verdict 確定権を
+#    持たず、既存 quality-gate-swift.sh の PASS/FAIL を上書きしない。寄与できるのは severity の
+#    下方修正のみ（07a §9 H9）。考察パートの所見 attach に閉じる（quality-review SKILL §2.1）。
 #
 # 目的: Khononov 2024 の 3 次元モデル (Integration Strength × Distance × Volatility)
 #       を量子化された SIGNAL として算出し、`coupling-gate-result.json` に出力する。
-#       本スクリプトは「Strength ラダー段の確定」を行わない。それは 07a §6 decision
-#       table + 人手レビューに委譲される（07a §9 H3 規律）。
+#       本スクリプトは「Strength ラダー段の確定」を行わない。それは 07a §6.5 hint table が
+#       "候補" を出すのみで、段の確定は人手レビューに委譲される（07a §9 H3 規律）。
 #
 # 設計原則:
 #   - `quality-gates.yml` の swift.planned-deterministic.coupling: 各 id 1:1 対応。
@@ -197,7 +201,7 @@ run_intrusive() {
   read -r BAND SEV < <(band_classify "$HITS" "intrusive-hits")
   local OVERRIDE_NOTE=""
   if [ "$HITS" -gt 0 ]; then
-    OVERRIDE_NOTE="intrusive_hits>0 は BALANCE override 句先頭固定 (07a §6 decision table)"
+    OVERRIDE_NOTE="intrusive_hits>0 は BALANCE override 句先頭固定 (07a §6.5 hint table)"
   fi
   record "intrusive-hits" "$TOOL" "measured" "$HITS" "hits" "$BAND" "$SEV" \
     "$OVERRIDE_NOTE; H3 規律により shared element (path:line) 併記が必須"
@@ -218,7 +222,7 @@ run_duplicates() {
   DUP_COUNT="${DUP_COUNT:-0}"
   read -r BAND SEV < <(band_classify "$DUP_COUNT" "cross-boundary-duplicates")
   record "cross-boundary-duplicates" "jscpd" "measured" "$DUP_COUNT" "pairs" "$BAND" "$SEV" \
-    "Functional Coupling シグナル。decision table 入力。重複対の path:line 併記必須 (H3)"
+    "Functional Coupling シグナル。hint table 入力（候補）。重複対の path:line 併記必須 (H3)"
 }
 
 # ============================================================
@@ -235,7 +239,7 @@ run_shared_model() {
   PUBLIC_TYPES="${PUBLIC_TYPES:-0}"
   read -r BAND SEV < <(band_classify "$PUBLIC_TYPES" "shared-model-surface")
   record "shared-model-surface" "ripgrep-pattern" "measured" "$PUBLIC_TYPES" "types" "$BAND" "$SEV" \
-    "Model Coupling シグナル。DTO 専用なら model-low、ドメインロジック付きなら 1 件でも model-heavy (decision table)"
+    "Model Coupling シグナル。DTO 専用なら model-low、ドメインロジック付きなら 1 件でも model-heavy (07a §6.5 hint table; 候補)"
 }
 
 # ============================================================
@@ -296,7 +300,7 @@ esac
 if [ "$ANY_RAN" -eq 0 ]; then
   VERDICT="inconclusive"
 elif [ "$INTRUSIVE_HITS" -gt 0 ]; then
-  VERDICT="intrusive-override"   # 07a §6 decision table の常時 override
+  VERDICT="intrusive-override"   # 07a §6.5 hint table の常時 override
 else
   VERDICT="signals-collected"   # 注: pass/fail は出さない（07a §3 H3 規律により段の確定は別工程）
 fi

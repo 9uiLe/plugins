@@ -82,7 +82,8 @@ LLM が `run` コマンドを組み立て、出力をパースする工程には
   - ただし **生成された数値は `推測` ラベル付きで採用** する（量子化された判断であって最終判定ではない）。
   - 観測ウィンドウ依存のシグナル（volatility 系）は `--since=<window>` を本文に必ず併記する（07a §9 H5）。
   - ツール未導入時は `deterministic:` と同じく `skipped` 扱い（数値捏造禁止）。
-- **`deterministic:` への昇格条件**: 当該シグナルに対する pinned コマンド・固定パーサー・閾値根拠の 3 点が揃った時点で、プロジェクトは `planned-deterministic:` 項目を `deterministic:` へ移動できる。**移動の判断はユーザの明示同意の下でのみ行う**（auto-mode で自動昇格してはならない）。
+- **EXPERIMENTAL 扱い**: 07a 結合の深掘りの `planned-deterministic.coupling:` ブロックは `experimental: true` を持つ **experimental layer** である。verdict 確定権を持たず、既存 `deterministic:` の PASS/FAIL を上書きしない。寄与できるのは severity の **下方修正のみ**（07a §9 H9）。既定では考察パートの所見 attach に閉じ、決定論パート表には行を追加しない（quality-review SKILL §2.1 merge contract）。
+- **`deterministic:` への昇格条件**: 当該シグナルに対する pinned コマンド・固定パーサー・閾値根拠の 3 点が揃い、**かつ Integration Strength 段の意味的判別（DTO か / ドメインロジック付きか等）の自動化が達成された時点**で、プロジェクトは `planned-deterministic:` 項目を `deterministic:` へ移動できる。**移動の判断はユーザの明示同意の下でのみ行う**（auto-mode で自動昇格してはならない）。現時点では昇格条件は未達であり、experimental に留める。
 
 ## 4. 各特性の静的化可否（一般則）
 

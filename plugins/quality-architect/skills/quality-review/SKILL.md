@@ -148,7 +148,9 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
 - （任意）07a 補足: 結合の深掘り (07a) シグナルが attach されている場合のみ。例: `Khononov Distance: cross-service (推測; module_unit=spm-target, --since=6.months)` — 重大度の **下方修正のみ** 可（07a §9 H9）。
 ```
 
-### 2.1 結合の深掘り (07a) シグナルの merge contract
+### 2.1 結合の深掘り (07a) シグナルの merge contract 【EXPERIMENTAL / Phase 2】
+
+> ⚠️ 07a の結合シグナル (`coupling-gate-result.json`) は **experimental layer**（`quality-gates.yml` の `planned-deterministic.coupling: experimental: true`）である。**既定はオフ**。verdict 確定権を持たず、寄与できるのは severity の **下方修正のみ**。決定論パート表には行を追加せず、考察パートの所見 attach に閉じる。
 
 `HAS coupling-gate-result.json` が検出されているか、§1 step 3 で 2a/3a が選ばれた場合のみ、本セクションを適用する。**未検出/未選択時は本セクションを丸ごとスキップ**（既存挙動を保つ）。
 
