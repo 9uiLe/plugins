@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
-# coupling-gate-swift.sh — 結合の深掘り (07a 補論) シグナル計測器（Swift）
+# coupling-gate-swift.sh — 結合の深掘り (07a 補論) シグナル計測器（Swift）【EXPERIMENTAL / Phase 2】
+#
+# ⚠️ EXPERIMENTAL: 本スクリプトは Phase 2 試作の experimental layer。出力は verdict 確定権を
+#    持たず、既存 quality-gate-swift.sh の PASS/FAIL を上書きしない。寄与できるのは severity の
+#    下方修正のみ（07a §9 H9）。考察パートの所見 attach に閉じる（quality-review SKILL §2.1）。
 #
 # 目的: Khononov 2024 の 3 次元モデル (Integration Strength × Distance × Volatility)
 #       を量子化された SIGNAL として算出し、`coupling-gate-result.json` に出力する。
-#       本スクリプトは「Strength ラダー段の確定」を行わない。それは 07a §6 decision
-#       table + 人手レビューに委譲される（07a §9 H3 規律）。
+#       本スクリプトは「Strength ラダー段の確定」を行わない。それは 07a §6.5 hint table が
+#       "候補" を出すのみで、段の確定は人手レビューに委譲される（07a §9 H3 規律）。
 #
 # 設計原則:
 #   - `quality-gates.yml` の swift.planned-deterministic.coupling: 各 id 1:1 対応。
@@ -64,14 +68,18 @@ declare -a ROWS=()
 ANY_RAN=0
 ANY_SKIPPED=0
 INTRUSIVE_HITS=0
+MEASURED_LIST=""          # measured 済み signal id の空白区切りリスト（bash 3.2 互換）
 
 have() { command -v "$1" >/dev/null 2>&1; }
+
+# is_measured <signal-id> — その signal が measured 済みなら 0 を返す
+is_measured() { case " $MEASURED_LIST " in *" $1 "*) return 0;; *) return 1;; esac; }
 
 # record <signal> <tool> <status:measured|skipped|error> <value> <unit> <band_label> <severity> <note>
 record() {
   local sig="$1" tool="$2" status="$3" value="$4" unit="$5" band="$6" severity="$7" note="${8:-}"
   case "$status" in
-    measured) ANY_RAN=1 ;;
+    measured) ANY_RAN=1; MEASURED_LIST="$MEASURED_LIST $sig" ;;
     skipped|error) ANY_SKIPPED=1 ;;
   esac
   ROWS+=("$(printf '{"signal":"%s","tool":"%s","status":"%s","value":"%s","unit":"%s","band":"%s","severity":"%s","module_unit":"%s","observation_window":"%s","note":"%s"}' \
@@ -197,7 +205,7 @@ run_intrusive() {
   read -r BAND SEV < <(band_classify "$HITS" "intrusive-hits")
   local OVERRIDE_NOTE=""
   if [ "$HITS" -gt 0 ]; then
-    OVERRIDE_NOTE="intrusive_hits>0 は BALANCE override 句先頭固定 (07a §6 decision table)"
+    OVERRIDE_NOTE="intrusive_hits>0 は BALANCE override 句先頭固定 (07a §6.5 hint table)"
   fi
   record "intrusive-hits" "$TOOL" "measured" "$HITS" "hits" "$BAND" "$SEV" \
     "$OVERRIDE_NOTE; H3 規律により shared element (path:line) 併記が必須"
@@ -218,7 +226,7 @@ run_duplicates() {
   DUP_COUNT="${DUP_COUNT:-0}"
   read -r BAND SEV < <(band_classify "$DUP_COUNT" "cross-boundary-duplicates")
   record "cross-boundary-duplicates" "jscpd" "measured" "$DUP_COUNT" "pairs" "$BAND" "$SEV" \
-    "Functional Coupling シグナル。decision table 入力。重複対の path:line 併記必須 (H3)"
+    "Functional Coupling シグナル。hint table 入力（候補）。重複対の path:line 併記必須 (H3)"
 }
 
 # ============================================================
@@ -235,7 +243,7 @@ run_shared_model() {
   PUBLIC_TYPES="${PUBLIC_TYPES:-0}"
   read -r BAND SEV < <(band_classify "$PUBLIC_TYPES" "shared-model-surface")
   record "shared-model-surface" "ripgrep-pattern" "measured" "$PUBLIC_TYPES" "types" "$BAND" "$SEV" \
-    "Model Coupling シグナル。DTO 専用なら model-low、ドメインロジック付きなら 1 件でも model-heavy (decision table)"
+    "Model Coupling シグナル。DTO 専用なら model-low、ドメインロジック付きなら 1 件でも model-heavy (07a §6.5 hint table; 候補)"
 }
 
 # ============================================================
@@ -244,23 +252,31 @@ run_shared_model() {
 # 試作: シグナル単位の band severity を集約して boolean 化。
 # ============================================================
 run_aggregate_balance() {
-  # 試作: intrusive_hits=0 かつ duplicates band<=1 かつ volatility band<=2 を BALANCE=TRUE とみなす
-  local BALANCE_LABEL="unknown"
-  if [ "$ANY_RAN" -eq 1 ]; then
-    if [ "$INTRUSIVE_HITS" -gt 0 ]; then
-      BALANCE_LABEL="false (intrusive override)"
-    else
-      BALANCE_LABEL="indicative-true"  # 個別ペア判定ではないことを示す名
-    fi
+  # BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY (07a §6.1)。
+  # 各次元の core SIGNAL（distance / volatility / intrusive）が measured で揃った時のみ
+  # 概観ラベルを出す。一つでも skipped なら inconclusive（skipped を pass と誤読させない）。
+  local BALANCE_LABEL STATUS NOTE missing=""
+  is_measured distance-level   || missing="$missing distance-level"
+  is_measured volatility-proxy || missing="$missing volatility-proxy"
+  is_measured intrusive-hits   || missing="$missing intrusive-hits"
+
+  if [ "$ANY_RAN" -eq 0 ]; then
+    STATUS="inconclusive"; BALANCE_LABEL="inconclusive (all signals skipped)"
+    NOTE="全 SIGNAL skipped。集計不能。skipped を pass と誤読しない (H2 / 試作値)"
+  elif [ -n "$missing" ]; then
+    STATUS="inconclusive"; BALANCE_LABEL="inconclusive (missing:${missing})"
+    NOTE="BALANCE 各次元の core SIGNAL が未計測 (missing:${missing})。集計不能。skipped を pass と誤読しない (H2 / 試作値)"
+  elif [ "$INTRUSIVE_HITS" -gt 0 ]; then
+    STATUS="measured"; BALANCE_LABEL="false (intrusive override)"
+    NOTE="概観目的のみ。verdict 根拠不可 (H2 / Khononov count-based 否定)。試作値"
   else
-    BALANCE_LABEL="inconclusive"
+    STATUS="measured"; BALANCE_LABEL="indicative-true"  # 個別ペア判定ではないことを示す名
+    NOTE="概観目的のみ。verdict 根拠不可 (H2 / Khononov count-based 否定)。試作値"
   fi
-  ROWS+=("$(printf '{"signal":"balance-pairs-ratio","tool":"aggregate","status":"%s","value":"%s","unit":"label","band":"-","severity":"-","module_unit":"%s","observation_window":"%s","note":"概観目的のみ。verdict 根拠不可 (H2 / Khononov count-based 否定)。試作値"}' \
-    "$( [ "$ANY_RAN" -eq 1 ] && echo measured || echo inconclusive )" \
-    "$BALANCE_LABEL" "$MODULE_UNIT" "$VOLATILITY_WINDOW")")
-  printf '  [%-8s] %-30s value=%-12s note=概観のみ\n' \
-    "$( [ "$ANY_RAN" -eq 1 ] && echo aggregate || echo skipped )" \
-    "balance-pairs-ratio" "$BALANCE_LABEL"
+  ROWS+=("$(printf '{"signal":"balance-pairs-ratio","tool":"aggregate","status":"%s","value":"%s","unit":"label","band":"-","severity":"-","module_unit":"%s","observation_window":"%s","note":"%s"}' \
+    "$STATUS" "$BALANCE_LABEL" "$MODULE_UNIT" "$VOLATILITY_WINDOW" "$NOTE")")
+  printf '  [%-9s] %-30s value=%-30s note=概観のみ\n' \
+    "$STATUS" "balance-pairs-ratio" "$BALANCE_LABEL"
 }
 
 echo "== 結合の深掘り (07a 補論) SIGNAL 計測 — Swift =="
@@ -296,7 +312,7 @@ esac
 if [ "$ANY_RAN" -eq 0 ]; then
   VERDICT="inconclusive"
 elif [ "$INTRUSIVE_HITS" -gt 0 ]; then
-  VERDICT="intrusive-override"   # 07a §6 decision table の常時 override
+  VERDICT="intrusive-override"   # 07a §6.5 hint table の常時 override
 else
   VERDICT="signals-collected"   # 注: pass/fail は出さない（07a §3 H3 規律により段の確定は別工程）
 fi

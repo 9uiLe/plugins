@@ -68,12 +68,17 @@ swift:
         note: >
           Trivy / OWASP Dependency-Check の SPM 対応は experimental。
           0 件でも見落としがあり得るため judgment 側でも補完する。
-  # 結合の深掘り (07a 補論) シグナル。`deterministic:` と区別される。
+  # 結合の深掘り (07a 補論) シグナル。`deterministic:` と区別される EXPERIMENTAL ブロック。
+  # - experimental: true。verdict 確定権を持たない。既存 deterministic: の PASS/FAIL を上書きしない。
+  #   寄与できるのは severity の下方修正のみ (07a §9 H9)。既定では考察パートの所見 attach に閉じる。
   # - 生成された数値は 推測 ラベル付きで採用 (静的評価 §3.6.4)。
   # - ツール未導入時は skipped (数値捏造禁止)。
-  # - Strength ラダー割当は 07a §6 の decision table に委譲 (本ブロックは "入力" のみ)。
+  # - Strength ラダー段は 07a §6.5 hint table が "候補" を出すのみ。段の確定は人手レビューに委譲
+  #   (本ブロックは "候補絞り込みの入力" であって段の確定ではない / 07a §3.2 / §9 H3)。
   # - aggregate スコアを単独 verdict 根拠に使わない (07a §3.2 / H2)。
+  # - deterministic: への昇格は静的評価 §3.6.4 の 3 条件 + ユーザ明示同意が揃った時のみ (現時点未達)。
   planned-deterministic:
+    experimental: true                 # Phase 2 試作。安定化まで考察パート attach に限定。
     coupling:
       - id: distance-level
         metric: 2 部品間の Khononov Distance 段（1=Methods → 5=Systems、07a §4）
@@ -120,7 +125,7 @@ swift:
         note: >
           intrusive_hits > 0 は BALANCE モデル (07a §6) で常に最先頭の override 句となる
           (どれだけ Distance / Volatility が良くても Intrusive は FAIL)。
-          07a §6 decision table 参照。
+          07a §6.5 hint table 参照。
       - id: cross-boundary-duplicates
         metric: モジュール境界を跨ぐ重複コードブロック数
         ref: "Khononov 2024, Ch.7 (Functional Coupling) / 07a §3"
@@ -145,7 +150,7 @@ swift:
             - { max: null, label: "model-heavy",  severity: medium }
         note: >
           DTO 専用なら "model-low"、ドメインロジック付き型なら 1 件でも "model-heavy" 扱い。
-          07a §6 decision table のラダー割当入力。
+          07a §6.5 hint table のラダー割当入力。
     aggregate:
       # リポジトリ全体の概観目的のみ。verdict 根拠に単独で使わない。
       - id: balance-pairs-ratio
@@ -157,6 +162,9 @@ swift:
         note: >
           aggregate スコアは Khononov 2024 が名指しで否定する "count-based" 系メトリクスに近い。
           概観目的 (dashboard 表示等) に限定し、指摘の severity 根拠としては引用しない (H2)。
+          BALANCE 各次元の core SIGNAL (distance-level / volatility-proxy / intrusive-hits) が
+          一つでも skipped の場合、aggregate は `indicative-true` を出さず `inconclusive (missing:...)`
+          を返す (skipped を pass と誤読させない)。
   judgment:
     # 静的ツールが未成熟、または本質的に主観/動的。AI/人手で評価し「推測」を明示。
     security:
@@ -173,7 +181,7 @@ swift:
       - "適応性・置換性は設計レビュー。設置性は CI 上の clean-build 再現性で補助確認"
     coupling_deep_dive:
       # 07a 補論で 判断のみ と分類される項目。BALANCE 適用時は 推測 ラベル必須。
-      - "Khononov Integration Strength 段 (Intrusive/Functional/Model/Contract) の確定: 共有要素 (symbol/type/contract path) 併記が必須 (H3)。SIGNAL は planned-deterministic で計測するが、段の割当は decision table + 人手レビューに委譲"
+      - "Khononov Integration Strength 段 (Intrusive/Functional/Model/Contract) の確定: 共有要素 (symbol/type/contract path) 併記が必須 (H3)。SIGNAL は planned-deterministic で計測するが、段の確定は 07a §6.5 hint table（候補提示）+ 人手レビューに委譲"
       - "動的 Connascence (CoE/CoTi/CoV/CoI) は静的シグナルだけで断定不可 (H6)。runtime 観測・並行性解析の参照を併記し 推測 ラベル付与"
       - "Socio-Technical Distance (Conway's Law 整合): CODEOWNERS / git author 分布から概観可能だが組織判断との突合せが必須"
       - "Volatility の essential vs accidental 区別 (07a §5.2): 業務由来 (essential) と設計起因 (accidental) の切り分けはドメイン理解必須"

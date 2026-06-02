@@ -146,15 +146,19 @@ BALANCE     = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY
 
 Khononov 2024 は「decouple everything」アプローチを **明示的に否定** する。過剰な疎結合は distributed monolith を生み、Distance だけが伸びて Strength が下がらない反パターンとなる（出典: coupling.dev/posts/core-concepts/balance/）。
 
-### §6.5 SIGNAL → Integration Strength ラダー割当 — Decision Table (Phase 2)
+### §6.5 SIGNAL → Integration Strength 候補絞り込みヒント — Hint Table (Phase 2 / experimental)
 
-`quality-gates.yml` の `swift.planned-deterministic.coupling:` で計測される SIGNAL から、
-Integration Strength ラダー段（Intrusive / Functional / Model / Contract）を割り当てる **decision table**。
-本 table は **共有要素併記が成立している場合に限り適用可能**（H3 規律。`(symbol|type|contract-path)` を併記しない断定は禁則）。
+> ⚠️ **EXPERIMENTAL（実験的）**: 本 §6.5 は Phase 2 試作の **experimental layer** であり、`deterministic:` でも安定した `planned-deterministic:` でもない。本 table は Khononov 2024 本書に verbatim 出現せず、本リポジトリが §6.1 BALANCE 論理モデルと §3 Integration Strength 定義から **合成した運用補助** である。**Khononov 2024 出典として引用してはならない**。
+>
+> 🚫 **本 table は段を「確定」しない。候補を絞り込む「ヒント」に過ぎない**。SIGNAL は静的計測値であり、Integration Strength 段の確定（特に「DTO 専用か / ドメインロジック付きか」「公開コントラクト経由か」の意味的判別）は **本質的にレビュアの判断を要する**（07a §3.2 / §9 H3、static-evaluation §3.6.4 で Strength 段は「判断のみ」に分類）。Khononov 2024 の中心原則 **"Dependencies, like words, should be weighed, not counted"** に従い、本 table が出す候補を SIGNAL の数値だけで段に固定することを禁ずる。
 
-#### §6.5.1 Decision Table（上から優先順）
+`quality-gates.yml` の `swift.planned-deterministic.coupling:`（**experimental ブロック**）で計測される SIGNAL から、
+Integration Strength ラダー段（Intrusive / Functional / Model / Contract）の **候補を絞り込む** ための hint table。
+本 table は **共有要素併記が成立している場合に限り、候補提示の参考として利用可能**（H3 規律。`(symbol|type|contract-path)` を併記しない断定は禁則）。
 
-| 優先順位 | 条件（SIGNAL ベース） | 割当 Integration Strength | severity 入力 | BALANCE 含意 |
+#### §6.5.1 Hint Table（上から優先順 / 出力は「候補」であって「確定」ではない）
+
+| 優先順位 | 条件（SIGNAL ベース） | 候補 Integration Strength（確定不可・要レビュア判断） | severity 入力（**下方修正のみ**, H9） | BALANCE 含意 |
 | --- | --- | --- | --- | --- |
 | **1（先頭固定 override）** | `intrusive_hits > 0` | **Intrusive Coupling** | critical / high | **常に FAIL**。Distance / Volatility がいかに良くても override される |
 | 2 | `cross_boundary_duplicates > 0` **OR** `shared_model_surface` 内で **public API かつドメインロジック付き型** が境界跨ぎ参照されている | **Functional Coupling** | high / medium | Strength=High。Distance×Volatility との XOR 判定対象 |
@@ -167,15 +171,17 @@ Integration Strength ラダー段（Intrusive / Functional / Model / Contract）
 - **`intrusive_hits > 0` の override は無条件**: Distance が 1（Methods 内）であっても、Volatility が「stable」であっても、`intrusive_hits > 0` であれば BALANCE = FALSE が確定する（07a §3 H3 連動）。
 - **module_unit 未宣言時の制限**: `module_unit:` が `quality-gates.yml` で宣言されていない場合、Distance に依存する条件（優先順位 2 の「境界跨ぎ」判定）は **`distance basis: path-depth fallback` ラベル付き** で出力する（H4）。
 - **観測ウィンドウ必須**: Volatility 系シグナル（`observed_change_frequency`）を判定根拠に用いる場合、`--since=<window>` を直近 5 行以内に併記する（H5）。
-- **decision table の結果は段の「決定論的判定」ではなく「シグナル由来の推奨割当」**: 共有要素の意味的判別（DTO か否か、ドメインロジック付きか）はレビュアの判断を必要とする。本 table は **「段の候補を絞る決定論的入力」** であって「段そのものの確定」ではない（07a §3 H3 規律）。
+- **hint table の出力は段の「確定」ではなく「候補（recommendation）」**: 共有要素の意味的判別（DTO か否か、ドメインロジック付きか）はレビュアの判断を必要とする。本 table は **「段の候補を絞り込むための experimental な入力」** であって「段そのものの確定」ではない（07a §3 H3 規律、static-evaluation §3.6.4 で Strength 段は「判断のみ」）。出力を段に固定する場合は必ずレビュアが共有要素を確認し、`推測` ラベルを併記する。
 
 #### §6.5.3 BALANCE 適用順序（intrusive override 句先頭固定）
+
+> 下記擬似コードは experimental な運用イメージであり、`STRENGTH_LEVEL` は hint table が出す**候補**をレビュアが確定した後の値を指す（SIGNAL から自動確定しない）。
 
 ```
 IF intrusive_hits > 0:
     BALANCE = FALSE  (Intrusive override; rebalance: Strength を下げる)
 ELSE:
-    STRENGTH_LEVEL  = decision_table(SIGNAL inputs)  -- 上記 §6.5.1
+    STRENGTH_LEVEL  = hint_table(SIGNAL inputs) → reviewer confirms  -- 上記 §6.5.1（候補→人手確定）
     DISTANCE_LEVEL  = swift package describe 由来 (module_unit 宣言下)
     VOLATILITY_BAND = observed_change_frequency / --since=<window>
     BALANCE = (STRENGTH_LEVEL XOR DISTANCE_LEVEL) OR NOT VOLATILITY_BAND
@@ -183,7 +189,7 @@ ELSE:
 ENDIF
 ```
 
-**運用注意**: 本 §6.5 の table は Phase 2 試作段階の **decision support** であり、Khononov 2024 本書中に同等の table が verbatim 出現するわけではない。本 table は coupling.dev で明示される BALANCE 論理モデル（§6.1）と Integration Strength 4 段定義（§3）を運用化するために本リポジトリで合成したものである。**Khononov 2024 出典として引用してはならない**。本リポジトリ独自の運用 layer として明示する。
+**運用注意**: 本 §6.5 の table は Phase 2 試作段階の **experimental な hint support**（候補絞り込み補助）であり、Khononov 2024 本書中に同等の table が verbatim 出現するわけではない。本 table は coupling.dev で明示される BALANCE 論理モデル（§6.1）と Integration Strength 4 段定義（§3）を運用化するために本リポジトリで合成したものである。**Khononov 2024 出典として引用してはならない**。本リポジトリ独自の experimental 運用 layer として明示する。`deterministic:` への昇格は static-evaluation §3.6.4 の 3 条件（pinned コマンド・固定パーサー・閾値根拠）が揃い、かつ Strength 段の意味的判別が自動化された場合に限る（現時点では未達）。
 
 ---
 
