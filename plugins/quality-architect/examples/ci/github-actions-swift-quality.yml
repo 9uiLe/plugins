@@ -19,11 +19,19 @@ jobs:
     runs-on: macos-14   # SwiftLint/Periphery/coverage は macOS が無難。Linux なら swift:6.0 コンテナ
     steps:
       - uses: actions/checkout@v4
+        with:
+          # coupling シグナルの volatility-proxy は git log --since=<window> で churn を観測する。
+          # 浅い clone だと観測ウィンドウ内の履歴が欠けるため、全履歴を取得する (07a §5.3 / H5)。
+          fetch-depth: 0
 
       - name: Install tools
         run: |
           brew install swiftlint swift-format lizard trivy jq
           brew install peripheryapp/periphery/periphery
+          # 結合の深掘り (07a 補論) シグナル用の任意ツール。未導入なら該当シグナルは skipped。
+          brew install jscpd || true
+          # semgrep の Swift サポートは experimental。導入できない場合は rg fallback が走る。
+          brew install semgrep || true
 
       - name: Run ISO/IEC 25010 quality gate (deterministic part)
         env:
@@ -43,3 +51,26 @@ jobs:
 
       # スクリプトは fail があれば exit 1 を返すため、上の step が失敗すればジョブも失敗する。
       # 「計測はするがマージは止めない」運用にしたい場合は run の末尾に `|| true` を付ける。
+
+      # --- 結合の深掘り (07a 補論) シグナル — Phase 2 planned-deterministic ---
+      # 役割: Khononov 2024 の 3 次元 (Integration Strength × Distance × Volatility) を
+      #       SIGNAL として算出し coupling-gate-result.json に残す。quality-review スキルが
+      #       Phase 2 オプション選択時にこの artifact を最優先採用する。
+      # 注意 (07a §9 H9): coupling シグナルは既存ゲートの verdict を上書きしない（severity の
+      #       下方修正のみ）。よって本ステップは continue-on-error で「計測はするがマージは止めない」。
+      #       生成された数値は 推測 ラベル付き (静的評価 §3.6.4 / planned-deterministic)。
+      - name: Run coupling deep-dive signals (Phase 2, advisory only)
+        continue-on-error: true
+        env:
+          CGS_MODULE_UNIT: "spm-target"        # quality-gates.yml の module_unit: と一致させる (H4)
+          CGS_VOLATILITY_WINDOW: "6.months"    # 観測ウィンドウは本文・JSON 双方に記録 (H5)
+        # git churn を観測するため履歴が必要。checkout@v4 を fetch-depth: 0 にしておくと精度が上がる。
+        run: bash scripts/coupling-gate-swift.sh --since="${CGS_VOLATILITY_WINDOW}"
+
+      - name: Upload coupling-gate result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coupling-gate-result
+          path: coupling-gate-result.json
+          if-no-files-found: warn
