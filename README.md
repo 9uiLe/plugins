@@ -52,6 +52,12 @@ Claude Code 上で次を実行してください:
 /plugin marketplace add /path/to/this/repo
 ```
 
+## 不具合報告・改善提案
+
+バグや改善のアイデアは GitHub Issue で受け付けています。リポジトリの **Issues → New issue** から、目的に合ったテンプレート（🐞 バグ報告 / ✨ 改善・機能要望）を選んで起票してください。
+
+起票や Pull Request の手順、修正時に押さえておくべきリポジトリ構成は [CONTRIBUTING.md](./CONTRIBUTING.md) にまとめています。
+
 ## ライセンス
 
 MIT — 詳細は [LICENSE](./LICENSE) を参照してください。
