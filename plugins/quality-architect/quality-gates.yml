@@ -15,9 +15,21 @@
 version: 1
 
 swift:
-  # 環境にツールが無い場合は「未実行」と報告すること。数値を捏造しない。
+  # 環境にツールが無い場合は「未実行（skipped）」と報告すること。数値を捏造しない。
+  # スキル本体はツールを自動インストールしない（サプライチェーン保護のため明示同意を要する）。
   setup:
-    install_hint: "brew install swiftlint swift-format peripheryapp/periphery/periphery lizard trivy jscpd"
+    # 注意: 下記は導入ツールの一覧であり、推奨インストール経路ではない。
+    #   - 各ツールはプロジェクトの方針（バージョン pin / 配布元検証 / 監査済み tap のみ）に従って導入すること。
+    #   - 特に `peripheryapp/periphery` は homebrew-core ではなく third-party tap。
+    #     tap の追加は formula 供給源を恒久的に増やすため、組織のセキュリティ方針に従い別途承認すること。
+    #   - CI で導入する場合は `actions/cache` でのバージョン pin と SHA 検証を推奨。
+    required_tools:
+      - swiftlint        # homebrew-core
+      - swift-format     # homebrew-core
+      - lizard           # homebrew-core
+      - trivy            # homebrew-core
+      - jscpd            # homebrew-core（任意）
+      - periphery        # third-party tap (peripheryapp/periphery) — 別途方針確認
   # 結合の深掘り (references/07a-coupling-deep-dive.md) のための module 単位宣言。
   # `distance_level` 決定論計算の前提（07a §9 H4）。
   # 未宣言時は distance basis: path-depth fallback ラベル併記が必須。
