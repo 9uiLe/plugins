@@ -109,31 +109,64 @@
 
 ## §6. BALANCE モデル（Khononov, Ch.10-11）
 
-### §6.1 公式論理モデル（verified）
+### §6.1 公式論理モデル（書籍本文 verbatim 確認済み）
 
-coupling.dev に明示される簡易論理モデル:
+Khononov 2024 本文（§10.2「強度、距離、変動性の組み合わせ」）に明示される論理モデル。
+**邦訳本文 verbatim**（島田訳, p.181 / p.183）:
 
 ```
-MODULARITY  = STRENGTH XOR DISTANCE
-COMPLEXITY  = STRENGTH AND DISTANCE
-BALANCE     = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY
+モジュール性  = 強度 XOR 距離                       (Modularity)
+複雑性        = NOT モジュール性 = NOT (強度 XOR 距離) (Complexity)
+局所的複雑性  = NOT 強度 AND NOT 距離               (Local complexity)
+大域的複雑性  = 強度 AND 距離                        (Global complexity)
+均衡度        = (強度 XOR 距離) OR NOT 変動性         (Balance, §10.2.2 p.183)
 ```
 
-出典: [coupling.dev/posts/core-concepts/balance/](https://coupling.dev/posts/core-concepts/balance/)
+英語表記（本ファイルの canonical 表現）:
+
+```
+MODULARITY        = STRENGTH XOR DISTANCE
+COMPLEXITY        = NOT MODULARITY
+LOCAL COMPLEXITY  = NOT STRENGTH AND NOT DISTANCE
+GLOBAL COMPLEXITY = STRENGTH AND DISTANCE
+BALANCE           = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY
+```
+
+出典: Khononov (2024), Ch.10 §10.2 / §10.2.2（邦訳 島田訳 p.181, p.183）で **verbatim 確認済み**。
+二次解説: [coupling.dev/posts/core-concepts/balance/](https://coupling.dev/posts/core-concepts/balance/)。
+
+**注（旧記載の訂正）**: 旧 07a は `COMPLEXITY = STRENGTH AND DISTANCE` と 1 行で記していたが、
+書籍は **局所的複雑性 (`NOT S AND NOT D`)** と **大域的複雑性 (`S AND D`)** を区別する。本ファイルの
+canonical はこの区別を反映する（`COMPLEXITY = NOT MODULARITY` が総体、`S AND D` は大域的のみ）。
 
 **読み方**:
 - 強い結合 (high strength) と長い距離 (high distance) が **両立** すると complexity が爆発する。
 - 強い結合と短い距離、または弱い結合と長い距離なら modularity が成立する（XOR）。
 - volatility が低ければ（変更されないなら）両方が成立しなくても許容される（NOT VOLATILITY による緩和）。
 
-### §6.2 「Pain 式」に関する注意（重要）
+### §6.2 「Pain 式」に関する注意（重要・書籍確認済み）
 
-「`Pain = Strength × Distance × Volatility`」という乗算形の式が、KanDDDinsky 2022 講演スライドなど **二次ソース** に登場する。しかし、**書籍本文中の verbatim 出現は本ファイル執筆時点で公開情報からは確認できていない**。
+「`Pain = Strength × Distance × Volatility`」の乗算形は **書籍本文に verbatim 存在する**。
+邦訳（島田訳, Ch.10 §10.2.1, p.182）では:
+
+> メンテナンスの労力 ＝ 強度 ＊ 距離 ＊ 変動性
+
+（"Pain" は邦訳で「メンテナンスの労力」と訳出。乗算記号は ＊）。
+
+**ただし、書籍自身が以下の 2 つの重大な留保を付けている**:
+
+1. **2 値スケール前提**（脚注 ※2, p.182）: 「私は依然として 2 値スケールを想定している。各次元で許可される
+   値は 高 (1) と 低 (0) である」。連続値ではない。本文は例として
+   `0 ＊ 1 ＊ 1 ＝ 0`, `1 ＊ 0 ＊ 1 ＝ 0`, `1 ＊ 1 ＊ 0 ＝ 0`（いずれかの次元が 0 なら痛みは 0）を挙げる。
+2. **「正確な科学ではない」警告**（§10.3, p.184）: 「警告：これは正確な科学ではない」。結合の 3 次元は
+   「定義上 主観的」であり、同一数値スケールへの定量化には本質的な課題があると明記する。
 
 そのため本ファイルでは:
-- **Khononov 2024 の canonical 表現は §6.1 の論理モデル (XOR/AND/NOT)** とする。
-- **`Pain = S × D × V` 形を Khononov 出典として本文に記載してはならない**（§9 H2 規律）。
-- ユーザが原典（紙版・邦訳版）で当該式の出現を確認した場合、§6 を「verbatim 引用」に更新可能（運用更新項目）。
+- **Khononov 2024 の canonical 第一表現は §6.1 の論理モデル (XOR/AND/NOT)** とする（こちらも書籍 verbatim）。
+- **`Pain = S × D × V` 形を「連続値の精密メトリクス」として提示してはならない**。引用する場合は
+  必ず (1) 2 値スケール前提（高=1/低=0）と (2) §10.3 の「正確な科学ではない」警告 を併記する（§9 H2 規律）。
+- 2 値スケールでの `S ＊ D ＊ V ＝ 0`（痛みなし）は §6.1 の `均衡度 = (強度 XOR 距離) OR NOT 変動性 = 高`
+  と整合する。本ファイルは均衡度（BALANCE）論理モデルを第一表現として用いる。
 
 ### §6.3 Rebalancing 戦略（Ch.11）
 
@@ -277,7 +310,12 @@ Khononov 2024 は古典理論を Ch.5 と Ch.6 で取り込み直しており、
 - 07a §3〜§6 で Khononov 概念を引用するとき、**章番号（Ch.7 / Ch.8 / Ch.9 / Ch.10）を必ず併記**する。「Khononov の Integration Strength」のような章指定なし参照は引用根拠として弱い。
 
 ### H2. Pain 式・Instability 代理の禁則
-- ❌ `Pain = Strength × Distance × Volatility` を **Khononov 2024 出典** として本文に書くこと。書籍本文中の verbatim 出現は本ファイル時点で未確認。canonical 表現は §6.1 の XOR/AND/NOT 論理モデル。
+- ⚠️ `Pain = Strength × Distance × Volatility`（邦訳「メンテナンスの労力 ＝ 強度 ＊ 距離 ＊ 変動性」）は
+  **書籍本文 verbatim 存在**（Ch.10 §10.2.1, 邦訳 p.182）。ただし書籍自身が **2 値スケール前提**（脚注 ※2: 高=1/低=0）と
+  **「正確な科学ではない」警告**（§10.3, p.184）を付している。
+- ❌ Pain 式を **連続値の精密メトリクス** として提示すること、または上記 2 留保を併記せずに引用することは禁則。
+  引用時は (1) 2 値スケール前提 と (2)「正確な科学ではない」警告 を必ず併記する。canonical 第一表現は §6.1 の
+  XOR/AND/NOT 論理モデル（こちらも書籍 verbatim, §10.2 / §10.2.2, p.181 / p.183）。
 - ❌ Robert C. Martin の Instability `I = Ce / (Ce + Ca)` を Khononov Integration Strength の代理として引用すること。Khononov は依存をカウントするアプローチを名指しで否定している（"Dependencies, like words, should be weighed, not counted"）。
 
 ### H3. Integration Strength の shared element 併記
@@ -319,7 +357,7 @@ Khononov 2024 は古典理論を Ch.5 と Ch.6 で取り込み直しており、
 以下は WebSearch / WebFetch により実在を確認済みの一次資料・著名な学術書である。**citation surface は本表のみ**（H7 規律）。
 
 1. **Khononov, V. (2024).** *Balancing Coupling in Software Design: Universal Design Principles for Architecting Modular Software Systems.* Addison-Wesley Professional. ISBN 978-0-13-735348-4. Product page: https://www.informit.com/store/balancing-coupling-in-software-design-universal-design-9780137353484
-   - 邦訳: 島田 浩二 訳『ソフトウェア設計の結合バランス — 持続可能な成長を支えるモジュール化の原則』インプレス (impress top gear), 2025 年 10 月. ISBN 978-4-295-02296-1. https://www.kinokuniya.co.jp/f/dsg-01-9784295022961
+   - 邦訳: 島田 浩二 訳『ソフトウェア設計の結合バランス — 持続可能な成長を支えるモジュール化の原則』インプレス (impress top gear), **2025 年 10 月 21 日 初版第 1 刷発行**（奥付確認済み）. ISBN 978-4-295-02296-1. https://www.kinokuniya.co.jp/f/dsg-01-9784295022961
 
 2. **Stevens, W. P., Myers, G. J., & Constantine, L. L. (1974).** Structured Design. *IBM Systems Journal*, 13(2), 115–139. https://doi.org/10.1147/sj.132.0115
 
@@ -342,8 +380,17 @@ Khononov 2024 は古典理論を Ch.5 と Ch.6 で取り込み直しており、
 - coupling.dev. *Dimensions of Coupling.* Vlad Khononov's blog. https://coupling.dev/posts/core-concepts/balance/ , https://coupling.dev/posts/dimensions-of-coupling/integration-strength/ , https://coupling.dev/posts/related-topics/distance/ , https://coupling.dev/posts/related-topics/module-coupling/
 - connascence.io. Community wiki. https://connascence.io
 
+**書籍原典確認済み（邦訳 島田訳, 2025-10-21 初版第 1 刷, ISBN 978-4-295-02296-1）**:
+- 「`Pain = Strength × Distance × Volatility`」=「メンテナンスの労力 ＝ 強度 ＊ 距離 ＊ 変動性」は **本文 verbatim 存在**（Ch.10 §10.2.1, p.182）。
+  ただし 2 値スケール前提（脚注 ※2, p.182: 高=1/低=0）+「正確な科学ではない」警告（§10.3, p.184）付き。§6.2 / §9 H2 に反映済み。
+- 論理モデル（モジュール性 ＝ 強度 XOR 距離 / 大域的複雑性 ＝ 強度 AND 距離 / 均衡度 ＝ (強度 XOR 距離) OR NOT 変動性）は
+  本文 verbatim（§10.2 p.181, §10.2.2 p.183）。§6.1 に反映済み（局所的/大域的複雑性の区別を含む）。
+- 「精緻な数学モデル」（coupling.dev が言及）について: 書籍の数式的内容は上記の論理モデル + 2 値スケール乗算式であり、
+  §10.3 が明示的に「正確な科学ではない」「定義上 主観的」と留保する。**coupling.dev が示唆する厳密な数学モデルに相当する形は
+  本書には存在しない**（本書は厳密化を意図的に避けている）。
+
 **未確認 (caveat)**:
-- 「`Pain = Strength × Distance × Volatility`」の書籍本文中 verbatim 出現は、本ファイル執筆時点で公開情報からは確認できていない（講演ソース由来）。原典確認後に §6.2 を更新する運用とする。
-- 書籍中の「精緻な数学モデル」（coupling.dev が言及）の具体形は未確認。
-- 「`M = S^D`」表記の書籍内代数表現は未確認。
-- 紙版邦訳（インプレス 2025-10）の **正確な発売日**: `book.impress.co.jp` が 403 で取得不能。honto eBook 販売開始日 2025-10-17 と Kinokuniya「2025 年 10 月」表記の独立 2 ソースでクロス検証済み。
+- 「`M = S^D`」の **べき乗（指数）表記**（Ch.12 Fractal Geometry での代数提示）は、今回確認した Ch.10 のページには
+  含まれない。なお Ch.10 §10.2（p.181）に「モジュール性 ＝ 強度 XOR 距離」が verbatim 存在し、`^` を XOR 演算子と
+  解せば `M = S^D` と一致する（KanDDDinsky 講演の `^` は XOR 演算子の蓋然性が高い）。Ch.12 の幾何/べき乗表現の有無は
+  Ch.12 ページ確認後に更新する。

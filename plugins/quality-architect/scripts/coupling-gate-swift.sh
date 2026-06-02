@@ -413,7 +413,7 @@ fi
   printf '  "intrusive_override":%s,\n' "$( [ "$INTRUSIVE_HITS" -gt 0 ] && echo true || echo false )"
   printf '  "ran_any":%s,\n' "$( [ "$ANY_RAN" -eq 1 ] && echo true || echo false )"
   printf '  "skipped_any":%s,\n' "$( [ "$ANY_SKIPPED" -eq 1 ] && echo true || echo false )"
-  printf '  "h2_warning":"Pain = Strength × Distance × Volatility は本書 verbatim 出現未確認。canonical 表現は BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY (07a §6.1)",\n'
+  printf '  "h2_warning":"Pain = Strength × Distance × Volatility は本書 verbatim 存在 (Ch.10 §10.2.1, 邦訳 p.182) だが 2値スケール前提(高=1/低=0) + 正確な科学ではない警告(§10.3 p.184)付き。連続値の精密メトリクスとして使わない。canonical 第一表現は BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY (07a §6.1, 同じく書籍 verbatim)",\n'
   printf '  "h3_warning":"Integration Strength 段の確定は共有要素 (symbol/type/contract path) 併記が必須。本ファイルは SIGNAL のみで段は確定しない",\n'
   printf '  "h9_warning":"既存 07/08 のしきい値・PASS/FAIL を上書きしない。重大度の下方修正のみ可",\n'
   printf '  "signals":[\n'

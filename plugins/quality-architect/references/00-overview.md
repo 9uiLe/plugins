@@ -108,3 +108,4 @@ SQuaRE シリーズの主な構成（本プラグインで参照する範囲）:
 - International Organization for Standardization (2014). *ISO/IEC 25000:2014 — Guide to SQuaRE.* https://www.iso.org/standard/64764.html
 - 日本産業標準調査会 (2013). *JIS X 25010:2013 システム及びソフトウェア製品の品質要求及び評価 (SQuaRE) — システム及びソフトウェア品質モデル* (2011 版に対応). https://www.jisc.go.jp/
 - Khononov, V. (2024). *Balancing Coupling in Software Design: Universal Design Principles for Architecting Modular Software Systems.* Addison-Wesley Professional. ISBN 978-0-13-735348-4. https://www.informit.com/store/balancing-coupling-in-software-design-universal-design-9780137353484 （結合の深掘り補論 [`07a-coupling-deep-dive.md`](./07a-coupling-deep-dive.md) を参照。本書は §5.1 / §5.2 のルーティング規律を上書きしない補論扱い）
+  - 邦訳: 島田 浩二 訳『ソフトウェア設計の結合バランス — 持続可能な成長を支えるモジュール化の原則』インプレス (impress top gear), 2025 年 10 月 21 日 初版第 1 刷発行（奥付確認済み）. ISBN 978-4-295-02296-1.

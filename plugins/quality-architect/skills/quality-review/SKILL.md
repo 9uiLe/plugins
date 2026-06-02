@@ -195,6 +195,6 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
 - ❌ §1 step 3 の AskUserQuestion（決定論パート実行方針の確認）を発行せずに静的解析ツールを実行する／LLM 単独レビューを書く。
 - ❌ 本文や指摘で数値しきい値（V(G) ≤ 10, カバレッジ ≥ 0.70 等）を引用したのに、§2 決定論パート表に対応行（measured 値または skipped）が存在しない。
 - ❌ 全行 skipped の決定論パート表を出しながら、サマリで `inconclusive` を宣言せずに重大度付き指摘を断定的に書く。
-- ❌ **Khononov の `Pain = Strength × Distance × Volatility` を本文に書く**。書籍本文中の verbatim 出現は未確認（講演ソースのみ）。canonical 表現は `references/07a-coupling-deep-dive.md` §6.1 の `BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY` を使う（07a §9 H2 規律）。
+- ⚠️ **Khononov の `Pain = Strength × Distance × Volatility` を「精密メトリクス」として本文に書く**。同式は書籍本文 verbatim（Ch.10 §10.2.1, 邦訳 p.182「メンテナンスの労力 ＝ 強度 ＊ 距離 ＊ 変動性」）だが、書籍自身が 2 値スケール前提（高=1/低=0）+「正確な科学ではない」警告（§10.3, p.184）を付している。引用時はこの 2 留保を必ず併記し、連続値の精密指標として提示しない。canonical 第一表現は `references/07a-coupling-deep-dive.md` §6.1 の `BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY`（こちらも書籍 verbatim）（07a §9 H2 規律）。
 - ❌ **Robert C. Martin の Instability `I = Ce / (Ce + Ca)` を Khononov Integration Strength の代理として引用する**。Khononov 2024 は依存をカウントするアプローチを名指しで否定している（07a §9 H2 規律）。
 - ❌ **Khononov 由来の指摘で `07-maintainability.md` / `08-flexibility.md` の既存しきい値・PASS/FAIL 判定を上書きする**。補論が寄与できるのは **重大度の下方修正 (downgrade) のみ**（07a §9 H9 規律）。verdict 反転や severity 上方修正は禁則。
