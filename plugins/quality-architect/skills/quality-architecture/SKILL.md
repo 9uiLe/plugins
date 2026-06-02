@@ -121,5 +121,5 @@ description: "Design NEW or PROPOSED software/system architecture using the ISO/
 - ❌ 過剰設計：要求にない品質特性のための仕組みを足し込まない。
 - ❌ 既存コード／差分／PR のレビュー依頼を本スキルで処理する（→ `quality-review` にハンドオフ。§0 参照）。
 - ❌ 対象コードに対する判定値として数値しきい値を引用する（V(G) ≤ 10, カバレッジ ≥ 0.70 等）。設計時は `（参考値: ...）` ラベル必須。実測値が必要なら `quality-review` に切り替える。
-- ❌ **Khononov の `Pain = Strength × Distance × Volatility` を本文に書く**。書籍本文中の verbatim 出現は未確認（講演ソースのみ）。canonical 表現は `references/07a-coupling-deep-dive.md` §6.1 の `BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY` を使う（07a §9 H2 規律）。
+- ⚠️ **Khononov の `Pain = Strength × Distance × Volatility` を「精密メトリクス」として本文に書く**。同式は書籍本文 verbatim（Ch.10 §10.2.1, 邦訳 p.182「メンテナンスの労力 ＝ 強度 ＊ 距離 ＊ 変動性」）だが、書籍自身が 2 値スケール前提（高=1/低=0）+「正確な科学ではない」警告（§10.3, p.184）を付している。引用時はこの 2 留保を必ず併記し、連続値の精密指標として提示しない。canonical 第一表現は `references/07a-coupling-deep-dive.md` §6.1 の `BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY`（こちらも書籍 verbatim）（07a §9 H2 規律）。
 - ❌ **Robert C. Martin の Instability `I = Ce / (Ce + Ca)` を Khononov Integration Strength の代理として引用する**。Khononov 2024 は依存をカウントするアプローチを名指しで否定している（07a §9 H2 規律）。

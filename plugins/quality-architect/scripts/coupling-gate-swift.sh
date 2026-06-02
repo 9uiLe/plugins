@@ -144,19 +144,39 @@ run_distance() {
     record "distance-level" "swift package describe" "skipped" "-" "level" "-" "-" "Package.swift 未検出 (H4 fallback: distance basis: path-depth)"
     return
   fi
-  local DESC TARGET_COUNT AVG_DIST
+  local DESC TARGET_COUNT
   DESC=$(cd "$TARGET" && swift package describe --type json 2>/dev/null || echo '{}')
   TARGET_COUNT=$(echo "$DESC" | jq '(.targets // []) | length' 2>/dev/null || echo 0)
   if [ "${TARGET_COUNT:-0}" -eq 0 ]; then
     record "distance-level" "swift package describe" "skipped" "-" "level" "-" "-" "Package.swift 解析失敗 / targets 0"
     return
   fi
-  # 試作: target 数からの平均近接度（同一パッケージ内の全 target 対は distance=3 namespace 近似）。
-  # 本実装では target.dependencies 解析で対ごとの境界深さを正確に算出する。
-  AVG_DIST=3
-  read -r BAND SEV < <(band_classify "$AVG_DIST" "distance-level")
-  record "distance-level" "swift package describe" "measured" "$AVG_DIST" "level" "$BAND" "$SEV" \
-    "${TARGET_COUNT} targets observed; module_unit=$MODULE_UNIT; 試作実装(平均距離)"
+  # 対ごとの境界深さを算出 (07a §4 / LCA)。
+  #   target → target (同一パッケージ内の依存): LCA = パッケージ ⇒ distance 3 (Namespaces/Packages)
+  #   target → product (外部パッケージ依存):     LCA = サービス境界 ⇒ distance 4 ((Micro)Services)
+  # Khononov は count-based 平均を否定 (H2) するため、平均ではなく最遠 (worst-case) 段を採る。
+  # 依存フィールドはツール版により target_dependencies / module_dependencies のいずれか。
+  local INTRA_EDGES CROSS_EDGES MAX_DIST EDGE_BREAKDOWN
+  INTRA_EDGES=$(echo "$DESC" | jq '[.targets[]? | ((.target_dependencies // .module_dependencies // [])[]?)] | length' 2>/dev/null || echo 0)
+  CROSS_EDGES=$(echo "$DESC" | jq '[.targets[]? | ((.product_dependencies // [])[]?)] | length' 2>/dev/null || echo 0)
+  INTRA_EDGES="${INTRA_EDGES:-0}"; CROSS_EDGES="${CROSS_EDGES:-0}"
+  if [ "$CROSS_EDGES" -gt 0 ]; then
+    MAX_DIST=4   # 外部 product 依存が最遠
+  elif [ "$INTRA_EDGES" -gt 0 ]; then
+    MAX_DIST=3   # 同一パッケージ内 target 間依存
+  else
+    MAX_DIST=2   # target 間依存なし（疎結合）。単一モジュール内 objects 相当
+  fi
+  # 対ごとの内訳を生成（H3: どの対が境界を跨ぐかを併記）。最大 6 対まで note に列挙。
+  EDGE_BREAKDOWN=$(echo "$DESC" | jq -r '
+    [ (.targets[]? | .name as $f
+        | ((.target_dependencies // .module_dependencies // [])[]? | "\($f)->\(.)=d3"),
+          ((.product_dependencies // [])[]? | "\($f)=>\(.)=d4") ) ]
+    | (.[0:6] | join(", ")) + (if length > 6 then " …(+\(length-6))" else "" end)' 2>/dev/null || echo "")
+  [ -z "$EDGE_BREAKDOWN" ] && EDGE_BREAKDOWN="no inter-target edges (decoupled)"
+  read -r BAND SEV < <(band_classify "$MAX_DIST" "distance-level")
+  record "distance-level" "swift package describe" "measured" "$MAX_DIST" "level" "$BAND" "$SEV" \
+    "${TARGET_COUNT} targets, intra-edges=${INTRA_EDGES}, cross-edges=${CROSS_EDGES}; worst-case 段 (平均不可 H2); module_unit=$MODULE_UNIT; pairs: ${EDGE_BREAKDOWN}"
 }
 
 # ============================================================
@@ -186,15 +206,29 @@ run_volatility() {
 # パターン検索のみ（Swift access level `private`/`fileprivate`/`internal` 露出パターン）。
 # ============================================================
 run_intrusive() {
-  local HITS=0 TOOL=""
+  local HITS=0 TOOL="" SHARED_ELEMENTS=""
   if have semgrep; then
     TOOL="semgrep"
     # experimental: 公式 Swift ruleset がない場合は 0 件返す（捏造禁止）
     HITS=$(semgrep --config p/swift --json "$TARGET" 2>/dev/null | jq '.results | length' 2>/dev/null || echo 0)
+    HITS="${HITS:-0}"
+    SHARED_ELEMENTS="semgrep p/swift (experimental); カスタム ruleset / SWAN (Tiganov 2020) で精密化余地あり"
   elif have rg; then
     TOOL="ripgrep-pattern"
-    # 試作: `@testable import` を別モジュールから呼んでいる箇所をシグナル化（intrusive の典型）
-    HITS=$(rg -c '^@testable import' "$TARGET" --include '*.swift' 2>/dev/null | wc -l | tr -d ' ')
+    # `@testable import` は internal シンボルを境界を越えて露出させる Swift 唯一の静的 intrusive 経路。
+    # ただし Tests/ 配下の @testable は正当（テスト目的）。本番ソース側の @testable のみを intrusive と数える。
+    # 件数はファイル数ではなく出現回数で数える（旧版はファイル数を数えていた）。
+    local MATCHES
+    MATCHES=$(rg -n --no-heading '^\s*@testable\s+import\s+\w+' "$TARGET" \
+      -g '*.swift' -g '!**/Tests/**' -g '!*Tests.swift' -g '!*Test.swift' 2>/dev/null)
+    if [ -n "$MATCHES" ]; then
+      HITS=$(printf '%s\n' "$MATCHES" | grep -c '')
+      # H3: shared element (path:line) を最大 5 件併記
+      SHARED_ELEMENTS=$(printf '%s\n' "$MATCHES" | head -5 | sed 's/[[:space:]]\+/ /g' | paste -sd '; ' -)
+    else
+      HITS=0
+      SHARED_ELEMENTS="本番ソースに @testable import なし"
+    fi
     HITS="${HITS:-0}"
   else
     record "intrusive-hits" "(semgrep|rg)" "skipped" "-" "hits" "-" "-" "semgrep / ripgrep 未インストール"
@@ -205,10 +239,10 @@ run_intrusive() {
   read -r BAND SEV < <(band_classify "$HITS" "intrusive-hits")
   local OVERRIDE_NOTE=""
   if [ "$HITS" -gt 0 ]; then
-    OVERRIDE_NOTE="intrusive_hits>0 は BALANCE override 句先頭固定 (07a §6.5 hint table)"
+    OVERRIDE_NOTE="intrusive_hits>0 は BALANCE override 句先頭固定 (07a §6.5 hint table)。"
   fi
   record "intrusive-hits" "$TOOL" "measured" "$HITS" "hits" "$BAND" "$SEV" \
-    "$OVERRIDE_NOTE; H3 規律により shared element (path:line) 併記が必須"
+    "${OVERRIDE_NOTE}shared elements (H3): ${SHARED_ELEMENTS}"
 }
 
 # ============================================================
@@ -238,12 +272,64 @@ run_shared_model() {
     record "shared-model-surface" "ripgrep" "skipped" "-" "types" "-" "-" "ripgrep 未インストール"
     return
   fi
+
+  # 精密版: SPM target 単位で「公開型のうち、他 target が import + 参照しているもの」だけを数える。
+  # 単に public 型を総数で数える旧来法では境界跨ぎでない公開型も拾ってしまうため (07a §3 Model Coupling)。
+  if have swift && have jq && [ "$MODULE_UNIT" = "spm-target" ] && [ -f "$TARGET/Package.swift" ]; then
+    local DESC
+    DESC=$(cd "$TARGET" && swift package describe --type json 2>/dev/null || echo '{}')
+    local -a TNAMES=() TPATHS=()
+    while IFS=$'\t' read -r _n _p; do
+      [ -z "$_n" ] && continue
+      TNAMES+=("$_n"); TPATHS+=("$_p")
+    done < <(echo "$DESC" | jq -r '.targets[]? | [.name, (.path // "")] | @tsv' 2>/dev/null)
+
+    if [ "${#TNAMES[@]}" -ge 2 ]; then
+      local CROSS_COUNT=0 EXAMPLES="" ti tj
+      for ti in "${!TNAMES[@]}"; do
+        local SRC_NAME="${TNAMES[$ti]}" SRC_PATH="${TPATHS[$ti]}"
+        [ -z "$SRC_PATH" ] && SRC_PATH="Sources/$SRC_NAME"
+        local ABS_SRC="$TARGET/$SRC_PATH"
+        [ -d "$ABS_SRC" ] || continue
+        # この target が公開している型名（public/open struct|class|protocol|enum）
+        local -a PUB_TYPES=()
+        while IFS= read -r _t; do [ -n "$_t" ] && PUB_TYPES+=("$_t"); done < <(
+          rg --no-filename -o -r '$1' '^\s*(?:public|open)\s+(?:final\s+)?(?:struct|class|protocol|enum)\s+(\w+)' \
+            "$ABS_SRC" --glob '*.swift' 2>/dev/null | sort -u)
+        [ "${#PUB_TYPES[@]}" -eq 0 ] && continue
+        # 他 target のうち、この module を import しているものを走査
+        for tj in "${!TNAMES[@]}"; do
+          [ "$tj" = "$ti" ] && continue
+          local OTHER_PATH="${TPATHS[$tj]}"
+          [ -z "$OTHER_PATH" ] && OTHER_PATH="Sources/${TNAMES[$tj]}"
+          local ABS_OTHER="$TARGET/$OTHER_PATH"
+          [ -d "$ABS_OTHER" ] || continue
+          rg -q "^\s*(?:@testable\s+)?import\s+${SRC_NAME}\b" "$ABS_OTHER" --glob '*.swift' 2>/dev/null || continue
+          # import している → 公開型のうち実際に参照されているものを数える
+          local _type
+          for _type in "${PUB_TYPES[@]}"; do
+            if rg -q "\b${_type}\b" "$ABS_OTHER" --glob '*.swift' 2>/dev/null; then
+              CROSS_COUNT=$((CROSS_COUNT+1))
+              [ "$(printf '%s' "$EXAMPLES" | tr -cd ',' | wc -c)" -lt 5 ] && \
+                EXAMPLES="${EXAMPLES:+$EXAMPLES, }${SRC_NAME}.${_type}->${TNAMES[$tj]}"
+            fi
+          done
+        done
+      done
+      read -r BAND SEV < <(band_classify "$CROSS_COUNT" "shared-model-surface")
+      record "shared-model-surface" "swift package describe + ripgrep" "measured" "$CROSS_COUNT" "types" "$BAND" "$SEV" \
+        "境界跨ぎ参照のみ計上 (Model Coupling, 07a §3)。DTO 専用なら model-low、ドメインロジック付きは 1 件でも model-heavy 扱い (07a §6.5 hint table; 候補)。shared elements (H3): ${EXAMPLES:-none}"
+      return
+    fi
+  fi
+
+  # fallback: module 境界を解決できない場合は公開型総数（境界跨ぎ判定なし）。
   local PUBLIC_TYPES
-  PUBLIC_TYPES=$(rg -c '^(public|open) (struct|class|protocol|enum) ' "$TARGET" --include '*.swift' 2>/dev/null | awk -F: '{ s += $2 } END { print s+0 }')
+  PUBLIC_TYPES=$(rg -c '^(public|open) (struct|class|protocol|enum) ' "$TARGET" --glob '*.swift' 2>/dev/null | awk -F: '{ s += $2 } END { print s+0 }')
   PUBLIC_TYPES="${PUBLIC_TYPES:-0}"
   read -r BAND SEV < <(band_classify "$PUBLIC_TYPES" "shared-model-surface")
   record "shared-model-surface" "ripgrep-pattern" "measured" "$PUBLIC_TYPES" "types" "$BAND" "$SEV" \
-    "Model Coupling シグナル。DTO 専用なら model-low、ドメインロジック付きなら 1 件でも model-heavy (07a §6.5 hint table; 候補)"
+    "Model Coupling シグナル (境界跨ぎ判定なし fallback: distance basis path-depth)。DTO 専用なら model-low、ドメインロジック付きなら 1 件でも model-heavy (07a §6.5 hint table; 候補)"
 }
 
 # ============================================================
@@ -327,7 +413,7 @@ fi
   printf '  "intrusive_override":%s,\n' "$( [ "$INTRUSIVE_HITS" -gt 0 ] && echo true || echo false )"
   printf '  "ran_any":%s,\n' "$( [ "$ANY_RAN" -eq 1 ] && echo true || echo false )"
   printf '  "skipped_any":%s,\n' "$( [ "$ANY_SKIPPED" -eq 1 ] && echo true || echo false )"
-  printf '  "h2_warning":"Pain = Strength × Distance × Volatility は本書 verbatim 出現未確認。canonical 表現は BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY (07a §6.1)",\n'
+  printf '  "h2_warning":"Pain = Strength × Distance × Volatility は本書 verbatim 存在 (Ch.10 §10.2.1, 邦訳 p.182) だが 2値スケール前提(高=1/低=0) + 正確な科学ではない警告(§10.3 p.184)付き。連続値の精密メトリクスとして使わない。canonical 第一表現は BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY (07a §6.1, 同じく書籍 verbatim)",\n'
   printf '  "h3_warning":"Integration Strength 段の確定は共有要素 (symbol/type/contract path) 併記が必須。本ファイルは SIGNAL のみで段は確定しない",\n'
   printf '  "h9_warning":"既存 07/08 のしきい値・PASS/FAIL を上書きしない。重大度の下方修正のみ可",\n'
   printf '  "signals":[\n'
@@ -340,7 +426,9 @@ fi
 echo
 echo "== verdict: $VERDICT  -> $RESULT_JSON =="
 echo "注: skipped はツール未導入。考察パートで人手/LLM 補完が必要。"
-echo "注: 本スクリプトは Phase 2 試作。distance / shared-model は target.dependencies 解析で対ごとに精密化する余地あり。"
+echo "注: distance / shared-model は target.dependencies / import 解析で対ごとに算出済み。"
+echo "注: 本スクリプトは Phase 2 (planned-deterministic)。deterministic 昇格には pinned コマンド・"
+echo "    固定パーサー・閾値根拠の 3 点とユーザ明示同意が必要 (静的評価 §3.6.4)。"
 
 # exit code: 全 skipped なら 2、intrusive_hits>0 なら 1、それ以外は 0
 if [ "$ANY_RAN" -eq 0 ]; then
