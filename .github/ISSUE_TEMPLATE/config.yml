@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: ❓ 質問・使い方の相談
+    url: https://github.com/9uiLe/plugins/discussions
+    about: バグや要望ではなく、使い方の質問・相談はこちらへ（Discussions が無効な場合は通常の Issue を利用してください）。
+  - name: 📖 ドキュメント / README
+    url: https://github.com/9uiLe/plugins#readme
+    about: インストール方法や各プラグインの概要はまず README を確認してください。

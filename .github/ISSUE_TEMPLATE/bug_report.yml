@@ -1,0 +1,122 @@
+name: "🐞 バグ報告 / Bug report"
+description: プラグインの不具合を報告します。修正に必要な情報を入力してください。
+title: "[Bug] <簡潔なタイトルを記入>"
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## バグ報告ありがとうございます 🙏
+
+        修正をスムーズに進めるため、**再現手順**と**環境情報**をできるだけ具体的に記入してください。
+        セキュリティに関わる脆弱性は Issue ではなく非公開で報告してください（[CONTRIBUTING.md](../blob/master/CONTRIBUTING.md) を参照）。
+
+        投稿前に [既存の Issue](../issues?q=is%3Aissue) を検索し、重複がないか確認してください。
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: 事前確認
+      description: 起票前にチェックしてください。
+      options:
+        - label: 既存の Issue を検索し、重複がないことを確認した。
+          required: true
+        - label: 最新版のプラグイン / Claude Code で再現することを確認した。
+          required: false
+
+  - type: dropdown
+    id: plugin
+    attributes:
+      label: 対象プラグイン
+      description: 不具合が発生しているプラグインを選択してください。
+      options:
+        - tech-docs
+        - quality-architect
+        - marketplace 全体 / インストール周り
+        - その他・不明
+    validations:
+      required: true
+
+  - type: input
+    id: skill
+    attributes:
+      label: 対象の Skill / コマンド
+      description: |
+        どの Skill・スラッシュコマンドで発生しましたか。
+        例: `create-adr`, `create-spec`, `create-doc`, `quality-architecture`, `quality-review`
+      placeholder: "例: create-spec"
+    validations:
+      required: false
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 不具合の概要
+      description: 何が起きているかを 1〜3 文で簡潔に説明してください。
+      placeholder: "例: create-spec で生成した HTML のチャートが表示されない。"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      description: 開発者が同じ状態を再現できるよう、番号付きで具体的に記載してください。
+      value: |
+        1. `/plugin install ...` で導入
+        2. `...` を実行
+        3. `...` を指示
+        4. エラー / 不正な出力が発生
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待した挙動
+      placeholder: "例: チャートが正しくレンダリングされた HTML が生成される。"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 実際の挙動
+      description: 実際に起きたことを記載してください。
+      placeholder: "例: チャート領域が空白のまま表示される。"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: エラーログ / 出力
+      description: |
+        エラーメッセージやコンソール出力、生成された成果物の該当箇所を貼り付けてください。
+        コードブロックで自動整形されます。
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 環境情報
+      description: |
+        以下を埋めてください。Claude Code のバージョンは `/status` または `claude --version` で確認できます。
+      value: |
+        - Claude Code バージョン:
+        - 実行環境: (CLI / VS Code 拡張 / JetBrains / Web など)
+        - OS / バージョン:
+        - プラグインのバージョン:
+        - インストール方法: (marketplace add / ローカルパス)
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 補足情報
+      description: スクリーンショット、生成された成果物、関連する設定など、調査の手がかりになる情報を添付してください。
+    validations:
+      required: false
