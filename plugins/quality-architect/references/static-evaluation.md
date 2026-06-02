@@ -84,6 +84,9 @@ LLM が `run` コマンドを組み立て、出力をパースする工程には
   - ツール未導入時は `deterministic:` と同じく `skipped` 扱い（数値捏造禁止）。
 - **EXPERIMENTAL 扱い**: 07a 結合の深掘りの `planned-deterministic.coupling:` ブロックは `experimental: true` を持つ **experimental layer** である。verdict 確定権を持たず、既存 `deterministic:` の PASS/FAIL を上書きしない。寄与できるのは severity の **下方修正のみ**（07a §9 H9）。既定では考察パートの所見 attach に閉じ、決定論パート表には行を追加しない（quality-review SKILL §2.1 merge contract）。
 - **`deterministic:` への昇格条件**: 当該シグナルに対する pinned コマンド・固定パーサー・閾値根拠の 3 点が揃い、**かつ Integration Strength 段の意味的判別（DTO か / ドメインロジック付きか等）の自動化が達成された時点**で、プロジェクトは `planned-deterministic:` 項目を `deterministic:` へ移動できる。**移動の判断はユーザの明示同意の下でのみ行う**（auto-mode で自動昇格してはならない）。現時点では昇格条件は未達であり、experimental に留める。
+- **結合の深掘り（07a）シグナルの確定方針（書籍原典確認済み）**: Khononov 2024 は結合の 3 次元を **順序尺度／質的** にのみ提示し、段階を区切る数値カットオフを与えない（Ch.7 図 7.14 [p.137]: Integration Strength は順序的バーチャート、Ch.8 図 8.2 [p.148]: Distance は順序カテゴリ、Ch.9 表 9.1 [p.167]: Volatility は コア/汎用/支援 の 高い/低い 分類）。さらに §10.3 で「正確な科学ではない」と明示する。したがって `coupling:` 配下の band severity（例: volatility の 5/20/100 commits、distance の段→severity 写像）は **原典に閾値根拠を持たず、リポジトリ運用上の選択** である。
+  - → 条件③（閾値根拠）を原典から満たせないため、これらの SIGNAL は **`planned-deterministic:`（experimental）のまま据え置く**のが既定方針。例外は書籍の論理モデルに直接根拠を持つ **2 値境界**（`intrusive_hits > 0` は 07a §6.5 で常に FAIL の override）。
+  - なお Ch.9 §9.3.2（p.167）は commit 数を「単純だが不正確になりやすい変動性指標」と明記しており、`observed_change_frequency` を `推測` ラベル付き proxy として扱う 07a §5.3 / H5 の運用を **原典が裏付ける**。
 
 ## 4. 各特性の静的化可否（一般則）
 

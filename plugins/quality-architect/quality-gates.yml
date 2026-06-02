@@ -77,6 +77,10 @@ swift:
   #   (本ブロックは "候補絞り込みの入力" であって段の確定ではない / 07a §3.2 / §9 H3)。
   # - aggregate スコアを単独 verdict 根拠に使わない (07a §3.2 / H2)。
   # - deterministic: への昇格は静的評価 §3.6.4 の 3 条件 + ユーザ明示同意が揃った時のみ (現時点未達)。
+  # - 昇格方針 (書籍原典確認済み): band severity の数値閾値は Khononov 原典に根拠なし
+  #   (Ch.7 図7.14 / Ch.8 図8.2 / Ch.9 表9.1 は順序的・質的、§10.3「正確な科学ではない」)。
+  #   閾値は リポジトリ運用上の選択 であり、本ブロックを deterministic: へ昇格しないのが既定方針
+  #   (静的評価 §3.6.4)。例外は 2値境界 intrusive_hits>0 (常に override, 07a §6.5)。
   planned-deterministic:
     experimental: true                 # Phase 2 試作。安定化まで考察パート attach に限定。
     coupling:
