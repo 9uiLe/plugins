@@ -318,7 +318,7 @@ run_shared_model() {
       done
       read -r BAND SEV < <(band_classify "$CROSS_COUNT" "shared-model-surface")
       record "shared-model-surface" "swift package describe + ripgrep" "measured" "$CROSS_COUNT" "types" "$BAND" "$SEV" \
-        "境界跨ぎ参照のみ計上 (Model Coupling, 07a §3)。DTO 専用なら model-low、ドメインロジック付きは 1 件でも model-heavy 扱い (decision table)。shared elements (H3): ${EXAMPLES:-none}"
+        "境界跨ぎ参照のみ計上 (Model Coupling, 07a §3)。DTO 専用なら model-low、ドメインロジック付きは 1 件でも model-heavy 扱い (07a §6.5 hint table; 候補)。shared elements (H3): ${EXAMPLES:-none}"
       return
     fi
   fi
