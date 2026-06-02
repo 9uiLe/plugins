@@ -1,5 +1,11 @@
 # 9uiLe / plugins
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/9uiLe/plugins?sort=semver&display_name=tag)](https://github.com/9uiLe/plugins/releases)
+[![Open issues](https://img.shields.io/github/issues/9uiLe/plugins)](https://github.com/9uiLe/plugins/issues)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-Marketplace-8A6FE8)](https://claude.com/claude-code)
+
 [Claude Code](https://claude.com/claude-code) 用プラグインを集めた Marketplace リポジトリです。
 
 ## インストール
@@ -57,6 +63,14 @@ Claude Code 上で次を実行してください:
 バグや改善のアイデアは GitHub Issue で受け付けています。リポジトリの **Issues → New issue** から、目的に合ったテンプレート（🐞 バグ報告 / ✨ 改善・機能要望）を選んで起票してください。
 
 起票や Pull Request の手順、修正時に押さえておくべきリポジトリ構成は [CONTRIBUTING.md](./CONTRIBUTING.md) にまとめています。
+
+## セキュリティ
+
+脆弱性の報告手順は [SECURITY.md](./SECURITY.md) を参照してください。**公開 Issue ではなく** GitHub の Private Vulnerability Reporting からご連絡ください。
+
+## 変更履歴
+
+リリースごとの変更点は [CHANGELOG.md](./CHANGELOG.md) にまとめています。
 
 ## ライセンス
 

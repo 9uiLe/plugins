@@ -101,8 +101,7 @@ JSON（`plugin.json` / `marketplace.json`）を編集した場合は、構文エ
 
 ## セキュリティ上の問題の報告
 
-脆弱性や機微な情報を含む不具合は、**公開 Issue を作成せず**、リポジトリオーナー
-（[@9uiLe](https://github.com/9uiLe)）へ非公開でご連絡ください。
+脆弱性や機微な情報を含む不具合は、**公開 Issue を作成せず**、[SECURITY.md](./SECURITY.md) に記載の手順（GitHub Private Vulnerability Reporting）でご連絡ください。
 公開リポジトリに詳細を投稿すると、修正前に悪用されるおそれがあります。
 
 ---
