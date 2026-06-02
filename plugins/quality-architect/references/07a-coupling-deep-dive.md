@@ -51,6 +51,12 @@
 - **Integration Strength 段を断定する場合、その判定根拠となる "shared element"（共有された具体的シンボル / 型名 / コントラクトパス）を同段落内に併記すること**（§9 H3）。共有要素を示さない断定は禁則。
 - **Robert C. Martin の Instability `I = Ce / (Ce + Ca)` を Khononov Integration Strength の代理として引用してはならない**。Khononov 2024 は依存を「数える」アプローチ自体を "Dependencies, like words, should be weighed, not counted" として **名指しで否定** している（出典: [coupling.dev/posts/core-concepts/balance/](https://coupling.dev/posts/core-concepts/balance/)）。§9 H2 規律参照。
 
+### §3.3 段は抽象化レベルに相対的（Khononov 2024, Ch.12 §12.4）
+
+- Integration Strength の 4 段は **絶対的ではなく、観測する抽象化レベルに対して相対的** である（Khononov 2024, Ch.12「ソフトウェア設計のフラクタル幾何学的性質」§12.4「フラクタルモジュール性」, 邦訳 p.222）。あるレベルでの Contract Coupling は、より高い抽象化レベルでは Implementation (Intrusive) Coupling と見なされうる。
+- 書籍の例（邦訳 p.222 趣意）: あるオブジェクトの公開インターフェースは、**マイクロサービス境界を越えて公開されない限り**、別のマイクロサービスから見れば実装詳細（Intrusive 相当）に当たる。同様にマイクロサービスの Contract Coupling は、まったく別のシステムから見れば Implementation Coupling と見なせる。
+- **運用含意**: SIGNAL から段を割り当てる際（§6.5 decision table）は、**どの抽象化レベル（`module_unit:`）で評価しているかを併記** する。同じ共有要素でも評価レベルが変われば段が変わりうるため、H3 の shared element 併記に加えて評価レベルの明示が要る。
+
 ---
 
 ## §4. Distance（Khononov, Ch.8）— 5 段階
@@ -73,6 +79,7 @@
 
 - **Socio-Technical Distance**: 「コンポーネントを所有する人/チームの距離」を表す追加要素（"Additional Factors Affecting Distance"）。これは **Distance のラダーとは別軸** として扱う。Conway's Law と密接。本ファイルでは「判断のみ」項目として §9 で扱う。
 - **検証済み引用**: "The cost of a change of related components is **inversely proportional** to the distance between them."（出典同上）
+- **Distance も抽象化レベルに相対的**（Khononov 2024, Ch.12 §12.4, 邦訳 p.222）: 例えば異なる言語の標準ライブラリ同士は「遠い」と見なされうるが、サービスレベルなど上位の抽象化で見ると「距離」のスケールは変化する。`module_unit:` 宣言（§4.3 / H4）は **どの抽象化レベルで距離を測るか** の宣言でもある（§3.3 の Strength 相対性と対をなす）。
 
 ### §4.3 引用規律
 
@@ -223,6 +230,12 @@ ENDIF
 ```
 
 **運用注意**: 本 §6.5 の table は Phase 2 試作段階の **experimental な hint support**（候補絞り込み補助）であり、Khononov 2024 本書中に同等の table が verbatim 出現するわけではない。本 table は coupling.dev で明示される BALANCE 論理モデル（§6.1）と Integration Strength 4 段定義（§3）を運用化するために本リポジトリで合成したものである。**Khononov 2024 出典として引用してはならない**。本リポジトリ独自の experimental 運用 layer として明示する。`deterministic:` への昇格は static-evaluation §3.6.4 の 3 条件（pinned コマンド・固定パーサー・閾値根拠）が揃い、かつ Strength 段の意味的判別が自動化された場合に限る（現時点では未達）。
+
+### §6.6 BALANCE モデルの自己相似性（Khononov 2024, Ch.12 §12.4）
+
+- 均衡結合モデル（§6.1）は **すべての抽象化レベルに自己相似的（フラクタル的）に適用** できる（Khononov 2024, Ch.12「ソフトウェア設計のフラクタル幾何学的性質」§12.4「フラクタルモジュール性」, 邦訳 p.222: 「均衡結合モデルは、すべての抽象化レベルで、コンポーネントの相互作用の設計を評価するために適用できる」）。メソッド間でも、サービス間でも、システム間でも同じ XOR/AND/NOT 論理（§6.1）で結合を評価する。
+- このため §3（Strength）・§4（Distance）の段は固定ラベルではなく **評価レベルに応じた相対量** として読む（§3.3 / §4.2）。decision table（§6.5）を適用する際は `module_unit:` がどのレベルかを必ず併記する。
+- **H2 連動の注意**: 自己相似性は「結合評価の論理が全レベルで同形」という意味である。Ch.12 が観察する「相互作用数が要素数に対し super-linear（図 12.5: `n(n-1)/2`）に増える」ことを **精密なべき乗則メトリクスとして引用してはならない**（`M = S^D` 形は書籍に存在しない。§10 確認済み）。§10.3「これは正確な科学ではない」留保は Ch.12 にも及ぶ。
 
 ---
 
