@@ -162,6 +162,9 @@ swift:
         note: >
           aggregate スコアは Khononov 2024 が名指しで否定する "count-based" 系メトリクスに近い。
           概観目的 (dashboard 表示等) に限定し、指摘の severity 根拠としては引用しない (H2)。
+          BALANCE 各次元の core SIGNAL (distance-level / volatility-proxy / intrusive-hits) が
+          一つでも skipped の場合、aggregate は `indicative-true` を出さず `inconclusive (missing:...)`
+          を返す (skipped を pass と誤読させない)。
   judgment:
     # 静的ツールが未成熟、または本質的に主観/動的。AI/人手で評価し「推測」を明示。
     security:

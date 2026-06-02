@@ -68,14 +68,18 @@ declare -a ROWS=()
 ANY_RAN=0
 ANY_SKIPPED=0
 INTRUSIVE_HITS=0
+MEASURED_LIST=""          # measured 済み signal id の空白区切りリスト（bash 3.2 互換）
 
 have() { command -v "$1" >/dev/null 2>&1; }
+
+# is_measured <signal-id> — その signal が measured 済みなら 0 を返す
+is_measured() { case " $MEASURED_LIST " in *" $1 "*) return 0;; *) return 1;; esac; }
 
 # record <signal> <tool> <status:measured|skipped|error> <value> <unit> <band_label> <severity> <note>
 record() {
   local sig="$1" tool="$2" status="$3" value="$4" unit="$5" band="$6" severity="$7" note="${8:-}"
   case "$status" in
-    measured) ANY_RAN=1 ;;
+    measured) ANY_RAN=1; MEASURED_LIST="$MEASURED_LIST $sig" ;;
     skipped|error) ANY_SKIPPED=1 ;;
   esac
   ROWS+=("$(printf '{"signal":"%s","tool":"%s","status":"%s","value":"%s","unit":"%s","band":"%s","severity":"%s","module_unit":"%s","observation_window":"%s","note":"%s"}' \
@@ -248,23 +252,31 @@ run_shared_model() {
 # 試作: シグナル単位の band severity を集約して boolean 化。
 # ============================================================
 run_aggregate_balance() {
-  # 試作: intrusive_hits=0 かつ duplicates band<=1 かつ volatility band<=2 を BALANCE=TRUE とみなす
-  local BALANCE_LABEL="unknown"
-  if [ "$ANY_RAN" -eq 1 ]; then
-    if [ "$INTRUSIVE_HITS" -gt 0 ]; then
-      BALANCE_LABEL="false (intrusive override)"
-    else
-      BALANCE_LABEL="indicative-true"  # 個別ペア判定ではないことを示す名
-    fi
+  # BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY (07a §6.1)。
+  # 各次元の core SIGNAL（distance / volatility / intrusive）が measured で揃った時のみ
+  # 概観ラベルを出す。一つでも skipped なら inconclusive（skipped を pass と誤読させない）。
+  local BALANCE_LABEL STATUS NOTE missing=""
+  is_measured distance-level   || missing="$missing distance-level"
+  is_measured volatility-proxy || missing="$missing volatility-proxy"
+  is_measured intrusive-hits   || missing="$missing intrusive-hits"
+
+  if [ "$ANY_RAN" -eq 0 ]; then
+    STATUS="inconclusive"; BALANCE_LABEL="inconclusive (all signals skipped)"
+    NOTE="全 SIGNAL skipped。集計不能。skipped を pass と誤読しない (H2 / 試作値)"
+  elif [ -n "$missing" ]; then
+    STATUS="inconclusive"; BALANCE_LABEL="inconclusive (missing:${missing})"
+    NOTE="BALANCE 各次元の core SIGNAL が未計測 (missing:${missing})。集計不能。skipped を pass と誤読しない (H2 / 試作値)"
+  elif [ "$INTRUSIVE_HITS" -gt 0 ]; then
+    STATUS="measured"; BALANCE_LABEL="false (intrusive override)"
+    NOTE="概観目的のみ。verdict 根拠不可 (H2 / Khononov count-based 否定)。試作値"
   else
-    BALANCE_LABEL="inconclusive"
+    STATUS="measured"; BALANCE_LABEL="indicative-true"  # 個別ペア判定ではないことを示す名
+    NOTE="概観目的のみ。verdict 根拠不可 (H2 / Khononov count-based 否定)。試作値"
   fi
-  ROWS+=("$(printf '{"signal":"balance-pairs-ratio","tool":"aggregate","status":"%s","value":"%s","unit":"label","band":"-","severity":"-","module_unit":"%s","observation_window":"%s","note":"概観目的のみ。verdict 根拠不可 (H2 / Khononov count-based 否定)。試作値"}' \
-    "$( [ "$ANY_RAN" -eq 1 ] && echo measured || echo inconclusive )" \
-    "$BALANCE_LABEL" "$MODULE_UNIT" "$VOLATILITY_WINDOW")")
-  printf '  [%-8s] %-30s value=%-12s note=概観のみ\n' \
-    "$( [ "$ANY_RAN" -eq 1 ] && echo aggregate || echo skipped )" \
-    "balance-pairs-ratio" "$BALANCE_LABEL"
+  ROWS+=("$(printf '{"signal":"balance-pairs-ratio","tool":"aggregate","status":"%s","value":"%s","unit":"label","band":"-","severity":"-","module_unit":"%s","observation_window":"%s","note":"%s"}' \
+    "$STATUS" "$BALANCE_LABEL" "$MODULE_UNIT" "$VOLATILITY_WINDOW" "$NOTE")")
+  printf '  [%-9s] %-30s value=%-30s note=概観のみ\n' \
+    "$STATUS" "balance-pairs-ratio" "$BALANCE_LABEL"
 }
 
 echo "== 結合の深掘り (07a 補論) SIGNAL 計測 — Swift =="
