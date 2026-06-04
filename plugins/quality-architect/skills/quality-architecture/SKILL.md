@@ -59,6 +59,7 @@ description: "Design NEW or PROPOSED software/system architecture using the ISO/
 3. **特性ごとのタクティクス導出**
    - 優先した各特性について、対応する `${CLAUDE_PLUGIN_ROOT}/references/0N-*.md` を**実際に Read し**、「設計タクティクス/パターン」節から候補を選ぶ。
    - 副特性レベルまで降りる（例: 信頼性 → 障害許容性なら Circuit Breaker / Bulkhead / リトライ+バックオフ）。
+   - **モジュール／サービス境界を新規に定義する設計の場合は、`${CLAUDE_PLUGIN_ROOT}/references/07a-coupling-deep-dive.md` §11（設計時の結合検討）を Read し**、境界をまたぐ依存ごとに結合バランスを **定性的に** 評価する（§11.1 ヒューリスティクス → §11.2 チェックリスト）。設計時なので実測値は書かず、結合 3 次元（Integration Strength × Distance × Volatility）への言及は `（参考値: Khononov 2024, Ch.<n>）` ラベルで扱う（§3.5）。SIGNAL ベースの §6.5 hint table は **レビュー時専用** なので設計時には使わない（07a §11.3）。
 
 4. **トレードオフ分析（ATAM 的に）**
    - 候補アーキテクチャを 1〜複数案出し、各案を重点特性の軸で評価する。
@@ -81,11 +82,18 @@ description: "Design NEW or PROPOSED software/system architecture using the ISO/
 2. 品質特性の優先付け（重点特性と根拠、トレードオフ）
 3. アーキテクチャ提案（案ごとの構成・図）
 4. 特性別の設計タクティクス（副特性 → 採用タクティクス → 根拠リファレンス）
+4'. モジュール境界と結合バランス（07a §11）  ← 境界を新規定義する設計の場合のみ
 5. トレードオフ分析（感度/トレードオフポイント、比較表、推奨）
 6. 検証計画（各特性の測定・評価方法）
 7. Open Questions
 8. References（本文で引用したものを集約）
 ```
+
+**章 4'（モジュール境界と結合バランス）の書き方**（境界を新規定義する設計の場合のみ出力）:
+- 境界をまたぐ依存ごとに、評価レベル（`module_unit:`）・目標 Integration Strength 段（共有要素併記）・Distance 段・Volatility 見積りを表で示し、`BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY`（07a §6.1 canonical）で評価する。
+- 数値・段は `（参考値: Khononov 2024, Ch.<n>）` ラベル付き（実測判定にしない・§3.5）。
+- 末尾に 07a §11.2 の設計時結合チェックリストを貼り、各項目の充足を示す。
+- 詳細手順と禁則は `07a §11`（§11.1 ヒューリスティクス / §11.2 チェックリスト / §11.3 §6.5 との混同禁止）に従う。
 
 設計ドキュメントを HTML/ADR として残したい場合は、`tech-docs` プラグインの `create-adr` / `create-spec` の利用を案内してもよい。
 
@@ -97,7 +105,7 @@ description: "Design NEW or PROPOSED software/system architecture using the ISO/
 - ブログ・QA サイト・出典不明の主張を根拠にしない。
 - 引用形式は本文中で「（McCabe 1976）」「（ISO/IEC 25010）」のように示し、末尾 References に完全な書誌を集約する。
 - リファレンスに無い主張を新たにする場合は、推測である旨を明示する（断定しない）。
-- **モジュール境界決定でモジュール内結合特性（Khononov Integration Strength × Distance × Volatility）を引用する場合は、補論 `references/07a-coupling-deep-dive.md` を `（参考値: Khononov 2024, Ch.<n>）` 形式で引く**。`07a` §10 References と §9 H7 規律に従う（学術・公式のみ、coupling.dev / connascence.io は定義参照のみ可）。
+- **モジュール境界決定でモジュール内結合特性（Khononov Integration Strength × Distance × Volatility）を引用する場合は、補論 `references/07a-coupling-deep-dive.md` を `（参考値: Khononov 2024, Ch.<n>）` 形式で引く**。設計時の検討手順・チェックリストは **`07a §11`（設計時の結合検討）** が入口（§1 step 3 / §2 章 4'）。`07a` §10 References と §9 H7 規律に従う（学術・公式のみ、coupling.dev / connascence.io は定義参照のみ可）。
 
 ---
 
