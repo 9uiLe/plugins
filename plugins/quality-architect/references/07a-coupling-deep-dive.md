@@ -428,3 +428,60 @@ Khononov 2024 は古典理論を Ch.5 と Ch.6 で取り込み直しており、
 
 > **書籍原典確認は完了**: Issue 追跡の残存リスク 4 項目（Pain 式・精緻な数学モデル・`M = S^D`・発売日）は
 > いずれも邦訳（島田訳, 2025-10-21 初版第 1 刷）で確定。本ファイルに未確認 caveat は残っていない。
+
+---
+
+## §11. 設計時の結合検討（コードが無い段階）
+
+> **位置づけ**: 本節は §6.5 hint table（**静的 SIGNAL 前提＝レビュー時専用**）の **設計時版＝質的判断版** である。設計段階（コード未生成・PR 無し）でモジュール／サービス境界を決めるとき、`quality-architecture` スキルが §1 step 3・§2 から本節を入口として参照する。**`quality-review`（既存コード）側は本節ではなく §6.5 と `quality-review` スキルの §2.1 merge contract を使う**。
+>
+> ⚠️ **設計時は実測値を書かない**（00-overview §5.1 ルール 4 / quality-architecture §3.5）。本節で結合 3 次元に言及する数値・段は **すべて `（参考値: Khononov 2024, Ch.<n>）` ラベル付き** で扱い、対象コードへの実測判定として書いてはならない。実測が必要になった瞬間、それは review 領域であり `coupling-gate-swift.sh` / §6.5 / §2.1 に移譲する。
+>
+> 🚫 本節は **新しい数値しきい値を導入しない**。Khononov 2024 は結合 3 次元に数値カットオフを与えない（§10 確認済み: 図 7.14 / 8.2 / 表 9.1 はいずれも順序尺度）。本節も段の「確定」ではなく境界設計の「検討手順」を提供するに留まる。
+
+### §11.1 設計時ヒューリスティクス（定性・SIGNAL 非依存）
+
+設計が **モジュール／サービス境界を新規に定義する** とき、境界をまたぐ依存（コンポーネント対）ごとに次を **定性的に** 問い、§6.1 canonical の `BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY` で評価する。SIGNAL（churn / jscpd / semgrep）はまだ無いため、各次元は計測でなく **設計意図からの見積り** であり、`推測` 相当として扱う。
+
+1. **評価レベルを宣言する（H4 / §3.3 / §4.2）**: どの抽象化レベルで結合を見るか（`module_unit:` = メソッド / オブジェクト / 名前空間 / (マイクロ)サービス / システム）を先に固定する。Strength 段も Distance 段も評価レベルに **相対的** なので、レベル未宣言の議論は段を確定できない。
+
+2. **Integration Strength を1段選ぶ（§3 / H1 / H3）**: 境界をまたいで共有する「知識」が何か（私的実装 / 業務ロジック / ドメインモデル型 / 明示コントラクト）から、Intrusive → Functional → Model → Contract の **どの段に設計するか** を選ぶ。**共有要素（型名・コントラクトパス・シンボル）を必ず併記**する（H3）。設計時なので「現状」ではなく「目標とする段」を書く。
+
+3. **Distance を見積る（§4 / H4）**: その境界が Methods / Objects / Namespaces / (Micro)Services / Systems のどこに当たるか。Distance が遠いほど変更コストは比例して増し（§4.2: 比例）、ライフサイクル結合は反比例で弱まる（§4.2）。
+
+4. **Volatility を見積る（§5）**: 結合先が Core / Supporting / Generic のどれで、将来の変更圧力が高いか低いか。**essential（ドメイン由来・不可避）と accidental（設計由来・除去可能）を区別**し、設計判断で減らすのは accidental の方だけ（§5.2）。観測ウィンドウ付きの実測（`observed_change_frequency`）はまだ無いので、ここは設計仮説。
+
+5. **BALANCE を XOR/AND/NOT で評価する（§6.1 / H10）**:
+   - **強 Strength × 遠 Distance の両立 = 大域的複雑性**（`STRENGTH AND DISTANCE`）。これを設計で作り込もうとしていないか最優先で疑う。
+   - 強 Strength なら Distance を **縮める**（同一境界に寄せる）、Distance を遠くするなら Strength を **下げる**（Contract 化）＝ XOR を成立させる（§6.3 Rebalancing）。
+   - 結合先が低 Volatility（安定）なら、XOR が崩れても `OR NOT VOLATILITY` で許容できる（凍結された Generic サブドメインへの依存など）。
+   - 「pain / balance / 結合の苦痛」という語を使うなら、同段落に canonical `BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY` を併記する（H10）。`Pain = S × D × V` を精密メトリクスとして書かない（H2: 2 値スケール前提＋「正確な科学ではない」§10.3 の2留保が必要）。
+
+6. **「decouple everything」を疑う（§6.4）**: 全境界を最大 Distance＋Contract 化すると distributed monolith（Distance だけ伸びて Strength が下がらない反パターン）になる。強く結合した2部品は **あえて同一境界に寄せる** 設計も balanced であり得る。
+
+### §11.2 設計時 結合チェックリスト（成果物テンプレ）
+
+`quality-architecture` の出力（§2 の「モジュール境界と結合バランス」節）に貼る、境界設計レビュー用チェックリスト。各項目は **grep で機械検証できる** ことを意図し、H 規律に紐づく。設計時なので数値は `（参考値）` ラベル必須。
+
+- [ ] **評価レベルを宣言したか**: 各境界に `module_unit:`（評価する抽象化レベル）を明示したか（H4 / §3.3）。
+- [ ] **Strength 段を1つ選び、共有要素を併記したか**: 境界ごとに目標 Integration Strength 段（Intrusive/Functional/Model/Contract）を選び、`(type: ...) / (contract: ...) / (symbol: ...)` を直近に併記したか（H3）。未併記なら `推測` ラベルに格下げ。
+- [ ] **Distance を見積ったか**: 境界の Distance 段（Methods〜Systems）を見積り、変更コスト比例／ライフサイクル結合反比例の含意（§4.2）を踏まえたか。
+- [ ] **Volatility を essential/accidental で分けたか**: 結合先の変更圧力を見積り、設計で減らす対象を accidental に限定したか（§5.2）。
+- [ ] **三重苦を避けたか**: 強 Strength × 遠 Distance × 高 Volatility が同時に成立する境界を作っていないか（§6.1 大域的複雑性 + 高 Volatility）。該当すれば §6.3 のどの軸で rebalance するか明記。
+- [ ] **XOR を成立させたか**: 各境界で `STRENGTH XOR DISTANCE`（強なら近く / 遠いなら弱く）か、または低 Volatility による緩和（`OR NOT VOLATILITY`）を説明できるか（§6.1）。
+- [ ] **decouple everything になっていないか**: 過剰な疎結合で distributed monolith を招いていないか（§6.4）。
+- [ ] **canonical 表現を併記したか**: 「pain / balance」表現に canonical `BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY` を併記したか（H10）。`Pain = S × D × V` 単独引用や精密メトリクス化をしていないか（H2）。
+- [ ] **既存しきい値を上書きしていないか**: 本節の結合論で `07-maintainability` / `08-flexibility` の数値しきい値・PASS/FAIL を上書きしていないか（H9: 設計時は `参考値` 引用のみ、判定化しない）。
+- [ ] **citation 規律を守ったか**: Khononov 概念に章番号を併記（H1）、根拠引用は §10 References の学術・公式のみ（coupling.dev/connascence.io は定義参照のみ・推奨根拠不可、H7）。
+
+### §11.3 §6.5 hint table との関係（混同禁止）
+
+| 観点 | §6.5 hint table | §11 設計時ヒューリスティクス |
+| --- | --- | --- |
+| 適用フェーズ | 既存コードのレビュー時 | コードが無い設計時 |
+| 入力 | 静的 SIGNAL（`coupling-gate-result.json`: intrusive_hits / duplicates / contract_layer_present 等） | 設計意図からの定性見積り（計測なし） |
+| 出力の性格 | SIGNAL から段の **候補を絞る**（experimental・要レビュア確定） | 境界設計の **検討手順**（段は目標として選ぶ） |
+| 数値の扱い | proxy 数値を `推測` ラベルで採用（H5: `--since=<window>` 併記） | 実測値を書かない（`参考値` ラベルのみ） |
+| 使うスキル | `quality-review`（同スキル §2.1 merge contract 経由） | `quality-architecture`（同スキル §1 step 3 / §2 章 4'） |
+
+両者は **同じ §3〜§6 の語彙・§6.1 canonical を共有**するが、**入力（SIGNAL か設計意図か）と数値規律（実測 `推測` か `参考値` か）が異なる**。設計時に SIGNAL 数値を捏造して §6.5 を使ってはならず、レビュー時に §11 の定性見積りで実測を代替してはならない。

@@ -18,7 +18,7 @@
 
 **定義:** システムやプログラムが独立したコンポーネントで構成されており、あるコンポーネントへの変更が他のコンポーネントへ波及しにくい度合い（出典: ISO/IEC 25010:2023）。
 
-> 結合の **3 次元モデル (Integration Strength × Distance × Volatility)** と Connascence による深掘り語彙は補論 [`07a-coupling-deep-dive.md`](./07a-coupling-deep-dive.md) を参照。本ファイルのしきい値・PASS/FAIL は補論の知見によって **上書きされない**（補論 §9 H9: 重大度は下方修正のみ可）。
+> 結合の **3 次元モデル (Integration Strength × Distance × Volatility)** と Connascence による深掘り語彙は補論 [`07a-coupling-deep-dive.md`](./07a-coupling-deep-dive.md) を参照。**設計時（コードが無い段階）にモジュール境界の結合を検討する場合は補論 §11**、レビュー時の SIGNAL ベース運用は補論 §6.5（および `quality-review` スキルの merge contract）を参照。本ファイルのしきい値・PASS/FAIL は補論の知見によって **上書きされない**（補論 §9 H9: 重大度は下方修正のみ可）。
 
 **調査観点:**
 - コンポーネント間の依存関係グラフが非循環有向グラフ (DAG) を形成しているか。
