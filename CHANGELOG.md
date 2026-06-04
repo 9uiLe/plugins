@@ -5,6 +5,8 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-04
+
 ### Added
 
 - **quality-architect**: 設計時（コードが無い段階）にモジュール境界の結合を検討するための補論 §11（設計時の結合検討）を `references/07a-coupling-deep-dive.md` に新設。定性ヒューリスティクス（§11.1）・設計時結合チェックリスト（§11.2）・§6.5 hint table（レビュー時専用）との混同禁止表（§11.3）を提供。
@@ -23,5 +25,6 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/9uiLe/plugins/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/9uiLe/plugins/releases/tag/v0.1.0
