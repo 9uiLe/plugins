@@ -12,21 +12,21 @@
 <link rel="stylesheet" href="../tokens.css" />
 <link rel="stylesheet" href="../components.css" />
 
-<!-- Syntax highlighting -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" integrity="sha512-vswe+cgvic/XBoF1OcM/TeJ2FW0OofqAVdCZiEYkd6dwGXthvkSFWOoGGJgS2CW70VK5dQM5Oh+7ne47s74VTg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js" integrity="sha512-uOw7XYETzS/DPmmirpP5UCMihSDNMeyTS965J0/456OSPfxn9xEtHHjj5Q/5WefVdqyMfN/afmQnNpZd/tpkcA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-jsx.min.js" integrity="sha512-m3JYEI6gx5fh9jF10FjGoMzVKcV2N6nchcDcqPCdI1L3R2WQV7br2XVNR8iTLb2daOMRl3zldbcfT40xU2ntVw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-tsx.min.js" integrity="sha512-xjGCJ9YxyZBfYTCHsEjkOZMoOse1W3cKMXv1szXrxs68myuXt0YTj3/xKPar6iDMlXzTUSEqwUxprWcyp+plaw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js" integrity="sha512-whYhDwtTmlC/NpZlCr6PSsAaLOrfjVg/iXAnC4H/dtiHawpShhT2SlIMbpIhT/IL/NrpdMm+Hq2C13+VKpHTYw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js" integrity="sha512-QXFMVAusM85vUYDaNgcYeU3rzSlc+bTV4JvkfJhjxSHlQEo+ig53BtnGkvFTiNJh8D+wv6uWAQ2vJaVmxe8d3w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js" integrity="sha512-6O/PZimM3TD1NN3yrazePA4AbZrPcwt1QCGJrVY7WoHDJROZFc9TlBvIKMe+QfqgcslW4lQeBzNJEJvIMC8WhA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-diff.min.js" integrity="sha512-tBR4SAva+2bw36ToxaFeOEvgqxWHON25E9xp+kEBfw175sS5OusQEH8GrigKgTdHUXcKsK1yiyfo7fctBYl+rA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js" integrity="sha512-w200Nz1i9KgDNi+IpPMgpZBVRIvfVK/V5vskyHjkz7XJkVnRJcb1uNmpiHhDv0/Ln+GG2VqScKKz/1izBfg64Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js" integrity="sha512-R/HpMlNfZZV6DxMhNz1dYJbBaPBVSOCqX8imo3uGUurhPDHRcXrBxkEVOjawwUwTMfOqT6t1eLYYQXIjFWCX/A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- Syntax highlighting (vendor 同梱: ADR-0002) -->
+<link rel="stylesheet" href="../vendor/prism-tomorrow.min.css" />
+<script src="../vendor/prism.min.js"></script>
+<script src="../vendor/prism-components/prism-typescript.min.js"></script>
+<script src="../vendor/prism-components/prism-jsx.min.js"></script>
+<script src="../vendor/prism-components/prism-tsx.min.js"></script>
+<script src="../vendor/prism-components/prism-bash.min.js"></script>
+<script src="../vendor/prism-components/prism-json.min.js"></script>
+<script src="../vendor/prism-components/prism-yaml.min.js"></script>
+<script src="../vendor/prism-components/prism-diff.min.js"></script>
+<script src="../vendor/prism-components/prism-go.min.js"></script>
+<script src="../vendor/prism-components/prism-rust.min.js"></script>
 
 <!-- Mermaid for flow diagrams -->
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js" integrity="sha384-WmdflGW9aGfoBdHc4rRyWzYuAjEmDwMdGdiPNacbwfGKxBW/SO6guzuQ76qjnSlr" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="../vendor/mermaid.min.js"></script>
 
 <style>
   /* Page-specific styles for the showcase only */
@@ -747,46 +747,17 @@ erDiagram
     <section class="section" id="usage-section">
       <p class="section-eyebrow">08 / How to use</p>
       <h2 id="usage">使い方</h2>
-      <p>新しいドキュメント / ADR を作成するときの最小テンプレートです。詳細は <code class="inline">USAGE.md</code> を参照。</p>
+      <p>新しいドキュメント / ADR を作成するときは、雛形 (skeleton) を起点にする。雛形の本体は単一の正典ファイルとして管理しており、本ページではコピーを保持しない (二重メンテと乖離を避けるため)。</p>
 
-      <figure class="code-block">
-        <div class="code-block__header">
-          <span class="code-block__filename">my-doc.html</span>
-          <span class="code-block__lang">html</span>
-          <span class="code-block__spacer"></span>
-        </div>
-<pre><code class="language-html">&lt;!DOCTYPE html&gt;
-&lt;html lang="ja"&gt;
-&lt;head&gt;
-  &lt;meta charset="UTF-8" /&gt;
-  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;
-  &lt;title&gt;ADR-0001 · 認証方式の選定&lt;/title&gt;
-  &lt;link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" /&gt;
-  &lt;link rel="stylesheet" href="system/tokens.css" /&gt;
-  &lt;link rel="stylesheet" href="system/components.css" /&gt;
-  &lt;link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" /&gt;
-&lt;/head&gt;
-&lt;body&gt;
-  &lt;div class="doc-shell"&gt;
-    &lt;aside class="doc-toc" id="toc"&gt;&lt;p class="doc-toc-label"&gt;On this page&lt;/p&gt;&lt;/aside&gt;
-    &lt;main class="doc-main prose" id="content"&gt;
-      &lt;h1&gt;ADR-0001 · 認証方式の選定&lt;/h1&gt;
-      &lt;!-- ... 本文 ... --&gt;
-    &lt;/main&gt;
-  &lt;/div&gt;
+      <ul>
+        <li>ADR 用: <code class="inline">../templates/skeleton-adr.html</code></li>
+        <li>仕様書用: <code class="inline">../templates/skeleton-spec.html</code></li>
+        <li>汎用ドキュメント用: <code class="inline">../templates/skeleton-doc.html</code></li>
+      </ul>
 
-  &lt;script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"&gt;&lt;/script&gt;
-  &lt;script src="https://cdn.jsdelivr.net/npm/<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="92fff7e0fff3fbf6d2a3a2bcabbca3">[email&#160;protected]</a>/dist/mermaid.min.js"&gt;&lt;/script&gt;
-  &lt;script src="system/components.js"&gt;&lt;/script&gt;
-  &lt;script&gt;
-    DocsADR.initAll({
-      toc: { container: '#toc', content: '#content', selector: 'h2, h3' }
-    });
-  &lt;/script&gt;
-&lt;/body&gt;
-&lt;/html&gt;</code></pre>
-      </figure>
+      <p>各雛形は <code class="inline">system/tokens.css</code> / <code class="inline">system/components.css</code> / <code class="inline">system/components.js</code> と <code class="inline">system/vendor/</code> 配下の Prism / Mermaid を相対参照する。CDN は使用しない (ADR-0002 を参照)。</p>
+
+      <p>クラス・コンポーネントの完全リファレンスは <code class="inline">../USAGE.md</code> を参照。</p>
 
       <div class="callout callout--tip">
         <span class="callout-icon">★</span>

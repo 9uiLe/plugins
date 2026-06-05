@@ -1,0 +1,16 @@
+# Vendored third-party assets (Prism / Mermaid) — see ADR-0002.
+# `binary` suppresses textual diff so review attention is drawn to any change;
+# `linguist-vendored` and `linguist-generated` exclude these files from
+# GitHub language statistics and from default PR diff rendering.
+
+plugins/tech-docs/shared-assets/vendor/**       binary linguist-vendored linguist-generated
+docs/**/system/vendor/**                        binary linguist-vendored linguist-generated
+
+# Generated design-system copies under any docs output directory.
+docs/**/system/components/**                    linguist-generated
+docs/**/system/components.css                   linguist-generated
+docs/**/system/components.js                    linguist-generated
+docs/**/system/tokens.css                       linguist-generated
+
+# Checksums are text and must remain diff-able.
+plugins/tech-docs/shared-assets/vendor/SHA256SUMS  text

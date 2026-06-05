@@ -31,15 +31,15 @@
   <link rel="stylesheet" href="system/tokens.css" />
   <link rel="stylesheet" href="system/components.css" />
 
-  <!-- コードハイライト (SRI 必須 — 第三者 CDN は integrity + crossorigin を付ける) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" integrity="sha512-vswe+cgvic/XBoF1OcM/TeJ2FW0OofqAVdCZiEYkd6dwGXthvkSFWOoGGJgS2CW70VK5dQM5Oh+7ne47s74VTg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js" integrity="sha512-uOw7XYETzS/DPmmirpP5UCMihSDNMeyTS965J0/456OSPfxn9xEtHHjj5Q/5WefVdqyMfN/afmQnNpZd/tpkcA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js" integrity="sha512-whYhDwtTmlC/NpZlCr6PSsAaLOrfjVg/iXAnC4H/dtiHawpShhT2SlIMbpIhT/IL/NrpdMm+Hq2C13+VKpHTYw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-diff.min.js" integrity="sha512-tBR4SAva+2bw36ToxaFeOEvgqxWHON25E9xp+kEBfw175sS5OusQEH8GrigKgTdHUXcKsK1yiyfo7fctBYl+rA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <!-- コードハイライト (vendor 同梱: ADR-0002 / CDN は使わない) -->
+  <link rel="stylesheet" href="system/vendor/prism-tomorrow.min.css" />
+  <script src="system/vendor/prism.min.js"></script>
+  <script src="system/vendor/prism-components/prism-typescript.min.js"></script>
+  <script src="system/vendor/prism-components/prism-bash.min.js"></script>
+  <script src="system/vendor/prism-components/prism-diff.min.js"></script>
 
-  <!-- フロー図 (使う場合のみ) -->
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js" integrity="sha384-WmdflGW9aGfoBdHc4rRyWzYuAjEmDwMdGdiPNacbwfGKxBW/SO6guzuQ76qjnSlr" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <!-- フロー図 (vendor 同梱済み。図を使わない場合はこの行ごと削除可) -->
+  <script src="system/vendor/mermaid.min.js"></script>
 </head>
 <body>
   <div class="doc-shell">
@@ -476,5 +476,15 @@ DocsADR.initPrism();
 └── system/
     ├── tokens.css      ← デザイントークン (色・フォント・スペーシング)
     ├── components.css  ← 全コンポーネントのスタイル
-    └── components.js   ← TOC / コピー / チャート / Mermaid 初期化
+    ├── components.js   ← TOC / コピー / チャート / Mermaid 初期化
+    └── vendor/         ← Prism / Mermaid を同梱 (オフラインで動作)
+        ├── prism.min.js
+        ├── prism-tomorrow.min.css
+        ├── prism-components/
+        │   └── prism-*.min.js
+        └── mermaid.min.js
 ```
+
+> **Note**: vendor 配下は CDN ではなく**プラグインに同梱されたアセット**を参照する。
+> オフライン環境・IDE プレビュー・CSP 厳格環境でも動作する。
+> 詳細な決定背景は ADR-0002 (`docs/adr/0002-vendor-prism-mermaid.html`) を参照。

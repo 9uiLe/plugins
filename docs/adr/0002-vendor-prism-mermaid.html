@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ADR-0002 · 生成 HTML の Prism / Mermaid を CDN から vendor 同梱へ移行</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<!-- Design system -->
+<link rel="stylesheet" href="system/tokens.css" />
+<link rel="stylesheet" href="system/components.css" />
+
+<!-- Syntax highlighting (vendor 同梱) -->
+<link rel="stylesheet" href="system/vendor/prism-tomorrow.min.css" />
+<script src="system/vendor/prism.min.js"></script>
+<script src="system/vendor/prism-components/prism-typescript.min.js"></script>
+<script src="system/vendor/prism-components/prism-bash.min.js"></script>
+<script src="system/vendor/prism-components/prism-diff.min.js"></script>
+
+<style>
+  .doc-header {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--sp-10) var(--sp-8) var(--sp-4);
+  }
+  .doc-header__breadcrumb {
+    display: flex;
+    gap: var(--sp-2);
+    align-items: center;
+    font-size: var(--fs-xs);
+    color: var(--color-text-muted);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    font-weight: var(--fw-medium);
+    margin-bottom: var(--sp-3);
+  }
+  .doc-header__breadcrumb a { color: inherit; }
+  .doc-header__breadcrumb span { opacity: 0.4; }
+  .doc-header h1 {
+    font-size: var(--fs-3xl);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-tight);
+    line-height: 1.15;
+    margin: 0 0 var(--sp-3);
+  }
+  .doc-header h1 .num {
+    font-family: var(--font-mono);
+    color: var(--color-text-faint);
+    font-weight: var(--fw-medium);
+    margin-right: var(--sp-3);
+  }
+  .doc-header .lead { max-width: none; }
+</style>
+</head>
+<body>
+
+<header class="doc-header">
+  <div class="doc-header__breadcrumb">
+    <a href="../">Engineering Docs</a>
+    <span>/</span>
+    <a href="./">ADRs</a>
+    <span>/</span>
+    <span style="opacity:1;color:var(--color-text-secondary)">0002</span>
+  </div>
+  <h1><span class="num">ADR-0002</span>生成 HTML の Prism / Mermaid を CDN から vendor 同梱へ移行</h1>
+  <p class="lead" style="max-width: none;">tech-docs プラグインが生成する 1 枚 HTML から外部 CDN 参照を排除し、Prism / Mermaid をプラグインに同梱する。オフライン環境・IDE プレビュー・CSP 厳格環境での再現性を、CDN 依存というアンチパターンと引き換えに獲得する。</p>
+</header>
+
+<div class="doc-shell">
+  <aside class="doc-toc" id="toc">
+    <p class="doc-toc-label">On this page</p>
+  </aside>
+
+  <main class="doc-main prose" id="content">
+
+    <!-- Front-matter -->
+    <div class="adr-frontmatter">
+      <div class="adr-frontmatter__field">
+        <span class="adr-frontmatter__key">ADR</span>
+        <span class="adr-frontmatter__value mono">0002</span>
+      </div>
+      <div class="adr-frontmatter__field">
+        <span class="adr-frontmatter__key">Status</span>
+        <span class="adr-frontmatter__value"><span class="badge status-accepted">Accepted</span></span>
+      </div>
+      <div class="adr-frontmatter__field">
+        <span class="adr-frontmatter__key">Date</span>
+        <span class="adr-frontmatter__value mono">2026-06-05</span>
+      </div>
+      <div class="adr-frontmatter__field">
+        <span class="adr-frontmatter__key">Deciders</span>
+        <span class="adr-frontmatter__value">@9uiLe</span>
+      </div>
+      <div class="adr-frontmatter__field adr-frontmatter__field--full">
+        <span class="adr-frontmatter__key">Supersedes</span>
+        <span class="adr-frontmatter__value" style="max-width: none;">CDN + SRI 構成 (<span class="mono">fix/sri-on-cdn-templates</span> の暗黙の決定)</span>
+      </div>
+      <div class="adr-frontmatter__field adr-frontmatter__field--full">
+        <span class="adr-frontmatter__key">Tags</span>
+        <span class="adr-frontmatter__value">
+          <span class="badge badge--no-dot">tech-docs</span>
+          <span class="badge badge--no-dot">supply-chain</span>
+          <span class="badge badge--no-dot">offline</span>
+          <span class="badge badge--no-dot">iso-25010-flexibility</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Context -->
+    <h2 id="context">Context</h2>
+    <p>
+      <code class="inline">tech-docs</code> プラグインは ADR / 仕様書 / 汎用ドキュメントを <strong>1 枚の自己完結型 HTML</strong> として生成する。装飾には
+      <code class="inline">Prism</code> (シンタックスハイライト) と <code class="inline">Mermaid</code> (フロー図) を利用しており、これまでは
+      <code class="inline">cdnjs.cloudflare.com</code> と <code class="inline">cdn.jsdelivr.net</code> から CDN 経由で読み込んでいた。
+    </p>
+    <p>
+      直前のブランチ <code class="inline">fix/sri-on-cdn-templates</code> では Subresource Integrity (SRI) ハッシュを追加することで、
+      CDN 経由スクリプトの改ざん検知を補強した。しかし議論の過程で次の前提が明らかになった:
+    </p>
+    <ul>
+      <li>本プラグインの利用者は <strong>公開 Web サイトに HTML をデプロイすることを主目的としていない</strong>。Git リポジトリ内 / ローカル <code class="inline">file://</code> / IDE プレビュー / 社内 wiki への取り込み等が主な閲覧手段。</li>
+      <li>本リポジトリは <strong>public</strong> であり、見ず知らずの第三者が <code class="inline">/plugin install</code> して使う。Plugin 作者は「install したら何もせず動く default」を提供する責務を負う。</li>
+      <li>ADR は 5〜10 年参照される長期成果物であり、URL の永続性に対する要求が一般の Web ページより高い。</li>
+    </ul>
+    <p>
+      これらの前提下では、CDN への依存は次のシナリオで装飾が機能しなくなる:
+    </p>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>閲覧シナリオ</th>
+            <th class="center">CDN 構成</th>
+            <th>備考</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>オフライン / エアギャップ環境</td>
+            <td class="center"><span class="cmp-mark cmp-mark--no"></span></td>
+            <td>外部到達不可能</td>
+          </tr>
+          <tr>
+            <td>VS Code / Cursor の HTML プレビュー</td>
+            <td class="center"><span class="cmp-mark cmp-mark--no"></span></td>
+            <td>Workspace Trust / CSP により外部 script をブロック</td>
+          </tr>
+          <tr>
+            <td>社内 Wiki / Confluence への取り込み</td>
+            <td class="center"><span class="cmp-mark cmp-mark--no"></span></td>
+            <td>サンドボックスが <code class="inline">&lt;script&gt;</code> を除去</td>
+          </tr>
+          <tr>
+            <td>5 年後の同じ HTML 再オープン</td>
+            <td class="center"><span class="cmp-mark cmp-mark--mid"></span></td>
+            <td>CDN URL の長期可用性は保証されない</td>
+          </tr>
+          <tr>
+            <td>公開 Web デプロイ (Vercel / GitHub Pages)</td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+            <td>動作する (が主用途ではない)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Decision Drivers -->
+    <h2 id="drivers">Decision Drivers</h2>
+    <ul>
+      <li><strong>柔軟性 / 設置性 (Installability)</strong>: 第三者が install した瞬間、追加作業なしに装飾を含めて動作すること (ISO/IEC 25010:2023 §柔軟性)</li>
+      <li><strong>柔軟性 / 適応性 (Adaptability)</strong>: オフライン・ローカル・IDE preview・CSP 厳格環境のいずれでも崩れないこと</li>
+      <li><strong>セキュリティ / インテグリティ</strong>: 配布物の真正性が verify できること (SRI または同梱物の出所明示)</li>
+      <li><strong>保守性</strong>: 上流の重大 CVE に追従できる更新フローが存在すること</li>
+      <li><strong>サプライチェーンの透明性</strong>: 何のバージョンが入っているかをリポジトリ単体で検証可能なこと</li>
+    </ul>
+
+    <!-- Considered Options -->
+    <h2 id="options">Considered Options</h2>
+
+    <h3 id="option-a">Option A — CDN + SRI ハッシュ (従来構成)</h3>
+    <p>
+      cdnjs / jsdelivr から Prism と Mermaid をロードし、<code class="inline">integrity</code> 属性で改ざんを検知する。プラグイン本体の配布サイズはゼロ。
+    </p>
+    <p>
+      Driver との適合: ❌ 設置性 (オフラインで装飾喪失) / ❌ 適応性 (CSP・IDE preview で動かない) / ◯ インテグリティ (SRI) / ◯ 保守性 (差し替え簡単)
+    </p>
+
+    <h3 id="option-b">Option B — vendor 同梱 (本案)</h3>
+    <p>
+      Prism コア + 必要言語コンポーネント + Prism テーマ + Mermaid を <code class="inline">shared-assets/vendor/</code> 配下に commit し、
+      生成時に <code class="inline">system/vendor/</code> へコピーする。HTML からの参照はすべて相対パス。
+    </p>
+    <p>
+      Driver との適合: ◯ 設置性 (どこでも動く) / ◯ 適応性 (CSP も OK) / ◯ インテグリティ (Git commit 自体が provenance、初回 commit 時に上流公式 SHA-512 と照合済み) / △ 保守性 (CVE 追従は手動だがバージョン pin の transparency と引き換え)
+    </p>
+
+    <h3 id="option-c">Option C — ハイブリッド (CDN 優先 + vendor フォールバック)</h3>
+    <p>
+      <code class="inline">onerror</code> ハンドラで CDN 取得失敗を検出し、ローカルへ切り替える。両方の利点を取りに行く構成。
+    </p>
+    <p>
+      Driver との適合: △ コード複雑度が増し、HTML が膨らむ。両系の検証コスト 2 倍。CSP 環境ではどのみち vendor のみで動くため、default を B にすればハイブリッドの存在意義が薄い。
+    </p>
+
+    <!-- Comparison table -->
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>判断基準</th>
+            <th class="center">A. CDN + SRI</th>
+            <th class="center">B. vendor 同梱</th>
+            <th class="center">C. ハイブリッド</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>オフライン / IDE preview / CSP 互換</td>
+            <td class="center"><span class="cmp-mark cmp-mark--no"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+          </tr>
+          <tr>
+            <td>長期保存性 (5 年+)</td>
+            <td class="center"><span class="cmp-mark cmp-mark--mid"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+          </tr>
+          <tr>
+            <td>プラグイン配布サイズ</td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--mid"></span><br /><span class="muted" style="font-size:var(--fs-xs)">+3.3 MB</span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--mid"></span></td>
+          </tr>
+          <tr>
+            <td>真正性 (provenance)</td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span><br /><span class="muted" style="font-size:var(--fs-xs)">SRI</span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span><br /><span class="muted" style="font-size:var(--fs-xs)">Git commit</span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+          </tr>
+          <tr>
+            <td>CVE 追従の容易さ</td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--mid"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--mid"></span></td>
+          </tr>
+          <tr>
+            <td>実装複雑度</td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--no"></span></td>
+          </tr>
+          <tr class="is-recommended">
+            <td><strong>採用</strong></td>
+            <td class="center"><span class="cmp-mark cmp-mark--no"></span></td>
+            <td class="center"><strong>✓</strong></td>
+            <td class="center"><span class="cmp-mark cmp-mark--no"></span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Decision -->
+    <h2 id="decision">Decision</h2>
+    <div class="callout callout--success">
+      <span class="callout-icon">✓</span>
+      <div class="callout-body">
+        <p class="callout-title">Option B — vendor 同梱を採用</p>
+        <p>
+          <code class="inline">shared-assets/vendor/</code> に Prism (コア + 言語コンポーネント + テーマ) と Mermaid を commit する。
+          すべての skeleton / sample / 出力 HTML は <code class="inline">system/vendor/...</code> の相対パスを参照し、外部 CDN への依存を排除する。
+          ISO/IEC 25010:2023 における<strong>設置性 (Installability)</strong> および<strong>適応性 (Adaptability)</strong> を重視した判断であり、
+          Twelve-Factor App Factor II 「Explicitly declare and isolate dependencies」(Wiggins, 2012) と整合する。
+        </p>
+      </div>
+    </div>
+
+    <h3 id="versions-pinned">採用バージョン</h3>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>パッケージ</th>
+            <th>バージョン</th>
+            <th>出所</th>
+            <th>SHA-512 (verify 済み)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code class="inline">prism.min.js</code></td>
+            <td class="mono">1.29.0</td>
+            <td><code class="inline">cdnjs.cloudflare.com/ajax/libs/prism</code></td>
+            <td class="mono" style="font-size:var(--fs-xs)">7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==</td>
+          </tr>
+          <tr>
+            <td><code class="inline">prism-tomorrow.min.css</code></td>
+            <td class="mono">1.29.0</td>
+            <td><code class="inline">cdnjs.cloudflare.com/ajax/libs/prism</code></td>
+            <td class="mono" style="font-size:var(--fs-xs)">vswe+cgvic/XBoF1OcM/TeJ2FW0OofqAVdCZiEYkd6dwGXthvkSFWOoGGJgS2CW70VK5dQM5Oh+7ne47s74VTg==</td>
+          </tr>
+          <tr>
+            <td><code class="inline">mermaid.min.js</code></td>
+            <td class="mono">10.9.1</td>
+            <td><code class="inline">cdn.jsdelivr.net/npm/mermaid</code></td>
+            <td class="mono" style="font-size:var(--fs-xs)">SHA-384: WmdflGW9aGfoBdHc4rRyWzYuAjEmDwMdGdiPNacbwfGKxBW/SO6guzuQ76qjnSlr</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" style="font-size:var(--fs-sm)">
+      ハッシュは vendoring 時点で上流 (cdnjs / jsdelivr) が公開していた SRI ハッシュと完全一致を確認済み。
+      これにより vendor 配下のファイルが公式アーティファクトであることを transparency に担保する。
+    </p>
+
+    <!-- Consequences -->
+    <h2 id="consequences">Consequences</h2>
+
+    <h3 id="consequences-positive">Positive</h3>
+    <ul>
+      <li>オフライン / エアギャップ / 機内・出張中の閲覧で装飾を含めて動作する</li>
+      <li>VS Code・Cursor の HTML preview で図とコード装飾が機能する</li>
+      <li>CSP <code class="inline">script-src 'self'</code> 環境 (社内ポリシーの一般形) で動作する</li>
+      <li>5〜10 年後の同じ HTML を開いても装飾が崩れない (URL 永続性に依存しない)</li>
+      <li>vendor 配下が Git の履歴に乗ることでサプライチェーンが <em>透明 (open design)</em> になる (Saltzer &amp; Schroeder 1975)</li>
+      <li><code class="inline">integrity</code> / <code class="inline">crossorigin</code> 属性のメンテナンスから解放される</li>
+    </ul>
+
+    <h3 id="consequences-negative">Negative</h3>
+    <ul>
+      <li>プラグイン配布サイズが <strong>+3.3 MB</strong> 増加 (Mermaid 3.2MB + Prism 約 50KB)。<code class="inline">/plugin install</code> 初回ダウンロード時間がわずかに伸びる</li>
+      <li>Prism / Mermaid の CVE / 機能追加に手動で追従する必要がある (上流リリースの監視は別途仕組み化が必要)</li>
+      <li>各 ADR / spec / doc の出力ディレクトリに <code class="inline">system/vendor/</code> がコピーされ、ディスク使用量が増える (同一ディレクトリ内では使い回し)</li>
+    </ul>
+
+    <h3 id="consequences-neutral">Neutral</h3>
+    <ul>
+      <li>SRI 属性が不要になり HTML 雛形が読みやすくなった (副次効果)</li>
+      <li>Google Fonts は引き続き CDN 読み込み (デザイントークン外、本 ADR の対象外)</li>
+      <li>従来の CDN + SRI 構成は技術的には正しかったが、本プラグインのユースケースには適合しなかった</li>
+    </ul>
+
+    <!-- Compliance & Monitoring -->
+    <h2 id="compliance">Compliance &amp; Monitoring</h2>
+    <ul>
+      <li><strong>CDN URL の混入禁止</strong>: <code class="inline">shared-assets/templates/</code> および <code class="inline">shared-assets/samples/</code> 配下に <code class="inline">cdnjs.cloudflare.com</code> / <code class="inline">cdn.jsdelivr.net</code> が現れないことを CI で grep チェックする。実装: <code class="inline">.github/workflows/verify-vendor.yml</code> ジョブ <code class="inline">cdn-leak-check</code>。</li>
+      <li><strong>vendor 配下の継続的真正性検証</strong>: <code class="inline">shared-assets/vendor/SHA256SUMS</code> に各ファイルの SHA-256 を記録し、CI で <code class="inline">shasum -a 256 -c SHA256SUMS</code> を実行する。実装: <code class="inline">.github/workflows/verify-vendor.yml</code> ジョブ <code class="inline">hash-verify</code>。</li>
+      <li><strong>vendor をレビューで埋もれさせない</strong>: <code class="inline">.gitattributes</code> で <code class="inline">vendor/**</code> を <code class="inline">binary linguist-vendored</code> 指定し、minified の文字列 diff を抑止する。</li>
+      <li><strong>vendor アップグレード時の verify 手順</strong>: 上流公式の SHA-512 (cdnjs) / SHA-384 (jsdelivr) と再計算ハッシュの一致を確認 → vendor 差し替え → <code class="inline">SHA256SUMS</code> 再生成 → 本 ADR の「採用バージョン」表更新。詳細チェックリスト: <code class="inline">.github/ISSUE_TEMPLATE/vendor_upgrade.yml</code>。</li>
+      <li><strong>CVE 追従</strong>: <code class="inline">.github/workflows/vendor-upgrade-check.yml</code> が四半期ごと (1/4/7/10 月 1 日) に npm の最新版を確認し、本 ADR に記載のバージョンと差分があれば自動で Issue を起票する。CVE は <a href="https://github.com/advisories">GitHub Advisories</a> で <em>prismjs</em> / <em>mermaid</em> を別途チェックする。</li>
+      <li><strong>vendor 配下の権限管理</strong>: 将来 maintainer が増えた段階で <code class="inline">CODEOWNERS</code> に <code class="inline">/plugins/tech-docs/shared-assets/vendor/ @9uiLe</code> を追記し、改変時のレビューを必須化する。</li>
+    </ul>
+
+    <!-- References -->
+    <h2 id="references">References</h2>
+    <ul>
+      <li><strong>ISO/IEC 25010:2023</strong> — <em>Systems and software engineering — SQuaRE — Product quality model</em>. 柔軟性 (Flexibility) 副特性 — 設置性 (Installability) / 適応性 (Adaptability) の定義の出典。</li>
+      <li><strong>Wiggins, A.</strong> (2012) — <em><a href="https://12factor.net/">The Twelve-Factor App</a></em>. Factor II: Explicitly declare and isolate dependencies。</li>
+      <li><strong>Saltzer, J. H. &amp; Schroeder, M. D.</strong> (1975) — "The Protection of Information in Computer Systems." <em>Proceedings of the IEEE</em>, Vol. 63, No. 9. Open Design / Economy of Mechanism 原則。</li>
+      <li><strong>OWASP ASVS 5.0</strong> (2025) — V14 Configuration: Subresource Integrity 要件 (CDN を使う場合に求められる) 。本 ADR では SRI ではなく vendor 同梱でこの要件を上回る provenance を達成。</li>
+      <li>関連ブランチ: <code class="inline">fix/sri-on-cdn-templates</code> (本 ADR が supersede)</li>
+    </ul>
+
+    <hr />
+    <p class="muted" style="font-size:var(--fs-sm)">
+      Last updated: <span class="mono">2026-06-05</span> ·
+      Maintainer: <span class="mono">@9uiLe</span>
+    </p>
+
+  </main>
+</div>
+
+<script src="system/components.js"></script>
+<script>
+  window.addEventListener('load', function () {
+    DocsADR.initAll({
+      toc: { container: '#toc', content: '#content', selector: 'h2, h3' }
+    });
+  });
+</script>
+</body>
+</html>

@@ -115,24 +115,30 @@ h2: References
     ├── tokens.css
     ├── components.css
     ├── components.js
-    └── components/
-        ├── layout.css
-        ├── typography.css
-        ├── badge.css
-        ├── callout.css
-        ├── code-block.css
-        ├── table.css
-        ├── metric.css
-        ├── bar-chart.css
-        ├── donut-chart.css
-        ├── line-chart.css
-        ├── matrix.css
-        ├── timeline.css
-        ├── mermaid.css
-        ├── decision-tree.css
-        ├── compare.css
-        ├── adr-frontmatter.css
-        └── utilities.css
+    ├── components/
+    │   ├── layout.css
+    │   ├── typography.css
+    │   ├── badge.css
+    │   ├── callout.css
+    │   ├── code-block.css
+    │   ├── table.css
+    │   ├── metric.css
+    │   ├── bar-chart.css
+    │   ├── donut-chart.css
+    │   ├── line-chart.css
+    │   ├── matrix.css
+    │   ├── timeline.css
+    │   ├── mermaid.css
+    │   ├── decision-tree.css
+    │   ├── compare.css
+    │   ├── adr-frontmatter.css
+    │   └── utilities.css
+    └── vendor/                 ← Prism / Mermaid をオフライン同梱 (ADR-0002)
+        ├── prism.min.js
+        ├── prism-tomorrow.min.css
+        ├── prism-components/
+        │   └── prism-*.min.js
+        └── mermaid.min.js
 ```
 
 コピー元: `${PLUGIN_ROOT}/shared-assets/`
@@ -143,10 +149,12 @@ cp -R ${PLUGIN_ROOT}/shared-assets/tokens.css \
       ${PLUGIN_ROOT}/shared-assets/components.css \
       ${PLUGIN_ROOT}/shared-assets/components.js \
       ${PLUGIN_ROOT}/shared-assets/components \
+      ${PLUGIN_ROOT}/shared-assets/vendor \
       docs/runbooks/system/
 ```
 
 すでに `system/` があれば再コピーしない。
+**CDN は使わない** (オフライン環境・IDE プレビュー・CSP 厳格環境でも動作させるため。詳細: ADR-0002)。
 
 ---
 
