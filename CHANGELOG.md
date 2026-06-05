@@ -5,6 +5,8 @@
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-06-05
+
 ### Added
 
 - **tech-docs**: Prism (1.29.0) と Mermaid (10.9.1) を `plugins/tech-docs/shared-assets/vendor/` に同梱し、生成 HTML から CDN 参照を排除 (ADR-0002)。オフライン環境・IDE プレビュー・CSP 厳格環境でも装飾を含めて動作するように。`shared-assets/vendor/LICENSES.md` で上流の MIT ライセンスを併記。
@@ -17,7 +19,6 @@
 - **tech-docs**: `skills/create-{adr,doc,spec}/SKILL.md` のアセットコピー手順に `vendor/` を追加し、CDN 利用を禁止する旨を明記。
 - **tech-docs**: skeleton テンプレート / サンプル HTML / USAGE.md / README.md のスクリプト参照を `system/vendor/...` の相対パスへ移行。
 - **security**: `SECURITY.md` に vendor 配下脆弱性報告経路の境界を一文追加。
-
 ## [0.1.1] - 2026-06-04
 
 ### Added
@@ -38,6 +39,7 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/9uiLe/plugins/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/9uiLe/plugins/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/9uiLe/plugins/releases/tag/v0.1.0
