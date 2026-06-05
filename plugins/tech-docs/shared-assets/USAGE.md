@@ -31,7 +31,7 @@
   <link rel="stylesheet" href="system/tokens.css" />
   <link rel="stylesheet" href="system/components.css" />
 
-  <!-- コードハイライト (vendor 同梱) -->
+  <!-- コードハイライト (vendor 同梱: ADR-0002 / CDN は使わない) -->
   <link rel="stylesheet" href="system/vendor/prism-tomorrow.min.css" />
   <script src="system/vendor/prism.min.js"></script>
   <script src="system/vendor/prism-components/prism-typescript.min.js"></script>
@@ -435,6 +435,7 @@ flowchart LR
 
 - ❌ `style="color: #ff0000"` のように任意の色を直書きしない。`var(--color-*)` を使う。
 - ❌ Tailwind / Bootstrap などの CSS フレームワークを追加で読み込まない。
+- ❌ 第三者 CDN の `<script>` / `<link>` を `integrity` 属性なしで読み込まない（CodeQL が警告）。cdnjs / jsdelivr の SRI を必ず付け、`crossorigin="anonymous"` も併記する。
 - ❌ コードブロック内の `<` `>` `&` の HTML エスケープ忘れ。
 - ❌ Mermaid を使わない図を SVG で手描きしない。
 - ❌ `body` や `<div>` に直接インラインで margin / padding を山盛りにしない (`--sp-*` を使う)。

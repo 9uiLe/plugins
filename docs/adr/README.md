@@ -8,7 +8,7 @@
 
 | 番号 | 状態 | タイトル | 日付 |
 |---|---|---|---|
-| 0001 | _(欠番)_ | リリース自動化 ADR (`feat/release-automation` で先行採番、別 PR で再導入予定) | — |
+| [0001](./0001-release-automation.html) | Accepted | リリース自動化 (scripts + CI verify) | 2026-06-04 |
 | [0002](./0002-vendor-prism-mermaid.html) | Accepted | 生成 HTML の Prism / Mermaid を CDN から vendor 同梱へ移行 | 2026-06-05 |
 
 ## 番号付与ルール
