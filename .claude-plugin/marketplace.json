@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Claude Code plugins by 9uiLe.",
-    "version": "0.1.1"
+    "version": "0.1.2"
   },
   "plugins": [
     {
       "name": "tech-docs",
       "source": "./plugins/tech-docs",
       "description": "Generate ADRs, technical specifications, and general engineering documents as single-file HTML pages using a consistent design system.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "documentation",
       "tags": [
         "documentation",
