@@ -5,6 +5,19 @@
 
 ## [Unreleased]
 
+### Added
+
+- **tech-docs**: Prism (1.29.0) と Mermaid (10.9.1) を `plugins/tech-docs/shared-assets/vendor/` に同梱し、生成 HTML から CDN 参照を排除 (ADR-0002)。オフライン環境・IDE プレビュー・CSP 厳格環境でも装飾を含めて動作するように。`shared-assets/vendor/LICENSES.md` で上流の MIT ライセンスを併記。
+- **infra**: vendor 真正性 CI (`shasum -a 256 -c SHA256SUMS`) と CDN URL 混入禁止 grep を `.github/workflows/verify-vendor.yml` に追加。`.gitattributes` で vendor 配下を binary 指定し PR diff のレビュー性を担保。
+- **infra**: Prism / Mermaid の四半期バージョン確認用 scheduled workflow (`.github/workflows/vendor-upgrade-check.yml`) と Issue テンプレート (`.github/ISSUE_TEMPLATE/vendor_upgrade.yml`) を追加。Dependabot で追従できない vendor 配下を半自動でフォロー。
+- **docs**: `docs/adr/0002-vendor-prism-mermaid.html` を新規追加。`docs/adr/README.md` で ADR インデックスと番号付与ルール (renumber 禁止・欠番許容) を文書化。
+
+### Changed
+
+- **tech-docs**: `skills/create-{adr,doc,spec}/SKILL.md` のアセットコピー手順に `vendor/` を追加し、CDN 利用を禁止する旨を明記。
+- **tech-docs**: skeleton テンプレート / サンプル HTML / USAGE.md / README.md のスクリプト参照を `system/vendor/...` の相対パスへ移行。
+- **security**: `SECURITY.md` に vendor 配下脆弱性報告経路の境界を一文追加。
+
 ## [0.1.1] - 2026-06-04
 
 ### Added

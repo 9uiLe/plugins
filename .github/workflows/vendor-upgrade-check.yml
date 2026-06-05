@@ -1,0 +1,72 @@
+name: vendor-upgrade-check
+
+# tech-docs プラグインに同梱している Prism / Mermaid (vendor 配下) の
+# 上流バージョンを四半期ごとに自動確認し、新版があれば Issue を起票する。
+# ADR-0002 (docs/adr/0002-vendor-prism-mermaid.html) で約束した CVE 追従の自動化部分。
+
+on:
+  schedule:
+    # 1月・4月・7月・10月の 1 日 00:00 UTC
+    - cron: "0 0 1 1,4,7,10 *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read currently vendored versions from ADR-0002
+        id: current
+        run: |
+          set -e
+          adr=docs/adr/0002-vendor-prism-mermaid.html
+          prism=$(grep -oE 'prism[^<]*</td>[[:space:]]*<td class="mono">[0-9.]+' "$adr" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          mermaid=$(grep -oE 'mermaid[^<]*</td>[[:space:]]*<td class="mono">[0-9.]+' "$adr" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          # fall back to known defaults if regex missed (defensive)
+          : "${prism:=1.29.0}"
+          : "${mermaid:=10.9.1}"
+          echo "prism=$prism" >> "$GITHUB_OUTPUT"
+          echo "mermaid=$mermaid" >> "$GITHUB_OUTPUT"
+          echo "vendored prism=$prism mermaid=$mermaid"
+
+      - name: Look up latest versions on npm
+        id: latest
+        run: |
+          set -e
+          prism_latest=$(npm view prismjs version)
+          mermaid_latest=$(npm view mermaid version)
+          echo "prism=$prism_latest" >> "$GITHUB_OUTPUT"
+          echo "mermaid=$mermaid_latest" >> "$GITHUB_OUTPUT"
+          echo "latest prism=$prism_latest mermaid=$mermaid_latest"
+
+      - name: Open issue if outdated
+        if: steps.current.outputs.prism != steps.latest.outputs.prism || steps.current.outputs.mermaid != steps.latest.outputs.mermaid
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CUR_PRISM: ${{ steps.current.outputs.prism }}
+          NEW_PRISM: ${{ steps.latest.outputs.prism }}
+          CUR_MERMAID: ${{ steps.current.outputs.mermaid }}
+          NEW_MERMAID: ${{ steps.latest.outputs.mermaid }}
+        run: |
+          quarter=$(date -u +"%Y-Q$((( $(date -u +%-m) - 1 ) / 3 + 1))")
+          title="[Vendor] ${quarter} Prism / Mermaid バージョン確認"
+          body=$(cat <<EOF
+          上流の新バージョンを検出しました。ADR-0002 のフローに従い、アップグレード可否を判断してください。
+
+          | パッケージ | 同梱バージョン | 上流最新 |
+          |---|---|---|
+          | Prism | ${CUR_PRISM} | ${NEW_PRISM} |
+          | Mermaid | ${CUR_MERMAID} | ${NEW_MERMAID} |
+
+          - ADR: \`docs/adr/0002-vendor-prism-mermaid.html\`
+          - CVE 検索: <https://github.com/advisories?query=prismjs>, <https://github.com/advisories?query=mermaid>
+          - チェックリスト: \`.github/ISSUE_TEMPLATE/vendor_upgrade.yml\` を参照
+          EOF
+          )
+          gh issue create --title "$title" --label maintenance --label vendor --label tech-docs --body "$body"

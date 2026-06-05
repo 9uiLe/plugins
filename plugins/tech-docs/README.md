@@ -45,24 +45,30 @@ docs/adr/                              ← 出力先 (作業ディレクトリ�
     ├── tokens.css
     ├── components.css
     ├── components.js
-    └── components/                    ← @import 先の細粒度モジュール
-        ├── layout.css
-        ├── typography.css
-        ├── badge.css
-        ├── callout.css
-        ├── code-block.css
-        ├── table.css
-        ├── metric.css
-        ├── bar-chart.css
-        ├── donut-chart.css
-        ├── line-chart.css
-        ├── matrix.css
-        ├── timeline.css
-        ├── mermaid.css
-        ├── decision-tree.css
-        ├── compare.css
-        ├── adr-frontmatter.css
-        └── utilities.css
+    ├── components/                    ← @import 先の細粒度モジュール
+    │   ├── layout.css
+    │   ├── typography.css
+    │   ├── badge.css
+    │   ├── callout.css
+    │   ├── code-block.css
+    │   ├── table.css
+    │   ├── metric.css
+    │   ├── bar-chart.css
+    │   ├── donut-chart.css
+    │   ├── line-chart.css
+    │   ├── matrix.css
+    │   ├── timeline.css
+    │   ├── mermaid.css
+    │   ├── decision-tree.css
+    │   ├── compare.css
+    │   ├── adr-frontmatter.css
+    │   └── utilities.css
+    └── vendor/                        ← Prism / Mermaid を同梱 (ADR-0002)
+        ├── prism.min.js
+        ├── prism-tomorrow.min.css
+        ├── prism-components/
+        │   └── prism-*.min.js
+        └── mermaid.min.js
 ```
 
 同じディレクトリに次の ADR / spec を追加すると、`system/` は使い回されます。
@@ -81,7 +87,7 @@ docs/adr/                              ← 出力先 (作業ディレクトリ�
 | `samples/` | デザインシステムショーケース + サンプル ADR |
 | `USAGE.md` | クラス・コンポーネントの完全リファレンス (AI 向け) |
 
-ライブラリは追加で必要ありません。Prism (シンタックスハイライト) と Mermaid (フロー図) のみ CDN から読み込みます。
+ライブラリは追加で必要ありません。Prism (シンタックスハイライト) と Mermaid (フロー図) は `shared-assets/vendor/` に同梱されており、生成時に出力ディレクトリの `system/vendor/` へコピーされます。これにより**オフライン環境・IDE プレビュー・CSP 厳格環境**でも装飾を含めて動作します。詳細は ADR-0002 (`docs/adr/0002-vendor-prism-mermaid.html`) を参照。
 
 ## サンプルを見たい
 

@@ -31,15 +31,15 @@
   <link rel="stylesheet" href="system/tokens.css" />
   <link rel="stylesheet" href="system/components.css" />
 
-  <!-- コードハイライト -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-diff.min.js"></script>
+  <!-- コードハイライト (vendor 同梱) -->
+  <link rel="stylesheet" href="system/vendor/prism-tomorrow.min.css" />
+  <script src="system/vendor/prism.min.js"></script>
+  <script src="system/vendor/prism-components/prism-typescript.min.js"></script>
+  <script src="system/vendor/prism-components/prism-bash.min.js"></script>
+  <script src="system/vendor/prism-components/prism-diff.min.js"></script>
 
-  <!-- フロー図 (使う場合のみ) -->
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+  <!-- フロー図 (vendor 同梱済み。図を使わない場合はこの行ごと削除可) -->
+  <script src="system/vendor/mermaid.min.js"></script>
 </head>
 <body>
   <div class="doc-shell">
@@ -475,5 +475,15 @@ DocsADR.initPrism();
 └── system/
     ├── tokens.css      ← デザイントークン (色・フォント・スペーシング)
     ├── components.css  ← 全コンポーネントのスタイル
-    └── components.js   ← TOC / コピー / チャート / Mermaid 初期化
+    ├── components.js   ← TOC / コピー / チャート / Mermaid 初期化
+    └── vendor/         ← Prism / Mermaid を同梱 (オフラインで動作)
+        ├── prism.min.js
+        ├── prism-tomorrow.min.css
+        ├── prism-components/
+        │   └── prism-*.min.js
+        └── mermaid.min.js
 ```
+
+> **Note**: vendor 配下は CDN ではなく**プラグインに同梱されたアセット**を参照する。
+> オフライン環境・IDE プレビュー・CSP 厳格環境でも動作する。
+> 詳細な決定背景は ADR-0002 (`docs/adr/0002-vendor-prism-mermaid.html`) を参照。

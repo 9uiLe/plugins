@@ -71,24 +71,30 @@ ADR HTML は `system/tokens.css` / `system/components.css` / `system/components.
     ├── tokens.css
     ├── components.css
     ├── components.js
-    └── components/             ← components.css が @import している
-        ├── layout.css
-        ├── typography.css
-        ├── badge.css
-        ├── callout.css
-        ├── code-block.css
-        ├── table.css
-        ├── metric.css
-        ├── bar-chart.css
-        ├── donut-chart.css
-        ├── line-chart.css
-        ├── matrix.css
-        ├── timeline.css
-        ├── mermaid.css
-        ├── decision-tree.css
-        ├── compare.css
-        ├── adr-frontmatter.css
-        └── utilities.css
+    ├── components/             ← components.css が @import している
+    │   ├── layout.css
+    │   ├── typography.css
+    │   ├── badge.css
+    │   ├── callout.css
+    │   ├── code-block.css
+    │   ├── table.css
+    │   ├── metric.css
+    │   ├── bar-chart.css
+    │   ├── donut-chart.css
+    │   ├── line-chart.css
+    │   ├── matrix.css
+    │   ├── timeline.css
+    │   ├── mermaid.css
+    │   ├── decision-tree.css
+    │   ├── compare.css
+    │   ├── adr-frontmatter.css
+    │   └── utilities.css
+    └── vendor/                 ← Prism / Mermaid をオフライン同梱 (ADR-0002)
+        ├── prism.min.js
+        ├── prism-tomorrow.min.css
+        ├── prism-components/
+        │   └── prism-*.min.js  ← 雛形が参照する言語のみで十分
+        └── mermaid.min.js
 ```
 
 コピー元: `${PLUGIN_ROOT}/shared-assets/`
@@ -99,10 +105,12 @@ cp -R ${PLUGIN_ROOT}/shared-assets/tokens.css \
       ${PLUGIN_ROOT}/shared-assets/components.css \
       ${PLUGIN_ROOT}/shared-assets/components.js \
       ${PLUGIN_ROOT}/shared-assets/components \
+      ${PLUGIN_ROOT}/shared-assets/vendor \
       docs/adr/system/
 ```
 
 すでに `system/` が存在する場合は再コピーせず、新規 ADR HTML のみ追加する。
+**CDN は使わない** (オフライン環境・IDE プレビュー・CSP 厳格環境でも動作させるため。詳細: ADR-0002)。
 
 ---
 

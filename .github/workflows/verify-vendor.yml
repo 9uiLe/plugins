@@ -1,0 +1,46 @@
+name: verify-vendor
+
+on:
+  pull_request:
+    paths:
+      - "plugins/tech-docs/shared-assets/vendor/**"
+      - "docs/**/system/vendor/**"
+      - ".github/workflows/verify-vendor.yml"
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  hash-verify:
+    name: Vendor SHA-256 integrity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify shared-assets/vendor SHA-256
+        working-directory: plugins/tech-docs/shared-assets/vendor
+        run: shasum -a 256 -c SHA256SUMS
+
+  cdn-leak-check:
+    name: No CDN URLs in templates/samples
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: grep for CDN URLs
+        run: |
+          set -e
+          paths=(
+            plugins/tech-docs/shared-assets/templates
+            plugins/tech-docs/shared-assets/samples
+          )
+          if grep -rnE "(cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net)" "${paths[@]}"; then
+            echo "::error::CDN URLs detected in templates/samples. Vendor the asset instead (see ADR-0002)."
+            exit 1
+          fi
+          echo "OK: no CDN URLs in templates/samples"
