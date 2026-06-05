@@ -86,7 +86,8 @@
 - **生成物の見た目（tech-docs）** → `plugins/tech-docs/shared-assets/`（`tokens.css` / `components/` / `templates/`）を編集します。
 - **品質モデルの基準（quality-architect）** → `plugins/quality-architect/references/` の各 Markdown を編集します。
 - **新しいプラグインを追加する** → `plugins/<name>/` を作成し、`.claude-plugin/plugin.json` を用意したうえで、ルートの `.claude-plugin/marketplace.json` の `plugins` 配列にエントリを追加します。`README.md` の収録プラグイン表も更新してください。
-- **バージョンを上げる** → 該当 `plugin.json` と `marketplace.json` の `version` を揃えて更新します。
+- **バージョンを上げる** → 該当 `plugin.json` と `marketplace.json` の `version` を揃えて更新します。**リリース作業全体の手順は [`RELEASING.md`](./RELEASING.md) を参照** してください（`scripts/release-prepare.sh` で自動化されています）。
+- **リリース手順を変える** → `RELEASING.md` / `scripts/**` / `.github/workflows/verify-versions.yml` は同一 PR で更新します（仕様ドリフト防止）。
 
 ### ローカルでの動作確認
 
