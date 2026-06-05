@@ -25,11 +25,18 @@ generate_release_notes() {
 
   local prev
   prev="$(awk -v v="$version" '
-    match($0, /^## \[([0-9]+\.[0-9]+\.[0-9]+)\]/, m) {
-      if (m[1] == v) { found=1; next }
-      if (found) { print m[1]; exit }
+    /^## \[[0-9]+\.[0-9]+\.[0-9]+\]/ {
+      match($0, /[0-9]+\.[0-9]+\.[0-9]+/)
+      ver = substr($0, RSTART, RLENGTH)
+      if (ver == v) { found=1; next }
+      if (found) { print ver; exit }
     }
   ' "$CHANGELOG")"
+  # In --dry-run, CHANGELOG hasn't been promoted yet, so the new [X.Y.Z] heading
+  # is absent. Fall back to the current latest released version.
+  if [[ -z "$prev" && "$DRY_RUN" == "1" ]]; then
+    prev="$(previous_version)"
+  fi
   [[ -n "$prev" ]] || die "could not find previous version before $version in CHANGELOG.md"
 
   local out="$RELEASES_DIR/v${version}.md"
@@ -39,6 +46,11 @@ generate_release_notes() {
 
   local body
   body="$(extract_section "$version")"
+  # In --dry-run, the [X.Y.Z] heading doesn't exist yet; preview against the
+  # [Unreleased] body instead (that's what promote_unreleased will copy over).
+  if [[ -z "${body// /}" && "$DRY_RUN" == "1" ]]; then
+    body="$(extract_unreleased)"
+  fi
   if [[ -z "${body// /}" ]]; then
     die "CHANGELOG section [$version] is empty; promote it first"
   fi
