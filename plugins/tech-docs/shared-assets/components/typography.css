@@ -72,8 +72,8 @@
 
 /* Lead paragraph */
 .lead {
-  font-size: var(--fs-lg);
-  line-height: var(--lh-snug);
+  font-size: var(--fs-xl);
+  line-height: var(--lh-base);
   color: var(--color-text-secondary);
   letter-spacing: var(--tracking-tight);
 }

@@ -57,7 +57,7 @@
     font-weight: var(--fw-medium);
     margin-right: var(--sp-3);
   }
-  .doc-header .lead { max-width: 720px; }
+  .doc-header .lead { max-width: none; }
 </style>
 </head>
 <body>
@@ -99,7 +99,7 @@
         <span class="adr-frontmatter__key">Deciders</span>
         <span class="adr-frontmatter__value">{{DECIDERS}}</span>
       </div>
-      <div class="adr-frontmatter__field">
+      <div class="adr-frontmatter__field adr-frontmatter__field--full">
         <span class="adr-frontmatter__key">Tags</span>
         <span class="adr-frontmatter__value">
           <span class="badge badge--no-dot">{{TAG}}</span>
