@@ -15,9 +15,14 @@ extract_unreleased() {
 }
 
 # previous_version — last released X.Y.Z heading, or empty if none
+# Uses POSIX awk (match + RSTART/RLENGTH) so it works under BSD awk on macOS.
 previous_version() {
   awk '
-    match($0, /^## \[([0-9]+\.[0-9]+\.[0-9]+)\]/, m) { print m[1]; exit }
+    /^## \[[0-9]+\.[0-9]+\.[0-9]+\]/ {
+      match($0, /[0-9]+\.[0-9]+\.[0-9]+/)
+      print substr($0, RSTART, RLENGTH)
+      exit
+    }
   ' "$CHANGELOG"
 }
 
@@ -80,15 +85,16 @@ promote_unreleased() {
     { print }
   ' "$CHANGELOG" >"$tmp"
 
-  # Re-inject the promoted body under the new heading
+  # Re-inject the promoted body under the new heading.
+  # Pass body via ENVIRON because BSD awk's -v cannot carry literal newlines.
   local tmp2
   tmp2="$(mktemp)"
-  awk -v new="$new" -v body="$body" '
+  BODY="$body" awk -v new="$new" '
     {
       print
       if ($0 ~ "^## \\[" new "\\]") {
         print ""
-        print body
+        print ENVIRON["BODY"]
       }
     }
   ' "$tmp" >"$tmp2"

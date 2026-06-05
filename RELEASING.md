@@ -15,18 +15,32 @@
 
 ---
 
+## バージョンの二軸
+
+このリポジトリは **2 種類のバージョン番号**を持ちます。混同しないでください。
+
+| 軸 | どこに書かれるか | 何を表すか |
+| --- | --- | --- |
+| **プラグイン版** | `plugins/<name>/.claude-plugin/plugin.json`<br>`.claude-plugin/marketplace.json` の `plugins[].version` | 個別プラグインの互換性追跡 |
+| **リリース版** | `.claude-plugin/marketplace.json` の `metadata.version`<br>git tag `vX.Y.Z` / `releases/vX.Y.Z.md` / `CHANGELOG.md` の `[X.Y.Z]` 見出し | リポジトリ全体のスナップショット番号 |
+
+整合性ゲート: **リリース版 ≥ max(プラグイン版)**（`verify-versions.sh` が CI で検査）。
+
+---
+
 ## 手順（推奨フロー）
 
 ### 1. リリース対象を決める
 
 - どのプラグインを bump するか（例: `quality-architect`）
-- どの種類の bump か（`patch` / `minor` / `major`）
-- 例: `quality-architect` の patch リリース → 0.1.1 → 0.1.2
+- プラグインの bump 種別（`patch` / `minor` / `major`）
+- リリース版の bump 種別（同じ。デフォルト `patch`）
+- 例: `quality-architect` を patch、リリース版を patch → quality-architect 0.1.1 → 0.1.2、リポジトリ v0.1.1 → v0.1.2
 
 ### 2. dry-run で差分を確認
 
 ```bash
-scripts/release-prepare.sh --plugin quality-architect --bump patch --dry-run
+scripts/release-prepare.sh --plugin quality-architect --bump patch --release-bump patch --dry-run
 ```
 
 ファイルは書き換えず、CHANGELOG・plugin.json・marketplace.json・releases/*.md の差分プレビューが流れます。
@@ -34,7 +48,7 @@ scripts/release-prepare.sh --plugin quality-architect --bump patch --dry-run
 ### 3. 本番実行（PR 作成まで）
 
 ```bash
-scripts/release-prepare.sh --plugin quality-architect --bump patch
+scripts/release-prepare.sh --plugin quality-architect --bump patch --release-bump patch
 ```
 
 実行内容:
@@ -95,7 +109,8 @@ scripts/release-publish.sh --version X.Y.Z
 | --- | --- |
 | `--dry-run` | ファイル書き換えと git/gh 操作をスキップし、差分プレビューだけ表示する（初回は必ずこれ） |
 | `--yes` | すべての確認プロンプトをスキップする（CI 等の無人実行向け。**通常は使わない**） |
-| `--marketplace-bump` | `release-prepare` で `marketplace.json` の `metadata.version` も同時に bump する（最大プラグイン版より上がるときのみ反映） |
+| `--release-bump <patch\|minor\|major>` | リリース版（`metadata.version`）の bump 種別。デフォルト `patch` |
+| `--release-version <X.Y.Z>` | リリース版を明示指定（プラグイン版を一気に上げる時など。`--release-bump` と排他） |
 | `--no-pr` | `release-prepare` で push までで止め、PR は手動で作る |
 
 ---
@@ -127,6 +142,7 @@ bash scripts/verify-versions.sh
 | `tag vX.Y.Z already exists` | 同じバージョンの tag が既に存在する。バージョン番号を見直す |
 | `[Unreleased] section is empty` | `CHANGELOG.md` の `## [Unreleased]` 直下に変更点を記入してから再実行 |
 | `new version X.Y.Z is not greater than previous Y.Y.Y` | bump 方向 / 引数を見直す |
+| `plugin version X.Y.Z is greater than release version A.B.C` | プラグイン版がリリース版を超えている。`--release-version X.Y.Z`（プラグイン版以上）で再実行 |
 | 途中で abort された | push 前なら ERR トラップで自動巻き戻し済み。push 後の場合は手動で `git push origin --delete release/vX.Y.Z` してリトライ |
 
 ---
