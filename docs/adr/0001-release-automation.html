@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ADR-0001 · リリース作業の自動化方針</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="system/tokens.css" />
+<link rel="stylesheet" href="system/components.css" />
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" integrity="sha512-vswe+cgvic/XBoF1OcM/TeJ2FW0OofqAVdCZiEYkd6dwGXthvkSFWOoGGJgS2CW70VK5dQM5Oh+7ne47s74VTg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js" integrity="sha512-whYhDwtTmlC/NpZlCr6PSsAaLOrfjVg/iXAnC4H/dtiHawpShhT2SlIMbpIhT/IL/NrpdMm+Hq2C13+VKpHTYw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js" integrity="sha512-QXFMVAusM85vUYDaNgcYeU3rzSlc+bTV4JvkfJhjxSHlQEo+ig53BtnGkvFTiNJh8D+wv6uWAQ2vJaVmxe8d3w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js" integrity="sha512-6O/PZimM3TD1NN3yrazePA4AbZrPcwt1QCGJrVY7WoHDJROZFc9TlBvIKMe+QfqgcslW4lQeBzNJEJvIMC8WhA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-diff.min.js" integrity="sha512-tBR4SAva+2bw36ToxaFeOEvgqxWHON25E9xp+kEBfw175sS5OusQEH8GrigKgTdHUXcKsK1yiyfo7fctBYl+rA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js" integrity="sha384-WmdflGW9aGfoBdHc4rRyWzYuAjEmDwMdGdiPNacbwfGKxBW/SO6guzuQ76qjnSlr" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<style>
+  .doc-header {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--sp-10) var(--sp-8) var(--sp-4);
+  }
+  .doc-header__breadcrumb {
+    display: flex;
+    gap: var(--sp-2);
+    align-items: center;
+    font-size: var(--fs-xs);
+    color: var(--color-text-muted);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    font-weight: var(--fw-medium);
+    margin-bottom: var(--sp-3);
+  }
+  .doc-header__breadcrumb a { color: inherit; }
+  .doc-header__breadcrumb span { opacity: 0.4; }
+  .doc-header h1 {
+    font-size: var(--fs-3xl);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-tight);
+    line-height: 1.15;
+    margin: 0 0 var(--sp-3);
+  }
+  .doc-header h1 .num {
+    font-family: var(--font-mono);
+    color: var(--color-text-faint);
+    font-weight: var(--fw-medium);
+    margin-right: var(--sp-3);
+  }
+  .doc-header .lead { max-width: none; }
+</style>
+</head>
+<body>
+
+<header class="doc-header">
+  <div class="doc-header__breadcrumb">
+    <a href="#">Engineering Docs</a>
+    <span>/</span>
+    <a href="#">ADRs</a>
+    <span>/</span>
+    <span style="opacity:1;color:var(--color-text-secondary)">0001</span>
+  </div>
+  <h1><span class="num">ADR-0001</span>リリース作業の自動化方針</h1>
+  <p class="lead">CONTRIBUTING.md に散在しているリリース手順を、役割別 bash スクリプト群 + 共通 lib + <code class="inline">RELEASING.md</code> + CI verify ワークフローへと自動化する。ISO/IEC 25010:2023 の品質モデルで優先付けした 4 特性（信頼性・機能適合性・保守性・相互作用性）を根拠とする。</p>
+</header>
+
+<div class="doc-shell">
+  <aside class="doc-toc" id="toc">
+    <p class="doc-toc-label">On this page</p>
+  </aside>
+
+  <main class="doc-main prose" id="content">
+
+    <div class="adr-frontmatter">
+      <div class="adr-frontmatter__field">
+        <span class="adr-frontmatter__key">ADR</span>
+        <span class="adr-frontmatter__value mono">0001</span>
+      </div>
+      <div class="adr-frontmatter__field">
+        <span class="adr-frontmatter__key">Status</span>
+        <span class="adr-frontmatter__value"><span class="badge status-proposed">Proposed</span></span>
+      </div>
+      <div class="adr-frontmatter__field">
+        <span class="adr-frontmatter__key">Date</span>
+        <span class="adr-frontmatter__value mono">2026-06-05</span>
+      </div>
+      <div class="adr-frontmatter__field">
+        <span class="adr-frontmatter__key">Deciders</span>
+        <span class="adr-frontmatter__value">@9uiLe</span>
+      </div>
+      <div class="adr-frontmatter__field adr-frontmatter__field--full">
+        <span class="adr-frontmatter__key">Tags</span>
+        <span class="adr-frontmatter__value">
+          <span class="badge badge--no-dot">release</span>
+          <span class="badge badge--no-dot">automation</span>
+          <span class="badge badge--no-dot">tooling</span>
+          <span class="badge badge--no-dot">iso-25010</span>
+        </span>
+      </div>
+    </div>
+
+    <h2 id="context">Context</h2>
+
+    <p>本リポジトリ <code class="inline">9uiLe/plugins</code> のリリース手順は、現状 <code class="inline">CONTRIBUTING.md</code> §「バージョンを上げる」と過去のコミット（<code class="inline">chore(release): v0.1.1</code> / PR <code class="inline">release/v0.1.1</code>）に分散しており、メンテナーが暗黙知として実行している。手順自体は確立しているが、自動化されていないために以下の問題が顕在化している。</p>
+
+    <ul>
+      <li><strong>整合性のずれ:</strong> v0.1.1 リリース時に <code class="inline">marketplace.json</code> の <code class="inline">metadata.version</code> と <code class="inline">plugins[].version</code> を bump し忘れ、<code class="inline">plugin.json</code> との不整合が残存している。</li>
+      <li><strong>不可逆操作の手作業:</strong> タグ作成・<code class="inline">git push</code>・<code class="inline">gh release create</code> が外部から参照される公開状態を作るが、ヒューマンエラー時の巻き戻し設計がない。</li>
+      <li><strong>頻度の低さによる記憶劣化:</strong> リリースは数週〜数ヶ月に 1 回。次回時に手順を毎度 <code class="inline">CONTRIBUTING.md</code> から拾い直すコストが反復する。</li>
+      <li><strong>仕様ドリフトのリスク:</strong> 手順書とコミット履歴が乖離し、誰も気づかないまま「正しい手順」が失われる可能性がある。</li>
+    </ul>
+
+    <p>これを解消するため、リリース手順のドキュメントとスクリプトを 1 セットで整備し、不可逆境界（<code class="inline">git push</code>）の手前で必ず巻き戻せる構造に固める。設計の基礎には <strong>ISO/IEC 25010:2023 製品品質モデル</strong>（ISO/IEC, 2023）を用い、重点 4 特性で意思決定を駆動した（別途レビュー済み）。</p>
+
+    <h2 id="drivers">Decision Drivers</h2>
+
+    <ul>
+      <li><strong>信頼性 (Reliability):</strong> 途中失敗時にワークツリーが中途半端な状態で残らず、<code class="inline">git push</code> 以前なら完全に巻き戻せること（Avizienis et al., 2004; Nygard, 2018）。</li>
+      <li><strong>機能適合性 (Functional Suitability):</strong> 手順上の「やる事」を 1 件も漏らさず、複数 JSON のバージョンを必ず揃え、CHANGELOG の節繰り上げと compare リンク差し替えを決定論的に行えること（Meyer, 1992）。</li>
+      <li><strong>保守性 (Maintainability):</strong> 1 人で半年後に読み返せる粒度。各関数 V(G) ≤ 10、長さ 30 行以内を目安に分割し、<code class="inline">shellcheck</code> で機械検証できること（McCabe, 1976; Parnas, 1972）。</li>
+      <li><strong>相互作用性 (Interaction Capability) — ユーザエラー防止性:</strong> 操作頻度が低く誤操作のコストが大きいため、不可逆操作前の確認・<code class="inline">--dry-run</code> 既定推奨・引数の厳格バリデーションで誤入力経路を構造的に封じること（Norman, 2013）。</li>
+      <li><strong>追加依存の最小化:</strong> 既存ランタイム依存（bash / git / jq / gh）を超えて Node/Python を導入しない。</li>
+    </ul>
+
+    <h2 id="options">Considered Options</h2>
+
+    <h3 id="option-a">Option A — 単一の巨大 bash スクリプト</h3>
+
+    <p>すべての処理を <code class="inline">scripts/release.sh</code> 1 本にまとめる最小構成。引数で <code class="inline">prepare</code> / <code class="inline">publish</code> / <code class="inline">verify</code> を切り替える。</p>
+
+    <ul>
+      <li><strong>Pros:</strong> ファイル数が少なく初見の発見性が高い。導入が早い。</li>
+      <li><strong>Cons:</strong> McCabe 循環的複雑度が早期に 10 を超え、保守性アンチパターン（モノリシック障害ドメイン相当）に陥る。テストの単位を切り出しにくい。</li>
+    </ul>
+
+    <h3 id="option-b">Option B — 役割別スクリプト + 共通 lib + RELEASING.md + CI verify <span class="badge badge--success">推奨</span></h3>
+
+    <p>処理を意図単位に分割し、共通の前提チェック・ログ・確認プロンプトを <code class="inline">lib/</code> に集約する。手順の正本は <code class="inline">RELEASING.md</code>、整合性ゲートは <code class="inline">verify-versions.sh</code> として CI でも再利用する。</p>
+
+    <div class="code-block">
+      <div class="code-block__header">
+        <span class="code-block__filename">リポジトリ追加ファイル</span>
+        <span class="code-block__lang">tree</span>
+        <span class="code-block__spacer"></span>
+      </div>
+<pre><code class="language-bash">RELEASING.md                       # 手順の正本
+scripts/
+  lib/
+    common.sh                      # ログ・前提チェック・dry-run・確認プロンプト
+    version.sh                     # plugin.json / marketplace.json の整合更新
+    changelog.sh                   # CHANGELOG セクション繰り上げ・compare リンク
+    release-notes.sh               # releases/vX.Y.Z.md 雛形生成
+  release-prepare.sh               # ブランチ → 編集 → コミット → PR
+  release-publish.sh               # master 取得 → tag → GH Release
+  verify-versions.sh               # 整合性ゲート（CI でも使う）
+.github/workflows/
+  verify-versions.yml              # PR ごとに verify-versions.sh を実行
+</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Pros:</strong> 責務分離により V(G) を低く保てる。<code class="inline">verify-versions.sh</code> を CI と本処理の双方から呼べる（事後条件アサーション）。bash 完結で新規ランタイム依存ゼロ。</li>
+      <li><strong>Cons:</strong> ファイル数が増え、初見の見渡しコストがわずかに上がる。共通 lib の引数規約を最初に決めておく必要がある。</li>
+    </ul>
+
+    <h3 id="option-c">Option C — Node.js / Python による専用 CLI</h3>
+
+    <p>型安全な言語で専用 CLI を新規実装する。<code class="inline">commander</code> / <code class="inline">click</code> 等で引数を厳格化し、JSON 編集も AST ベースで行う。</p>
+
+    <ul>
+      <li><strong>Pros:</strong> 引数バリデーション・テスト・型整合が言語側でほぼ自動。</li>
+      <li><strong>Cons:</strong> 本リポジトリに Node/Python の既存依存はない。リリース自動化のためだけにランタイムを足すのは機能適合性の「ゴールドプレーティング」（過剰設計）に該当（ISO/IEC 25010:2023 §機能適合性 §5 アンチパターン）。</li>
+    </ul>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>評価軸</th>
+            <th class="center">A: 単一 bash</th>
+            <th class="center">B: 役割別 + lib</th>
+            <th class="center">C: Node/Python</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>信頼性（部分失敗からの回復）</td>
+            <td class="center"><span class="cmp-mark cmp-mark--mid"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+          </tr>
+          <tr>
+            <td>機能適合性（手順の漏れなさ）</td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+          </tr>
+          <tr>
+            <td>保守性（V(G)・解析性）</td>
+            <td class="center"><span class="cmp-mark cmp-mark--no"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--mid"></span></td>
+          </tr>
+          <tr>
+            <td>相互作用性（誤操作防止）</td>
+            <td class="center"><span class="cmp-mark cmp-mark--mid"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+          </tr>
+          <tr>
+            <td>依存最小化（過剰設計回避）</td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--no"></span></td>
+          </tr>
+          <tr class="is-recommended">
+            <td>総合</td>
+            <td class="center"><span class="cmp-mark cmp-mark--mid"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--yes"></span></td>
+            <td class="center"><span class="cmp-mark cmp-mark--mid"></span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="decision">Decision</h2>
+
+    <div class="callout callout--success">
+      <span class="callout-icon">✓</span>
+      <div class="callout-body">
+        <p class="callout-title">採用: Option B — 役割別 bash スクリプト + 共通 lib + RELEASING.md + CI verify</p>
+        <p>4 つの重点品質特性すべてで A・C を上回る。とくに「依存最小化」と「保守性」を同時に満たせる唯一の案であり、本リポジトリの規模（メンテナー 1〜数名、リリース頻度数週〜数ヶ月）と整合する。<code class="inline">verify-versions.sh</code> を本処理と CI の双方から呼び出すことで、Design by Contract（Meyer, 1992）における事後条件アサーションを実装レベルで保証する。</p>
+      </div>
+    </div>
+
+    <h3 id="flow">実行フローと巻き戻し境界</h3>
+
+    <div class="mermaid-wrap">
+<pre class="mermaid">
+flowchart TD
+  A[release-prepare 引数] --> B{前提チェック<br/>gh / jq / git clean}
+  B -- NG --> X1[即時失敗・状態変更なし]
+  B -- OK --> C[一時ブランチ作成]
+  C --> D[lib/version.sh で<br/>JSON 整合更新]
+  D --> E[lib/changelog.sh で<br/>節繰り上げ + リンク]
+  E --> F[lib/release-notes.sh で<br/>雛形生成]
+  F --> G{verify-versions.sh<br/>事後検証}
+  G -- NG --> Y1[git restore で巻き戻し]
+  G -- OK --> H{確認プロンプト<br/>--yes でスキップ}
+  H -- 中断 --> Y2[git restore で巻き戻し]
+  H -- 続行 --> I[commit + push + gh pr create]
+  I --> J[手動: PR レビュー / マージ]
+  J --> K[release-publish<br/>tag + GH Release]
+</pre>
+      <div class="mermaid-wrap__caption">Figure 1 · 巻き戻し境界は <code>git push</code> まで。以降は不可逆領域として確認必須。</div>
+    </div>
+
+    <h3 id="tactics">採用タクティクスの内訳</h3>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>重点特性</th>
+            <th>採用タクティクス</th>
+            <th>根拠</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>信頼性</td>
+            <td><code class="inline">set -euo pipefail</code> + <code class="inline">trap ERR INT</code> による自動 <code class="inline">git restore</code> + 一時ディレクトリでの加工 → 全成功時のみ <code class="inline">mv</code> で原子的反映 + <code class="inline">--dry-run</code> 既定推奨</td>
+            <td>Fail-Fast (§信頼性 §3.3); 冪等性・チェックポイント (§信頼性 §2.4); 段階的ロールアウト相当 (§信頼性 §2.1)</td>
+          </tr>
+          <tr>
+            <td>機能適合性</td>
+            <td><code class="inline">RELEASING.md</code> 内の簡易 RTM で手順とスクリプト関数を双方向リンク + 各処理末尾で <code class="inline">verify-versions.sh</code> を事後条件として呼び出し + <code class="inline">awk</code> で CHANGELOG パースを 3 ステップに分解</td>
+            <td>RTM (Gotel &amp; Finkelstein, 1994); Design by Contract (Meyer, 1992); 仕様駆動テスト (ISO/IEC/IEEE 29119-4:2021)</td>
+          </tr>
+          <tr>
+            <td>保守性</td>
+            <td>lib を <code class="inline">version.sh</code> / <code class="inline">changelog.sh</code> / <code class="inline">release-notes.sh</code> / <code class="inline">common.sh</code> に責務分離（循環依存ゼロ） + <code class="inline">shellcheck</code> を CI 必須 + 構造化ログ <code class="inline">[release-prepare] [INFO] ...</code></td>
+            <td>情報隠蔽 (Parnas, 1972); 構造化設計 (Stevens et al., 1974); V(G) ≤ 10 目標 (McCabe, 1976)</td>
+          </tr>
+          <tr>
+            <td>相互作用性</td>
+            <td>不可逆操作前にバージョン文字列の再入力（タイプ確認）= 強制機能 + <code class="inline">--check</code> で副作用なしの事前バリデーション + エラーメッセージに必ず次の手を併記</td>
+            <td>Forcing Function (Norman, 2013); ユーザエラー防止性 (§相互作用性 §2.4); エラー回復導線 (Nielsen, 1993)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="consequences">Consequences</h2>
+
+    <h3 id="consequences-positive">Positive</h3>
+    <ul>
+      <li>リリース時の手作業項目が「PR レビュー」「マージ判断」「ローカル動作確認」の 3 点に縮約される。</li>
+      <li>バージョン整合性が CI で機械的にゲートされ、v0.1.1 で発生したような bump 漏れが構造的に再発しない。</li>
+      <li><code class="inline">git push</code> 以前は何度失敗しても <code class="inline">git restore</code> で初期状態に戻るため、リリース作業の心理的負荷が下がる。</li>
+      <li><code class="inline">RELEASING.md</code> がドキュメント・スクリプト・CI 設定を結ぶ正本となり、仕様ドリフトを抑止できる。</li>
+    </ul>
+
+    <h3 id="consequences-negative">Negative</h3>
+    <ul>
+      <li>追加ファイルが 8 つ（スクリプト 4 + lib 4 + ワークフロー 1 + 手順書 1）増え、初見の見渡しコストが上がる。<code class="inline">RELEASING.md</code> 冒頭の俯瞰図で補う。</li>
+      <li>bash の引数バリデーションは Node/Python に比べ表現力が低く、SemVer 正規表現や JSON 編集の不変条件を <code class="inline">jq</code> と関数規約で人手担保する必要がある。</li>
+      <li>CHANGELOG の Keep a Changelog 形式から外れた書き方をすると <code class="inline">awk</code> パースが abort する（意図的な厳格性だが、未経験者には驚きとなる）。</li>
+    </ul>
+
+    <h3 id="consequences-neutral">Neutral</h3>
+    <ul>
+      <li>GitHub Release の本文公開（<code class="inline">gh release create</code>）は手動のままとする。不可逆操作の自動化はユーザエラー防止性を毀損する判断（Norman, 2013）。</li>
+      <li>2 プラグイン同時リリース・pre-release（rc）対応は本 ADR のスコープ外。必要時に別 ADR で再検討。</li>
+    </ul>
+
+    <h2 id="compliance">Compliance &amp; Monitoring</h2>
+
+    <ul>
+      <li><strong>CI ゲート:</strong> <code class="inline">.github/workflows/verify-versions.yml</code> が PR ごとに <code class="inline">verify-versions.sh</code> を実行し、<code class="inline">plugin.json</code> と <code class="inline">marketplace.json.plugins[].version</code> の一致を強制する。</li>
+      <li><strong>静的検査:</strong> 同ワークフロー内で <code class="inline">shellcheck</code> を <code class="inline">scripts/**/*.sh</code> に対して実行し、warning 0 件を必須化する。</li>
+      <li><strong>受け入れ検証:</strong> リリース時に 3 ケースの誤入力（不正バージョン・clean でないワークツリー・既存 tag）を意図的に試し、すべて状態変更ゼロで abort することを目視確認する（カオス的検証, Basiri et al., 2016 の縮小適用）。</li>
+      <li><strong>仕様ドリフト防止:</strong> <code class="inline">RELEASING.md</code> ・スクリプト・<code class="inline">verify-versions.yml</code> を同一 PR で更新するルールを <code class="inline">CONTRIBUTING.md</code> に追記する（§機能適合性 §5 アンチパターン「仕様ドリフト」対策）。</li>
+    </ul>
+
+    <h2 id="open-questions">Open Questions</h2>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>ID</th><th>内容</th><th>方針</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono">Q1</td>
+            <td><code class="inline">marketplace.json</code> の <code class="inline">metadata.version</code> / <code class="inline">plugins[].version</code> の v0.1.1 不整合をいつ解消するか</td>
+            <td><span class="badge badge--success">Decided 2026-06-05</span> 自動化導入 PR とは別の <code class="inline">chore: sync marketplace versions</code> として独立化し、先に解消する。自動化 PR は不整合のない状態から開始する（機能適切性 §2.3 「スコープクリープ排除」）。</td>
+          </tr>
+          <tr>
+            <td class="mono">Q2</td>
+            <td>2 プラグイン同時リリース時の挙動（同一 X.Y.Z で揃えるか、独立採番か）</td>
+            <td>独立採番を既定。複数指定はフェーズ 2 に後送り</td>
+          </tr>
+          <tr>
+            <td class="mono">Q3</td>
+            <td>pre-release（rc）対応の必要性</td>
+            <td>現状不要。SemVer 正規表現は厳密版のみ受け付け</td>
+          </tr>
+          <tr>
+            <td class="mono">Q4</td>
+            <td>GitHub Actions での自動 publish（マージ即 tag/Release）まで踏み込むか</td>
+            <td>当面は手動 publish。CI は verify のみに限定</td>
+          </tr>
+          <tr>
+            <td class="mono">Q5</td>
+            <td><code class="inline">bats</code> ユニットテストを採用するか</td>
+            <td>初回は採用せず、CI の <code class="inline">verify-versions.sh</code> で代替。複雑度が増したら再検討</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="references">References</h2>
+
+    <ul>
+      <li>ISO/IEC (2023). <em>ISO/IEC 25010:2023 — Systems and software engineering — SQuaRE — Product quality model.</em> <a href="https://www.iso.org/standard/78176.html">https://www.iso.org/standard/78176.html</a></li>
+      <li>ISO/IEC (2016). <em>ISO/IEC 25023:2016 — Measurement of system and software product quality.</em> <a href="https://www.iso.org/standard/35747.html">https://www.iso.org/standard/35747.html</a></li>
+      <li>ISO/IEC/IEEE (2018). <em>ISO/IEC/IEEE 29148:2018 — Requirements engineering.</em> <a href="https://www.iso.org/standard/72089.html">https://www.iso.org/standard/72089.html</a></li>
+      <li>ISO/IEC/IEEE (2021). <em>ISO/IEC/IEEE 29119-4:2021 — Software testing — Test techniques.</em> <a href="https://www.iso.org/standard/79430.html">https://www.iso.org/standard/79430.html</a></li>
+      <li>Avizienis, A., Laprie, J.-C., Randell, B., &amp; Landwehr, C. (2004). Basic Concepts and Taxonomy of Dependable and Secure Computing. <em>IEEE TDSC</em>, 1(1), 11–33. DOI: 10.1109/TDSC.2004.2</li>
+      <li>Basiri, A. et al. (2016). Chaos Engineering. <em>IEEE Software</em>, 33(3), 35–41. DOI: 10.1109/MS.2016.60</li>
+      <li>Gotel, O. C. Z., &amp; Finkelstein, A. C. W. (1994). An Analysis of the Requirements Traceability Problem. <em>ICRE'94</em>, 94–101. DOI: 10.1109/ICRE.1994.292398</li>
+      <li>McCabe, T. J. (1976). A Complexity Measure. <em>IEEE TSE</em>, SE-2(4), 308–320.</li>
+      <li>Meyer, B. (1992). Applying 'Design by Contract'. <em>IEEE Computer</em>, 25(10), 40–51.</li>
+      <li>Nielsen, J. (1993). <em>Usability Engineering</em>. Academic Press.</li>
+      <li>Norman, D. A. (2013). <em>The Design of Everyday Things</em> (Revised ed.). Basic Books.</li>
+      <li>Nygard, M. T. (2018). <em>Release It! Design and Deploy Production-Ready Software</em> (2nd ed.). Pragmatic Bookshelf.</li>
+      <li>Parnas, D. L. (1972). On the Criteria To Be Used in Decomposing Systems into Modules. <em>CACM</em>, 15(12), 1053–1058.</li>
+      <li>Stevens, W. P., Myers, G. J., &amp; Constantine, L. L. (1974). Structured Design. <em>IBM Systems Journal</em>, 13(2), 115–139.</li>
+      <li>Keep a Changelog 1.1.0. <a href="https://keepachangelog.com/ja/1.1.0/">https://keepachangelog.com/ja/1.1.0/</a></li>
+      <li>Semantic Versioning 2.0.0. <a href="https://semver.org/lang/ja/">https://semver.org/lang/ja/</a></li>
+    </ul>
+
+    <hr />
+    <p class="muted" style="font-size:var(--fs-sm)">
+      Last updated: <span class="mono">2026-06-05</span> ·
+      Maintainer: <span class="mono">@9uiLe</span>
+    </p>
+
+  </main>
+</div>
+
+<script src="system/components.js"></script>
+<script>
+  window.addEventListener('load', function () {
+    DocsADR.initAll({
+      toc: { container: '#toc', content: '#content', selector: 'h2, h3' }
+    });
+  });
+</script>
+</body>
+</html>
