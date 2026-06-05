@@ -161,6 +161,18 @@ ADR ステータス専用:
 推奨フィールド: `ADR` / `Status` / `Date` / `Deciders` / `Supersedes` / `Tags`。
 数値・日付は `.mono` を付けて等幅で。
 
+Tags のように複数バッジを並べるフィールドは `adr-frontmatter__field--full` を付けて 1 行全幅に。バッジは自動で `flex-wrap` で改行する。
+
+```html
+<div class="adr-frontmatter__field adr-frontmatter__field--full">
+  <span class="adr-frontmatter__key">Tags</span>
+  <span class="adr-frontmatter__value">
+    <span class="badge badge--no-dot">frontend</span>
+    <span class="badge badge--no-dot">react</span>
+  </span>
+</div>
+```
+
 ---
 
 ## 5. コードブロック

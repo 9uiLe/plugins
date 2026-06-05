@@ -19,6 +19,18 @@
   gap: var(--sp-1);
 }
 
+/* Full-row field (Tags 等のように複数バッジを横並びで載せる用) */
+.adr-frontmatter__field--full {
+  grid-column: 1 / -1;
+}
+
+.adr-frontmatter__field--full .adr-frontmatter__value {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
 .adr-frontmatter__key {
   font-size: var(--fs-xs);
   letter-spacing: var(--tracking-caps);
