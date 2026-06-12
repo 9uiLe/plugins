@@ -1,6 +1,6 @@
 ---
 name: quality-review
-description: Review EXISTING code, a diff, a PR, or a repository against the ISO/IEC 25010:2023 product quality model (9 characteristics, 40 subcharacteristics) and produce findings with severity plus a quality scorecard. Use when the user asks for a quality-focused code review, a non-functional review of an implementation, an audit of a PR/diff/repository, or says 「品質観点でレビューして」「25010 でレビュー」「このコードの品質特性を評価して」「実装をレビューして」「PR を品質特性で見て」「指摘して」. ALWAYS runs the deterministic static-analysis layer (CI artifact → wrapper script → individual tool commands → mark as skipped) BEFORE producing any LLM judgement; see `references/static-evaluation.md`. If the user is asking to DESIGN a new architecture (not review existing code), use the `quality-architecture` skill instead. Every recommendation must cite the academic/official references in the reference library.
+description: Review EXISTING code, a diff, a PR, or a repository against the ISO/IEC 25010:2023 product quality model, producing severity-rated findings and a quality scorecard. Always runs deterministic static analysis before any LLM judgement. Japanese triggers: 「品質観点でレビューして」「25010 でレビュー」「実装をレビューして」「PR を品質特性で見て」「指摘して」. For designing a NEW architecture (not reviewing existing code), use `quality-architecture` instead.
 ---
 
 # quality-review — ISO/IEC 25010 でコード/差分を網羅レビューする
