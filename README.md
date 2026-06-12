@@ -28,6 +28,7 @@ Claude Code 上で次を実行してください:
 | --- | --- |
 | [tech-docs](./plugins/tech-docs) | ADR / 技術仕様書 / 汎用ドキュメントを、デザインシステム付きの 1 枚 HTML として生成する 3 つの Skill (`create-adr` / `create-spec` / `create-doc`) を提供します。 |
 | [quality-architect](./plugins/quality-architect) | ISO/IEC 25010:2023 製品品質モデル (9 特性 40 副特性) でアーキテクチャ設計とコードレビューを行う 2 つの Skill (`quality-architecture` / `quality-review`) を提供します。各特性の学術/公式リファレンス・ライブラリ付き。 |
+| [model-strategy](./plugins/model-strategy) | 従量課金前提でモデル (Fable/Opus/Sonnet/Haiku) と effort をコスパよく使い分ける Skill (`model-effort-guide`) と、安価な委譲先サブエージェント (`sonnet-implementer` / `haiku-scout`) を提供します。公式価格リファレンス付き。 |
 
 ## リポジトリ構成
 

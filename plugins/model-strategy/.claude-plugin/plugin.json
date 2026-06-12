@@ -1,0 +1,19 @@
+{
+  "name": "model-strategy",
+  "version": "0.1.0",
+  "description": "Cost-effective model and effort selection for Claude Code. Provides a task-classification skill (model-effort-guide) that recommends the optimal model (Fable/Opus/Sonnet/Haiku) and effort level per task, plus pre-configured subagents (sonnet-implementer / haiku-scout) for cheap delegation. Backed by a reference library with official pricing and effort documentation.",
+  "author": {
+    "name": "9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": [
+    "model-selection",
+    "effort",
+    "cost-optimization",
+    "subagents",
+    "pricing",
+    "token-economy"
+  ]
+}
