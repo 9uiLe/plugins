@@ -5,6 +5,8 @@
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-06-12
+
 ### Changed
 
 - **quality-architect**: `quality-architecture` / `quality-review` スキルの frontmatter description を約半分に短縮（計約 1,800 字 → 約 900 字、スキル一覧として毎セッション注入されるコンテキストを概算 280 トークン削減）。起動判断に必要な対象の区別（新規設計 vs 既存コードレビュー）・日本語トリガー・姉妹スキルへの誘導は維持。
@@ -43,7 +45,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/9uiLe/plugins/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/9uiLe/plugins/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/9uiLe/plugins/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/9uiLe/plugins/releases/tag/v0.1.0

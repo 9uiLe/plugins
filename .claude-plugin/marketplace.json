@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins by 9uiLe.",
-    "version": "0.1.2"
+    "version": "0.1.3"
   },
   "plugins": [
     {
@@ -27,7 +27,7 @@
       "name": "quality-architect",
       "source": "./plugins/quality-architect",
       "description": "Design and review software architecture against the ISO/IEC 25010:2023 product quality model (9 characteristics, 40 subcharacteristics), with a reference library of verified academic and official citations.",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "category": "development",
       "tags": [
         "iso-25010",
