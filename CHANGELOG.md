@@ -5,6 +5,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **quality-architect**: `quality-architecture` / `quality-review` スキルの frontmatter description を約半分に短縮（計約 1,800 字 → 約 900 字、スキル一覧として毎セッション注入されるコンテキストを概算 280 トークン削減）。起動判断に必要な対象の区別（新規設計 vs 既存コードレビュー）・日本語トリガー・姉妹スキルへの誘導は維持。
+
 ## [0.1.2] - 2026-06-05
 
 ### Added
