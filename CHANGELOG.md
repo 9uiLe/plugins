@@ -5,6 +5,12 @@
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-06-12
+
+### Added
+
+- プラグイン **model-strategy** (v0.1.0) を収録 — 従量課金前提でモデル・effort をコスパよく使い分けるためのプラグイン。タスクを分類して最適なモデル (Fable/Opus/Sonnet/Haiku)・effort・実行体制 (メイン or 委譲) を推奨する Skill `model-effort-guide`、安価な委譲先となる Subagent `sonnet-implementer` (Sonnet) / `haiku-scout` (Haiku)、公式ドキュメントに基づくリファレンス 4 編 (価格表 / effort 5 段階 / 決定マトリックス / コスト削減レバー) を提供。
+
 ## [0.1.3] - 2026-06-12
 
 ### Changed
@@ -45,7 +51,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/9uiLe/plugins/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/9uiLe/plugins/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/9uiLe/plugins/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/9uiLe/plugins/compare/v0.1.0...v0.1.1
