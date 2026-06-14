@@ -40,6 +40,7 @@ description: "Recommend the cost-optimal Claude model (Fable/Opus/Sonnet/Haiku) 
 | `references/01-effort-levels.md` | effort 5 段階の使い分けとモデル別知見 |
 | `references/02-decision-matrix.md` | タスク分類マトリックスと委譲判定基準 |
 | `references/03-cost-levers.md` | キャッシュ温存・コンテキスト衛生・アンチパターン |
+| `references/06-context-monitor.md` | コンテキスト量を statusLine で可視化する同梱スクリプトと配線手順 |
 
 ## 4. 出力形式(推奨のみ求められた場合)
 
