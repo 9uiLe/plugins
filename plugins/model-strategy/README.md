@@ -29,6 +29,8 @@ Claude Code を従量課金前提でコスパよく運用するための、モ�
 | [01-effort-levels.md](./references/01-effort-levels.md) | effort 5 段階 (low〜max) の使い分けとモデル別知見 |
 | [02-decision-matrix.md](./references/02-decision-matrix.md) | タスク分類 × モデル/effort 決定マトリックス・委譲判定基準 |
 | [03-cost-levers.md](./references/03-cost-levers.md) | プロンプトキャッシュ温存・コンテキスト衛生・アンチパターン |
+| [04-large-codebase.md](./references/04-large-codebase.md) | 大規模コードベースの量制御・常駐コンテキストを平坦に保つ規定 |
+| [05-repo-index.md](./references/05-repo-index.md) | ナビゲーション索引 (pull 優先)・外部 queryable 索引を第一に薄い CLAUDE.md 地図はフォールバック |
 | [06-context-monitor.md](./references/06-context-monitor.md) | コンテキスト量を statusLine で可視化する同梱スクリプトと配線手順 |
 
 ## 戦略の要約
