@@ -43,6 +43,7 @@ description: "Recommend the cost-optimal Claude model (Fable/Opus/Sonnet/Haiku) 
 | `references/03-cost-levers.md` | キャッシュ温存・コンテキスト衛生・アンチパターン |
 | `references/04-large-codebase.md` | 大規模コードベースの量制御 (常駐コンテキストを平坦に保つ規定) |
 | `references/05-repo-index.md` | ナビゲーション索引 (pull 優先: 外部 queryable 索引を第一に、薄い CLAUDE.md 地図はフォールバック) |
+| `references/06-context-monitor.md` | コンテキスト量を statusLine で可視化する同梱スクリプトと配線手順 |
 
 ## 4. 出力形式(推奨のみ求められた場合)
 
