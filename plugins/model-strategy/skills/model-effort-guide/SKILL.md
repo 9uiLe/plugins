@@ -20,7 +20,8 @@ description: "Recommend the cost-optimal Claude model (Fable/Opus/Sonnet/Haiku) 
    - 結論だけ欲しい探索・定型 → **haiku-scout** に委譲
    - 新しい設計判断を含む → メインセッションで実行
 4. 委譲する場合は §3 の鉄則に従う: 仕様・制約・受け入れ条件を**最初に全部**渡し、戻り値は「結論 + 根拠の要点」のみ要求する。独立タスクは 1 メッセージで並列に投げる
-5. ユーザーがモデル選択の理由や価格を尋ねた場合のみ、`00-pricing.md` / `01-effort-levels.md` を読んで根拠付きで説明する
+5. **コードベースが大きい場合** (`04-large-codebase.md` §4 の目安に該当) は、単価最適化とは別に**量制御**が支配的になる。探索を無条件委譲し (context firewall)、メインの常駐コンテキストを平坦に保つ。同ファイル §3 の規定をデフォルトとして適用する
+6. ユーザーがモデル選択の理由や価格を尋ねた場合のみ、`00-pricing.md` / `01-effort-levels.md` を読んで根拠付きで説明する
 
 ## 2. クイックリファレンス
 
@@ -40,6 +41,7 @@ description: "Recommend the cost-optimal Claude model (Fable/Opus/Sonnet/Haiku) 
 | `references/01-effort-levels.md` | effort 5 段階の使い分けとモデル別知見 |
 | `references/02-decision-matrix.md` | タスク分類マトリックスと委譲判定基準 |
 | `references/03-cost-levers.md` | キャッシュ温存・コンテキスト衛生・アンチパターン |
+| `references/04-large-codebase.md` | 大規模コードベースの量制御 (常駐コンテキストを平坦に保つ規定) |
 
 ## 4. 出力形式(推奨のみ求められた場合)
 
