@@ -5,6 +5,12 @@
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-06-15
+
+### Changed
+
+- **quality-architect**: `quality-review` スキルの「特性ごとのチェック」(step 4) に関連度トリアージを追加し、リファレンス `references/0N-*.md` を 9 特性すべて無条件に Read していた挙動を、精査対象と判定した特性のみ遅延ロードする方式へ変更。スコアカードには従来どおり 9 特性すべてを載せ網羅性を維持しつつ、典型的な差分で 1 レビューあたり概算 30,000 トークンのコンテキスト消費を削減。`quality-architecture` は既に重点 2〜4 特性に絞る設計のため変更なし。
+
 ## [0.1.4] - 2026-06-12
 
 ### Added
@@ -51,7 +57,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/9uiLe/plugins/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/9uiLe/plugins/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/9uiLe/plugins/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/9uiLe/plugins/compare/v0.1.1...v0.1.2
