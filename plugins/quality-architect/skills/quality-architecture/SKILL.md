@@ -1,6 +1,6 @@
 ---
 name: quality-architecture
-description: "Design NEW or PROPOSED architecture using the ISO/IEC 25010:2023 product quality model: prioritize quality attributes from requirements, compare design options, define non-functional requirements, or run ATAM-style trade-off analysis. Japanese triggers: 「アーキテクチャを設計して」「非機能要件を洗い出して」「ATAM でトレードオフ分析して」「設計案を比較して」. For reviewing EXISTING code, a diff, a PR, or a repository, use `quality-review` instead."
+description: "Design NEW or PROPOSED architecture using the ISO/IEC 25010:2023 product quality model: prioritize quality attributes from requirements, compare design options, define non-functional requirements, or run ATAM-style trade-off analysis. Japanese triggers: 「アーキテクチャを設計して」「非機能要件を洗い出して」「ATAM でトレードオフ分析して」「設計案を比較して」. For reviewing EXISTING code, a diff, a PR, or a repository — INCLUDING assessing whether the existing design itself is sound (design review) — use `quality-review` instead. This skill is for design that does not yet exist; review of an existing design is `quality-review`'s job."
 ---
 
 # quality-architecture — ISO/IEC 25010 でアーキテクチャを設計・評価する
@@ -19,6 +19,8 @@ description: "Design NEW or PROPOSED architecture using the ISO/IEC 25010:2023 p
 ## 0. このスキルを使ってよいかの判定（必須・最初に実行）
 
 このスキルは **新規／提案中のアーキテクチャ設計** 専用である。**既存コード／差分／PR／実装のレビュー**は姉妹スキル `quality-review` の領域で、決定論ファーストの静的解析手順がそこにのみ定義されている。
+
+**よくある誤選択の予防**: 「レビューでもまず設計の妥当性を見るべきだから architecture では？」という直感は誤り。**既存コードの設計が妥当かを評価する『設計レビュー』も `quality-review` の責務**（同スキル §1 step 2.5「設計妥当性トリアージ」）。判別軸は「設計を見るか否か」ではなく **「対象が既に在るか否か」**。ただし review が「設計そのものを作り直すべき」と結論し、ユーザが**置換アーキの新規設計**を望む場合は、本スキルへの**前方ハンドオフが正当**（§0.1 がブロックするのは“既存コードのレビューを本スキルで処理する”後方向のみ）。
 
 ### 0.1 客観条件（最優先・LLM の主観判断より上位）
 

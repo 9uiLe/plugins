@@ -1,6 +1,6 @@
 ---
 name: quality-review
-description: Review EXISTING code, a diff, a PR, or a repository against the ISO/IEC 25010:2023 product quality model, producing severity-rated findings and a quality scorecard. Always runs deterministic static analysis before any LLM judgement. Japanese triggers: 「品質観点でレビューして」「25010 でレビュー」「実装をレビューして」「PR を品質特性で見て」「指摘して」. For designing a NEW architecture (not reviewing existing code), use `quality-architecture` instead.
+description: Review EXISTING code, a diff, a PR, or a repository against the ISO/IEC 25010:2023 product quality model, producing severity-rated findings and a quality scorecard. Always runs deterministic static analysis before any LLM judgement. Reviewing whether the EXISTING design itself is sound (design review / design-validity assessment of existing code) is part of THIS skill — see §1 step 2.5 — not `quality-architecture`. Japanese triggers: 「品質観点でレビューして」「25010 でレビュー」「実装をレビューして」「PR を品質特性で見て」「指摘して」「この設計は妥当か」. For designing a NEW/replacement architecture (not yet existing code), use `quality-architecture` instead.
 ---
 
 # quality-review — ISO/IEC 25010 でコード/差分を網羅レビューする
@@ -58,6 +58,12 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
    - `git diff` / 対象ファイルを Read し、変更の意図・技術スタック・実行環境を把握する。
    - **対象言語を特定**する（不明なら確認）。`quality-gates.yml` に該当 profile があるか確認する。
 
+2.5. **設計妥当性トリアージ（考察パート・最初のトップダウン評価／このステップが「レビューでまず設計を見る」を満たす）**
+   - 個別の欠陥を探す前に、まず **「この差分／コードが採用しているアーキテクチャ・設計判断そのものが、要件・文脈に照らして妥当か」をトップダウンで評価する**。「レビューでも結局まず設計の妥当性を考えるべき＝それなら architecture スキルでは？」という疑問への答えはここ: **既存コードの設計レビューは本スキルの責務であり、`quality-architecture` ではない**（判別軸は「対象が既に在るか」。00-overview §5.2）。
+   - 観点は 25010 の重点特性で 2〜4 点に絞る: 採用方式に妥当な代替はあったか／主要なトレードオフ（例: 性能効率性⇄保守性、セキュリティ⇄使用性、可用性⇄一貫性）を設計が正しく解決しているか／境界・責務分割は妥当か。
+   - **このフェーズの出力は全て「推測(judgment)」**であり決定論パートではない。数値しきい値はここで判定しない（step 3 / 4 に委ねる）。設計上の懸念が大きい特性は step 4-0 の関連度トリアージで「精査対象」へ寄せる。
+   - **前方ハンドオフ（review → architecture）**: 設計そのものを作り直す提案（置換アーキの新規設計）が主目的になったら、それは `quality-architecture` の領域。「現状コードの設計レビューはこのまま継続する／置換アーキを“設計”したいなら quality-architecture へ」と 1 行で提示する。これは §0.1 がブロックする後方向（既存コードのレビューを architecture で受ける）とは別物の、正当な前方遷移（00-overview §5.2）。
+
 3. **静的評価レイヤー（決定論パート）を先に実行**
    - **【必須チェックポイント】このステップに入る前に、§0.2 のインベントリ結果を踏まえ、AskUserQuestion を 1 回発行する**（**二重質問禁止 — 1 ゲート / 1 セッション**）。文面テンプレ:
      > 「決定論パートの実行方針を確認します。検出した資産: <0.2 の転記内容>。
@@ -87,10 +93,12 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
 5. **指摘の構造化**
    - 各指摘を以下で記録する:
      - **特性 / 副特性**（25010 のどこか）
+     - **層**: `design-level`（設計・方式・境界そのものの誤り。step 2.5 由来）/ `implementation-level`（許容できる設計内の局所的欠陥）。重大度とは直交する軸で、両方を必ず付ける。
      - **重大度**: Critical / High / Medium / Low
      - **箇所**: `path:line`
      - **問題**と**推奨**（具体的な修正方針）
      - **根拠リファレンス**（`0N-*.md` の学術/公式文献を引用）
+   - **design-level の指摘が支配的で、局所修正では解消しない**と判断したら、step 2.5 の前方ハンドオフ（置換アーキの設計は `quality-architecture`）を報告に明記する。
 
 6. **スコアカード（決定論／考察を分離）**
    - **決定論パート**: ツール名・実測値・しきい値・判定を表で示す（再現可能）。
@@ -115,6 +123,7 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
 ### サマリ
 - 対象 / 範囲 / 版(2011|2023) / 言語・適用 profile
 - 決定論パートの source: ci-artifact / wrapper / individual / none(全 skipped)
+- 設計妥当性トリアージ（step 2.5）の所見: 採用設計は妥当 / 要再考（design-level 指摘 N 件・うち再設計提案の有無）
 - 最重要指摘 Top N
 
 ### 決定論パート（静的解析ツール由来・再現可能）
@@ -141,6 +150,7 @@ LLM の判断は数値化できない残余（考察パート）に閉じ込め�
 
 ### 指摘一覧（重大度順）
 #### [Critical] <タイトル> — セキュリティ/機密性
+- 層: design-level / implementation-level
 - 箇所: path:line
 - 問題: …
 - 推奨: …
