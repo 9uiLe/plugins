@@ -5,6 +5,20 @@
 
 ## [Unreleased]
 
+### Added
+
+- **quality-architect** (v0.1.4): 結合・凝集・複雑度・モジュール境界に関する指摘への「削減アクション」必須化。`references/07a-coupling-deep-dive.md` に §6.3.1「削減アクション・カタログ」（検出状況 → 下げる軸 → 具体的手順の対応表と提示書式）を追加し、`quality-review`（step 5・指摘テンプレ・§5）と `quality-architecture`（章 4'・§4）が BALANCE = FALSE の結合・複雑性を検出した際に Khononov のリバランス 3 軸（Strength↓ / Distance↓ / Volatility 隔離）に基づく具体的な削減手順の併記を要求するように。アクションは severity / verdict に影響しない（H9 維持）。
+- **model-strategy** (v0.1.1): Codex CLI 対応。`SKILL.md` に実行環境判定（§0.5）と Codex での委譲代替手順（`/model`・`codex exec -m`・低 reasoning effort の別実行）、`references/07-codex.md`（GPT 系モデル価格・reasoning effort・サブスク制限の決定基準）を追加。
+- **model-strategy** (v0.1.1): Fable 5 のサブスクリプション提供条件（〜2026-07-07 は週次上限 50% キャップで同梱、以降は API 単価の従量クレジット、セーフガードによる Opus 4.8 自動フォールバック）を `00-pricing.md` §4 に追加し、`01`/`02`/`03`/`SKILL.md` の判断基準を提供フェーズ別に更新。
+
+### Changed
+
+- **quality-architect** (v0.1.4): 両 SKILL.md に verbatim 重複していた Khononov 引用禁則（Pain 式の 2 留保・Instability 代理禁止・H9 片方向）を `07a §9` への単一ソース参照に置換し、規律の二重管理を解消。
+
+### Fixed
+
+- **model-strategy** (v0.1.1): `00-pricing.md` の「Fable 5 は新トークナイザで Opus 系比 30% 増 → 実効 2.6 倍」という誤記載を訂正。Fable 5 のトークナイザは Opus 4.8 と同一で、実効コストは名目通り約 2 倍（30% 増は Opus 4.7 系トークナイザ vs 旧世代モデルの比較）。
+
 ## [0.1.5] - 2026-06-15
 
 ### Changed

@@ -193,6 +193,26 @@ canonical はこの区別を反映する（`COMPLEXITY = NOT MODULARITY` が総�
 - **Volatility を下げる**: 安定化（API を凍結する、変更頻度の高い部分を抽出する）。
 - BALANCE = TRUE になるまで、3 次元のうち最も改修コストの低い軸から調整する。
 
+#### §6.3.1 削減アクション・カタログ（運用補助・本リポジトリ合成）
+
+> 位置づけ: §6.3 の 3 軸（Khononov 2024, Ch.11）を「指摘に添える具体的アクション」へ運用化した **本リポジトリ独自の catalog** である（§6.5 と同じく Khononov 2024 の verbatim ではない。出典として引用する場合は 3 軸の考え方のみ Ch.11 に帰属させること）。**severity・PASS/FAIL 判定には一切影響しない**（H9: 本 catalog は推奨の内容であって判定入力ではない）。
+
+| 検出状況（例） | 下げる軸 | 具体的アクション例 |
+| --- | --- | --- |
+| Intrusive Coupling（内部実装への依存、リフレクション、private 相当への到達） | Strength | 依存先の公開 API / 明示コントラクトのみを使うよう書き換え。必要な機能が公開されていなければ依存先に API 追加を提案（Intrusive → Functional 以下へ） |
+| Functional Coupling（業務ロジック・業務シーケンスの境界跨ぎ共有、cross-boundary duplicates） | Strength または Distance | 重複ロジックをどちらか一方の境界へ集約し他方はコントラクト経由で呼ぶ。または 2 部品を同一境界内へ移設（Distance 短縮） |
+| Model Coupling（ドメインモデル型の境界跨ぎ共有） | Strength | 境界専用の DTO / integration-specific model を導入し、内部モデルを非公開化（Model → Contract） |
+| 大域的複雑性（強 Strength × 遠 Distance、§6.1 `S AND D`） | どちらか一方 | XOR を成立させる: 強く結合したままなら同一境界へ寄せる（Distance↓）、遠いまま保つなら Contract 化（Strength↓）。両方同時に着手しない（改修コストの低い軸から） |
+| 局所的複雑性（弱 Strength × 近 Distance の部品が過剰分割で散在、§6.1 `NOT S AND NOT D`） | Distance（構成整理） | 過剰分割を統合し境界数を減らす。§6.4 の通り「さらに疎結合化」は逆効果（distributed monolith） |
+| 高 Volatility の結合先（Core サブドメイン等）への強依存 | Volatility（隔離） | 変更頻度の高い部分を安定インターフェースの背後に抽出・隔離（accidental volatility のみ削減対象。essential は設計では消えない、§5.2） |
+
+**アクション提示の書式**（指摘・設計成果物に添える 1〜2 行）:
+
+```
+削減アクション: <軸: Strength|Distance|Volatility>を下げる — <上表から選んだ具体的手順>（Khononov 2024, Ch.11）
+期待効果: BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY が <FALSE→TRUE になる理由 1 文>
+```
+
 ### §6.4 「Decouple everything は誤り」原則
 
 Khononov 2024 は「decouple everything」アプローチを **明示的に否定** する。過剰な疎結合は distributed monolith を生み、Distance だけが伸びて Strength が下がらない反パターンとなる（出典: coupling.dev/posts/core-concepts/balance/）。
@@ -467,7 +487,7 @@ Khononov 2024 は古典理論を Ch.5 と Ch.6 で取り込み直しており、
 - [ ] **Strength 段を1つ選び、共有要素を併記したか**: 境界ごとに目標 Integration Strength 段（Intrusive/Functional/Model/Contract）を選び、`(type: ...) / (contract: ...) / (symbol: ...)` を直近に併記したか（H3）。未併記なら `推測` ラベルに格下げ。
 - [ ] **Distance を見積ったか**: 境界の Distance 段（Methods〜Systems）を見積り、変更コスト比例／ライフサイクル結合反比例の含意（§4.2）を踏まえたか。
 - [ ] **Volatility を essential/accidental で分けたか**: 結合先の変更圧力を見積り、設計で減らす対象を accidental に限定したか（§5.2）。
-- [ ] **三重苦を避けたか**: 強 Strength × 遠 Distance × 高 Volatility が同時に成立する境界を作っていないか（§6.1 大域的複雑性 + 高 Volatility）。該当すれば §6.3 のどの軸で rebalance するか明記。
+- [ ] **三重苦を避けたか**: 強 Strength × 遠 Distance × 高 Volatility が同時に成立する境界を作っていないか（§6.1 大域的複雑性 + 高 Volatility）。該当すれば §6.3.1 の削減アクション書式（下げる軸 + 具体的手順 + 期待効果）で明記。
 - [ ] **XOR を成立させたか**: 各境界で `STRENGTH XOR DISTANCE`（強なら近く / 遠いなら弱く）か、または低 Volatility による緩和（`OR NOT VOLATILITY`）を説明できるか（§6.1）。
 - [ ] **decouple everything になっていないか**: 過剰な疎結合で distributed monolith を招いていないか（§6.4）。
 - [ ] **canonical 表現を併記したか**: 「pain / balance」表現に canonical `BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY` を併記したか（H10）。`Pain = S × D × V` 単独引用や精密メトリクス化をしていないか（H2）。
