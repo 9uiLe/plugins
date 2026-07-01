@@ -30,6 +30,12 @@
 ### Fable 5
 - **`low` でも従来モデルの `xhigh`〜`max` を超える品質が出ることが多い**(公式記載)。Fable 5 を使うときほど effort を下げる余地がある
 - 高 effort ではルーチン作業に対して過剰なコンテキスト収集・熟考をしがち。正しく完了するのに時間がかかりすぎる場合は effort を下げる
+- **thinking は常時オン**(オフにできない)。思考トークンも output 課金されるため、同じタスクでも他モデルよりトークン消費が多くなりやすい。サブスク同梱枠(`00-pricing.md` §4)は週次上限を共有しているので、**枠温存の観点でも既定を `high` ではなく `medium`〜`high` に置き、`xhigh`/`max` は最難関のみに限定**するのが効率的
+- 単発の難問なら「Fable 5 (low〜medium)」が「Opus 4.8 (xhigh)」より安く良い結果になるケースがある。迷ったら両者を同一タスクで比較して経路を固定する
+
+### Sonnet 5
+- Sonnet 帯で初めて `xhigh` に対応。`medium` ≈ Sonnet 4.6 の `high`、`high` ≈ Sonnet 4.6 の `max` に相当(公式マッピング)
+- adaptive thinking がデフォルトでオン(4.6 はオフ)。thinking 分の output 課金が増えるので、定型用途は `thinking: disabled` か effort `low` を明示する
 
 ### Sonnet 4.6
 - デフォルトが `high` なので、チャット的・定型的な用途では明示的に `low`/`medium` に下げないと過剰消費する

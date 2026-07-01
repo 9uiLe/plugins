@@ -7,9 +7,19 @@ description: "Recommend the cost-optimal Claude model (Fable/Opus/Sonnet/Haiku) 
 
 与えられたタスクを分類し、コスト最適なモデル・effort・実行体制(メイン実行 or サブエージェント委譲)を決定して実行する。
 
+この文書で `PLUGIN_ROOT` と書く場合は、Claude Code では `${CLAUDE_PLUGIN_ROOT}`、Codex ではこの `SKILL.md` の 2 階層上にある `model-strategy` プラグインルートを指す。リファレンスはすべて `PLUGIN_ROOT/references/` 配下。
+
 ## 0. 原則
 
 **高価なモデルは「判断」に、安価なモデルは「作業量」に使う。** メインセッションは設計・監査・レビュー・最難関実装に専念し、それ以外は委譲する。
+
+## 0.5 実行環境の判定（最初に 1 回だけ）
+
+- **Claude Code で実行中**: サブエージェント（`sonnet-implementer` / `haiku-scout` / Explore）への委譲が使える。以降の手順をそのまま適用する。
+- **Codex CLI で実行中**: モデル体系（GPT 系）・価格・reasoning effort・委譲手段が異なるため、判断基準は `references/07-codex.md` を読む。原則（§0）と委譲の鉄則（`02-decision-matrix.md` §3）はそのまま適用し、担当モデルだけ読み替える:
+  1. **委譲**: Codex のマルチエージェント（`spawn_agent` / `agents.<name>`）で安いモデル（gpt-5.4-mini 等）+ 低 effort の役割へ出す。使えない場合は `codex exec -m <model>` の別実行で代替
+  2. **モデル/effort 切替**: 対話中は `/model`、プリセットは `--profile`
+  3. 本プラグインの `sonnet-implementer` / `haiku-scout` エージェント定義は Claude Code 専用。Codex では同等の役割を `agents.<name>` に定義して使う
 
 ## 1. 判定フロー
 
@@ -29,9 +39,12 @@ description: "Recommend the cost-optimal Claude model (Fable/Opus/Sonnet/Haiku) 
 | --- | --- | --- |
 | 設計・技術選定・監査 | メインセッション | high〜xhigh |
 | 最難関実装・大規模リファクタ | メインセッション | xhigh |
+| Fable 5 でしか差が出ない最難関の判断 | メイン (Fable 5) | medium〜high (低 effort でも従来 xhigh 級) |
 | 仕様確定済みの実装 | sonnet-implementer | (委譲) |
 | 探索・調査・定型作業 | haiku-scout | (委譲) |
 | レビューの個別検証 fan-out | Sonnet サブエージェント並列 | (委譲) |
+
+**Fable 5 の使いどころはサブスク提供フェーズで変わる**: 同梱期間(〜2026-07-07・週次上限の 50% キャップ)は最難関タスクへの集中投下、以降は従量クレジット($10/$50)前提のコスト判断。詳細は `00-pricing.md` §4 と `02-decision-matrix.md` §2。
 
 ## 3. リファレンス
 
@@ -44,6 +57,7 @@ description: "Recommend the cost-optimal Claude model (Fable/Opus/Sonnet/Haiku) 
 | `references/04-large-codebase.md` | 大規模コードベースの量制御 (常駐コンテキストを平坦に保つ規定) |
 | `references/05-repo-index.md` | ナビゲーション索引 (pull 優先: 外部 queryable 索引を第一に、薄い CLAUDE.md 地図はフォールバック) |
 | `references/06-context-monitor.md` | コンテキスト量を statusLine で可視化する同梱スクリプトと配線手順 |
+| `references/07-codex.md` | Codex CLI (GPT 系モデル) の価格・reasoning effort・委譲代替の決定基準 |
 
 ## 4. 出力形式(推奨のみ求められた場合)
 

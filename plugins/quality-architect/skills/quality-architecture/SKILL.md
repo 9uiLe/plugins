@@ -96,6 +96,7 @@ description: "Design NEW or PROPOSED architecture using the ISO/IEC 25010:2023 p
 **章 4'（モジュール境界と結合バランス）の書き方**（境界を新規定義する設計の場合のみ出力）:
 - 境界をまたぐ依存ごとに、評価レベル（`module_unit:`）・目標 Integration Strength 段（共有要素併記）・Distance 段・Volatility 見積りを表で示し、`BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY`（07a §6.1 canonical）で評価する。
 - 数値・段は `（参考値: Khononov 2024, Ch.<n>）` ラベル付き（実測判定にしない・§3.5）。
+- **BALANCE = FALSE の境界（特に強 Strength × 遠 Distance の大域的複雑性）には、07a §6.3.1 の削減アクション書式（下げる軸 + 具体的手順 + 期待効果）を必ず添える**。低 Volatility による許容（`OR NOT VOLATILITY`）で残す場合はその根拠を 1 行書く。
 - 末尾に 07a §11.2 の設計時結合チェックリストを貼り、各項目の充足を示す。
 - 詳細手順と禁則は `07a §11`（§11.1 ヒューリスティクス / §11.2 チェックリスト / §11.3 §6.5 との混同禁止）に従う。
 
@@ -133,5 +134,5 @@ description: "Design NEW or PROPOSED architecture using the ISO/IEC 25010:2023 p
 - ❌ 過剰設計：要求にない品質特性のための仕組みを足し込まない。
 - ❌ 既存コード／差分／PR のレビュー依頼を本スキルで処理する（→ `quality-review` にハンドオフ。§0 参照）。
 - ❌ 対象コードに対する判定値として数値しきい値を引用する（V(G) ≤ 10, カバレッジ ≥ 0.70 等）。設計時は `（参考値: ...）` ラベル必須。実測値が必要なら `quality-review` に切り替える。
-- ⚠️ **Khononov の `Pain = Strength × Distance × Volatility` を「精密メトリクス」として本文に書く**。同式は書籍本文 verbatim（Ch.10 §10.2.1, 邦訳 p.182「メンテナンスの労力 ＝ 強度 ＊ 距離 ＊ 変動性」）だが、書籍自身が 2 値スケール前提（高=1/低=0）+「正確な科学ではない」警告（§10.3, p.184）を付している。引用時はこの 2 留保を必ず併記し、連続値の精密指標として提示しない。canonical 第一表現は `references/07a-coupling-deep-dive.md` §6.1 の `BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY`（こちらも書籍 verbatim）（07a §9 H2 規律）。
-- ❌ **Robert C. Martin の Instability `I = Ce / (Ce + Ca)` を Khononov Integration Strength の代理として引用する**。Khononov 2024 は依存をカウントするアプローチを名指しで否定している（07a §9 H2 規律）。
+- ❌ BALANCE = FALSE（特に強 Strength × 遠 Distance の大域的複雑性）と評価した境界を、削減アクション（07a §6.3.1 の書式）を添えずに提案に残す。
+- ⚠️ **Khononov（07a）を引用する前に、`references/07a-coupling-deep-dive.md` §9（H1〜H10 禁則）を必ず Read し従う**。同節がカノン。代表例: Pain 式 `Pain = S × D × V` を 2 留保なしに精密メトリクス化しない（H2/H10。canonical 第一表現は §6.1 の BALANCE 論理式）／Martin の Instability を Integration Strength の代理にしない（H2）。

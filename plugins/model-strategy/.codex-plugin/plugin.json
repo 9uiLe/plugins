@@ -1,6 +1,6 @@
 {
   "name": "model-strategy",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Cost-effective model and effort selection for Claude Code workflows.",
   "author": {
     "name": "9uiLe",
