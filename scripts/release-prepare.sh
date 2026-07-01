@@ -7,7 +7,7 @@
 #                              [--dry-run] [--yes] [--no-pr]
 #
 # Two version axes:
-#   - plugin version  (plugin.json, marketplace.json plugins[].version)
+#   - plugin version  (Claude/Codex plugin.json, marketplace.json plugins[].version)
 #   - release version (marketplace metadata.version, branch, CHANGELOG, tag)
 # --release-bump defaults to patch. CHANGELOG/branch/tag use the release version.
 #
@@ -147,6 +147,7 @@ confirm_typed "v${RELEASE_VERSION}" "About to commit & push branch ${BRANCH}."
 git add \
   ".claude-plugin/marketplace.json" \
   "$(plugin_json "$PLUGIN")" \
+  "$(codex_plugin_json "$PLUGIN")" \
   "CHANGELOG.md" \
   "releases/v${RELEASE_VERSION}.md"
 

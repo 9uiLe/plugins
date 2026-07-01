@@ -1,0 +1,44 @@
+{
+  "name": "9uile-plugins",
+  "interface": {
+    "displayName": "9uiLe Plugins"
+  },
+  "plugins": [
+    {
+      "name": "tech-docs",
+      "source": {
+        "source": "local",
+        "path": "./plugins/tech-docs"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "quality-architect",
+      "source": {
+        "source": "local",
+        "path": "./plugins/quality-architect"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "model-strategy",
+      "source": {
+        "source": "local",
+        "path": "./plugins/model-strategy"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

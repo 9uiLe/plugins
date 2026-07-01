@@ -9,6 +9,7 @@
 ## 対象プラグイン
 - [ ] tech-docs
 - [ ] quality-architect
+- [ ] model-strategy
 - [ ] marketplace / リポジトリ全体
 - [ ] その他:
 
@@ -20,12 +21,13 @@
 - [ ] 破壊的変更を含む
 
 ## 変更内容
-<!-- 主な変更点を箇条書きで。新規 Skill 追加時は SKILL.md・plugin.json・marketplace.json の更新有無も記載してください。 -->
+<!-- 主な変更点を箇条書きで。新規 Skill 追加時は SKILL.md・Claude/Codex plugin.json・marketplace.json の更新有無も記載してください。 -->
 -
 
 ## 動作確認
 <!-- どう検証したかを記載してください。 -->
 - [ ] ローカルの Marketplace 登録 (`/plugin marketplace add /path/to/repo`) で読み込めることを確認した
+- [ ] Codex のローカル Marketplace 登録 (`codex plugin marketplace add /path/to/repo`) で読み込めることを確認した
 - [ ] 対象の Skill / コマンドを実行し、期待どおり動作することを確認した
 - [ ] `marketplace.json` / `plugin.json` の JSON 構文が壊れていないことを確認した
 
@@ -34,7 +36,7 @@
 
 ## チェックリスト
 - [ ] 既存の挙動を壊していない（または破壊的変更を上に明記した）
-- [ ] バージョン更新が必要な場合、`plugin.json` / `marketplace.json` を更新した
+- [ ] バージョン更新が必要な場合、Claude/Codex `plugin.json` / `marketplace.json` を更新した
 - [ ] README など関連ドキュメントを更新した（必要な場合）
 
 ## 補足

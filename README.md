@@ -5,12 +5,15 @@
 [![Open issues](https://img.shields.io/github/issues/9uiLe/plugins)](https://github.com/9uiLe/plugins/issues)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Marketplace-8A6FE8)](https://claude.com/claude-code)
+[![Codex](https://img.shields.io/badge/Codex-Plugin-111827)](https://openai.com/codex)
 
-[Claude Code](https://claude.com/claude-code) 用プラグインを集めた Marketplace リポジトリです。
+[Claude Code](https://claude.com/claude-code) / Codex 用プラグインを集めた Marketplace リポジトリです。
 
 ## インストール
 
-Claude Code 上で次を実行してください:
+### Claude Code
+
+Claude Code 上で次を実行してください。
 
 ```
 /plugin marketplace add 9uiLe/plugins
@@ -20,6 +23,15 @@ Claude Code 上で次を実行してください:
 
 ```
 /plugin install <plugin-name>@9uile-plugins
+```
+
+### Codex
+
+Codex では、このリポジトリを Marketplace として登録してからプラグインを追加します。
+
+```bash
+codex plugin marketplace add 9uiLe/plugins
+codex plugin add <plugin-name>@9uile-plugins
 ```
 
 ## 収録プラグイン
@@ -35,10 +47,14 @@ Claude Code 上で次を実行してください:
 ```
 .
 ├── .claude-plugin/
-│   └── marketplace.json     ← Marketplace マニフェスト
+│   └── marketplace.json     ← Claude Code Marketplace マニフェスト
+├── .agents/
+│   └── plugins/
+│       └── marketplace.json ← Codex Marketplace マニフェスト
 ├── plugins/
 │   └── tech-docs/
 │       ├── .claude-plugin/plugin.json
+│       ├── .codex-plugin/plugin.json
 │       ├── skills/
 │       │   ├── create-adr/SKILL.md
 │       │   ├── create-spec/SKILL.md
@@ -49,14 +65,18 @@ Claude Code 上で次を実行してください:
 └── README.md
 ```
 
-新規プラグインを追加するときは `plugins/<name>/` を作り、`.claude-plugin/marketplace.json` の `plugins` 配列にエントリを追加します。
+新規プラグインを追加するときは `plugins/<name>/` を作り、Claude Code 用の `.claude-plugin/plugin.json`、Codex 用の `.codex-plugin/plugin.json`、ルートの `.claude-plugin/marketplace.json` / `.agents/plugins/marketplace.json` を更新します。
 
 ## 開発
 
-ローカルで動作確認するときは、リポジトリをローカルパスとして Marketplace に登録できます:
+ローカルで動作確認するときは、リポジトリをローカルパスとして Marketplace に登録できます。
 
 ```
 /plugin marketplace add /path/to/this/repo
+```
+
+```bash
+codex plugin marketplace add /path/to/this/repo
 ```
 
 ## 不具合報告・改善提案

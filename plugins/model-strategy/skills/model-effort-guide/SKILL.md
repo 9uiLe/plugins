@@ -14,7 +14,7 @@ description: "Recommend the cost-optimal Claude model (Fable/Opus/Sonnet/Haiku) 
 ## 1. 判定フロー
 
 1. タスクを分類する: 設計判断 / 実装 / レビュー / 探索・調査 / 定型作業 / 大量一括処理
-2. `${CLAUDE_PLUGIN_ROOT}/references/02-decision-matrix.md` のマトリックスで担当と effort を決定する
+2. プラグインルート相対の `references/02-decision-matrix.md` のマトリックスで担当と effort を決定する
 3. 委譲判定基準(同ファイル §2)を確認する:
    - 仕様が文章で書き切れる実装 → **sonnet-implementer** に委譲
    - 結論だけ欲しい探索・定型 → **haiku-scout** に委譲

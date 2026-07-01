@@ -1,7 +1,7 @@
 # 静的評価レイヤー — AI の揺らぎを抑える方法論
 
 > ISO/IEC 25010 のレビューを、できる範囲で **決定論的（再現可能）** にするための仕組み。
-> 設定は `${CLAUDE_PLUGIN_ROOT}/quality-gates.yml`、適用は `quality-review` スキルが行う。
+> 設定は `$PLUGIN_ROOT/quality-gates.yml`、適用は `quality-review` スキルが行う。
 
 ---
 
@@ -41,7 +41,7 @@ LLM によるレビューは同じ入力でも出力が揺らぐ。揺らぎが�
 LLM が `run` コマンドを組み立て、出力をパースする工程にはまだ揺らぎが残る
 （対象ファイルの選び方・JSON の読み方など）。これを排除するには:
 
-- **ラッパースクリプト**: `${CLAUDE_PLUGIN_ROOT}/scripts/quality-gate-swift.sh` が
+- **ラッパースクリプト**: `$PLUGIN_ROOT/scripts/quality-gate-swift.sh` が
   ツール実行 → パース → しきい値判定 → `quality-gate-result.json` 出力までを担う。
   スキルはこの JSON を読むだけなので、解釈の揺れが入らない。未導入ツールは `skipped`、
   全件 skipped なら `inconclusive`（pass と誤認しない）。
