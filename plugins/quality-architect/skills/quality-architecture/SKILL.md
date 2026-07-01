@@ -9,8 +9,10 @@ description: "Design NEW or PROPOSED architecture using the ISO/IEC 25010:2023 p
 要件から品質特性を優先付けし、各特性の設計タクティクスでアーキテクチャを構築・評価する。
 **すべての設計判断・推奨には、リファレンス・ライブラリ中の学術論文／公式文書を引用する。**
 
-リファレンス・ライブラリ: `${CLAUDE_PLUGIN_ROOT}/references/`
+リファレンス・ライブラリ: プラグインルート相対の `references/`
 （索引は `00-overview.md`、各特性は `01`〜`09`、静的評価方法論は `static-evaluation.md`）
+
+この文書で `PLUGIN_ROOT` と書く場合は、Claude Code では `${CLAUDE_PLUGIN_ROOT}`、Codex ではこの `SKILL.md` の 2 階層上にある `quality-architect` プラグインルートを指す。
 
 **スキル選択と決定論ファースト原則は `00-overview.md §5.1（プラグイン共通の絶対規律）` がカノン。本ファイルの §0 と §3.5 はその反映であり、矛盾があれば §5.1 を優先する。**
 
@@ -59,9 +61,9 @@ description: "Design NEW or PROPOSED architecture using the ISO/IEC 25010:2023 p
    - 代表的トレードオフ: セキュリティ⇄使用性、性能効率性⇄保守性、可用性⇄一貫性(CAP)、移植性⇄性能最適化。
 
 3. **特性ごとのタクティクス導出**
-   - 優先した各特性について、対応する `${CLAUDE_PLUGIN_ROOT}/references/0N-*.md` を**実際に Read し**、「設計タクティクス/パターン」節から候補を選ぶ。
+   - 優先した各特性について、対応する `$PLUGIN_ROOT/references/0N-*.md` を**実際に Read し**、「設計タクティクス/パターン」節から候補を選ぶ。
    - 副特性レベルまで降りる（例: 信頼性 → 障害許容性なら Circuit Breaker / Bulkhead / リトライ+バックオフ）。
-   - **モジュール／サービス境界を新規に定義する設計の場合は、`${CLAUDE_PLUGIN_ROOT}/references/07a-coupling-deep-dive.md` §11（設計時の結合検討）を Read し**、境界をまたぐ依存ごとに結合バランスを **定性的に** 評価する（§11.1 ヒューリスティクス → §11.2 チェックリスト）。設計時なので実測値は書かず、結合 3 次元（Integration Strength × Distance × Volatility）への言及は `（参考値: Khononov 2024, Ch.<n>）` ラベルで扱う（§3.5）。SIGNAL ベースの §6.5 hint table は **レビュー時専用** なので設計時には使わない（07a §11.3）。
+   - **モジュール／サービス境界を新規に定義する設計の場合は、`$PLUGIN_ROOT/references/07a-coupling-deep-dive.md` §11（設計時の結合検討）を Read し**、境界をまたぐ依存ごとに結合バランスを **定性的に** 評価する（§11.1 ヒューリスティクス → §11.2 チェックリスト）。設計時なので実測値は書かず、結合 3 次元（Integration Strength × Distance × Volatility）への言及は `（参考値: Khononov 2024, Ch.<n>）` ラベルで扱う（§3.5）。SIGNAL ベースの §6.5 hint table は **レビュー時専用** なので設計時には使わない（07a §11.3）。
 
 4. **トレードオフ分析（ATAM 的に）**
    - 候補アーキテクチャを 1〜複数案出し、各案を重点特性の軸で評価する。

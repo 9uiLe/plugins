@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# verify-versions.sh — assert plugin.json and marketplace.json versions agree
+# verify-versions.sh — assert Claude/Codex plugin.json and marketplace.json versions agree
 # Used both as a release post-condition and as a CI gate on every PR.
 # shellcheck shell=bash source=./lib/version.sh
 
@@ -17,10 +17,16 @@ while IFS= read -r name; do
   [[ -n "$name" ]] || continue
   checked=$((checked + 1))
   plugin_ver="$(read_plugin_version "$name")"
+  codex_plugin_ver="$(read_codex_plugin_version "$name")"
   marketplace_ver="$(read_marketplace_plugin_version "$name")"
 
   if ! is_semver "$plugin_ver"; then
-    log error "$name: plugin.json version is not valid semver: '$plugin_ver'"
+    log error "$name: .claude-plugin/plugin.json version is not valid semver: '$plugin_ver'"
+    fail=1
+    continue
+  fi
+  if ! is_semver "$codex_plugin_ver"; then
+    log error "$name: .codex-plugin/plugin.json version is not valid semver: '$codex_plugin_ver'"
     fail=1
     continue
   fi
@@ -30,7 +36,10 @@ while IFS= read -r name; do
     continue
   fi
   if [[ "$plugin_ver" != "$marketplace_ver" ]]; then
-    log error "$name: version mismatch (plugin.json=$plugin_ver, marketplace.json=$marketplace_ver)"
+    log error "$name: version mismatch (.claude-plugin/plugin.json=$plugin_ver, marketplace.json=$marketplace_ver)"
+    fail=1
+  elif [[ "$codex_plugin_ver" != "$plugin_ver" ]]; then
+    log error "$name: version mismatch (.codex-plugin/plugin.json=$codex_plugin_ver, .claude-plugin/plugin.json=$plugin_ver)"
     fail=1
   else
     log ok "$name: $plugin_ver"

@@ -1,6 +1,6 @@
 # model-strategy
 
-Claude Code を従量課金前提でコスパよく運用するための、モデル・effort 使い分けプラグインです。
+Claude Code を従量課金前提でコスパよく運用するための、Claude Code / Codex 対応モデル・effort 使い分けプラグインです。
 
 **原則: 高価なモデルは「判断」に、安価なモデルは「作業量」に使う。**
 
@@ -47,8 +47,14 @@ Fable 5 は新トークナイザにより実効コストが Opus 4.8 の約 2.6 
 
 ## インストール
 
-```
+```bash
+# Claude Code
+/plugin marketplace add 9uiLe/plugins
 /plugin install model-strategy@9uile-plugins
+
+# Codex
+codex plugin marketplace add 9uiLe/plugins
+codex plugin add model-strategy@9uile-plugins
 ```
 
 ## 典拠

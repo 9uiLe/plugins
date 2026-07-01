@@ -21,7 +21,7 @@
 
 | 軸 | どこに書かれるか | 何を表すか |
 | --- | --- | --- |
-| **プラグイン版** | `plugins/<name>/.claude-plugin/plugin.json`<br>`.claude-plugin/marketplace.json` の `plugins[].version` | 個別プラグインの互換性追跡 |
+| **プラグイン版** | `plugins/<name>/.claude-plugin/plugin.json`<br>`plugins/<name>/.codex-plugin/plugin.json`<br>`.claude-plugin/marketplace.json` の `plugins[].version` | 個別プラグインの互換性追跡 |
 | **リリース版** | `.claude-plugin/marketplace.json` の `metadata.version`<br>git tag `vX.Y.Z` / `releases/vX.Y.Z.md` / `CHANGELOG.md` の `[X.Y.Z]` 見出し | リポジトリ全体のスナップショット番号 |
 
 整合性ゲート: **リリース版 ≥ max(プラグイン版)**（`verify-versions.sh` が CI で検査）。
@@ -43,7 +43,7 @@
 scripts/release-prepare.sh --plugin quality-architect --bump patch --release-bump patch --dry-run
 ```
 
-ファイルは書き換えず、CHANGELOG・plugin.json・marketplace.json・releases/*.md の差分プレビューが流れます。
+ファイルは書き換えず、CHANGELOG・Claude/Codex plugin.json・marketplace.json・releases/*.md の差分プレビューが流れます。
 
 ### 3. 本番実行（PR 作成まで）
 
@@ -55,7 +55,7 @@ scripts/release-prepare.sh --plugin quality-architect --bump patch --release-bum
 
 1. 前提チェック（`gh`/`jq`/`git`、clean、`master`、tag 重複なし）
 2. `release/vX.Y.Z` ブランチを作成
-3. `plugin.json` と `marketplace.json` の version を bump
+3. Claude/Codex `plugin.json` と Claude Code 側 `marketplace.json` の version を bump
 4. `CHANGELOG.md` の `[Unreleased]` を `[X.Y.Z] - YYYY-MM-DD` に繰り上げ＋ compare リンク差し替え
 5. `releases/vX.Y.Z.md` 雛形を生成
 6. `verify-versions.sh` で事後検証
@@ -74,6 +74,11 @@ scripts/release-prepare.sh --plugin quality-architect --bump patch --release-bum
 ```bash
 /plugin marketplace add /Users/<you>/workspace/plugins
 /plugin install <plugin-name>@9uile-plugins
+```
+
+```bash
+codex plugin marketplace add /Users/<you>/workspace/plugins
+codex plugin add <plugin-name>@9uile-plugins
 ```
 
 対象 Skill を 1 回実行し、回帰がないか確認します。
@@ -121,7 +126,7 @@ scripts/release-publish.sh --version X.Y.Z
 
 - `shellcheck -x scripts/**/*.sh`
 - `bash scripts/verify-versions.sh`
-  - 各プラグインの `plugin.json.version` と `marketplace.json.plugins[].version` の一致
+  - 各プラグインの `.claude-plugin/plugin.json.version`、`.codex-plugin/plugin.json.version`、`marketplace.json.plugins[].version` の一致
   - `marketplace.json.metadata.version` が最大プラグイン版以上であること
 
 ローカルでも手動実行できます:
@@ -163,7 +168,7 @@ bash scripts/verify-versions.sh
 scripts/
 ├── lib/
 │   ├── common.sh         # ログ・前提チェック・確認プロンプト・rollback
-│   ├── version.sh        # plugin.json / marketplace.json の version 読み書き
+│   ├── version.sh        # Claude/Codex plugin.json / marketplace.json の version 読み書き
 │   ├── changelog.sh      # CHANGELOG セクション繰り上げ + compare リンク
 │   └── release-notes.sh  # releases/vX.Y.Z.md 雛形生成
 ├── release-prepare.sh    # ブランチ → 編集 → コミット → PR

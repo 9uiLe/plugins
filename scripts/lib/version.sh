@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version.sh — read/write version fields in plugin.json and marketplace.json
+# version.sh — read/write version fields in Claude/Codex plugin manifests and marketplace.json
 # shellcheck source=common.sh
 . "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
@@ -19,16 +19,28 @@ plugin_path() {
   printf '%s/%s' "$REPO_ROOT" "${rel#./}"
 }
 
-# plugin_json <name> — print absolute path to plugin.json
+# plugin_json <name> — print absolute path to the Claude plugin.json
 plugin_json() {
   local name="$1"
   printf '%s/.claude-plugin/plugin.json' "$(plugin_path "$name")"
+}
+
+# codex_plugin_json <name> — print absolute path to the Codex plugin.json
+codex_plugin_json() {
+  local name="$1"
+  printf '%s/.codex-plugin/plugin.json' "$(plugin_path "$name")"
 }
 
 # read_plugin_version <name>
 read_plugin_version() {
   local name="$1"
   jq -r '.version' "$(plugin_json "$name")"
+}
+
+# read_codex_plugin_version <name>
+read_codex_plugin_version() {
+  local name="$1"
+  jq -r '.version' "$(codex_plugin_json "$name")"
 }
 
 # read_marketplace_plugin_version <name>
@@ -42,23 +54,27 @@ read_marketplace_metadata_version() {
   jq -r '.metadata.version' "$MARKETPLACE_JSON"
 }
 
-# write_plugin_version <name> <new-version>
-write_plugin_version() {
-  local name="$1" new="$2"
-  is_semver "$new" || die "invalid semver: $new"
-  local file
-  file="$(plugin_json "$name")"
+write_json_version() {
+  local file="$1" new="$2" label="$3"
   local tmp
   tmp="$(mktemp)"
   jq --arg v "$new" '.version = $v' "$file" >"$tmp"
   if [[ "$DRY_RUN" == "1" ]]; then
-    log info "[dry-run] would update $file:"
+    log info "[dry-run] would update $label:"
     diff -u "$file" "$tmp" || true
     rm -f "$tmp"
   else
     mv "$tmp" "$file"
-    log ok "updated $file -> $new"
+    log ok "updated $label -> $new"
   fi
+}
+
+# write_plugin_version <name> <new-version>
+write_plugin_version() {
+  local name="$1" new="$2"
+  is_semver "$new" || die "invalid semver: $new"
+  write_json_version "$(plugin_json "$name")" "$new" "$(plugin_json "$name")"
+  write_json_version "$(codex_plugin_json "$name")" "$new" "$(codex_plugin_json "$name")"
 }
 
 # write_marketplace_plugin_version <name> <new-version>

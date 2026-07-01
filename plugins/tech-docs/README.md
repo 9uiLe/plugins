@@ -1,10 +1,10 @@
 # tech-docs
 
-Claude Code 用プラグイン。ADR / 技術仕様書 / 汎用ドキュメントを、共通デザインシステム付きの **1 枚 HTML** として生成する 3 つの Skill を提供します。
+Claude Code / Codex 用プラグイン。ADR / 技術仕様書 / 汎用ドキュメントを、共通デザインシステム付きの **1 枚 HTML** として生成する 3 つの Skill を提供します。
 
 ## 何ができるか
 
-このプラグインを有効にすると、Claude Code 上で次の作業が自然言語で依頼できるようになります:
+このプラグインを有効にすると、Claude Code / Codex 上で次の作業が自然言語で依頼できるようになります:
 
 | Skill | いつ呼ばれるか | 章立て |
 | --- | --- | --- |
@@ -17,16 +17,20 @@ Claude Code 用プラグイン。ADR / 技術仕様書 / 汎用ドキュメン�
 ## インストール
 
 ```bash
-# Marketplace 経由 (推奨)
+# Claude Code
 /plugin marketplace add 9uiLe/plugins
 /plugin install tech-docs@9uile-plugins
+
+# Codex
+codex plugin marketplace add 9uiLe/plugins
+codex plugin add tech-docs@9uile-plugins
 ```
 
 ローカル開発時はリポジトリを clone してから `~/.claude/settings.json` の `plugins.installed` に直接パスを指定する方法もあります。詳しくは Claude Code の plugin ドキュメントを参照してください。
 
 ## 使い方
 
-Claude Code 上で次のように依頼します:
+Claude Code / Codex 上で次のように依頼します:
 
 ```
 /create-adr で「event-driven vs request-driven の選択」をまとめて

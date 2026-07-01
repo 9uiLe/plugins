@@ -1,7 +1,7 @@
 # コントリビューションガイド
 
 `9uiLe/plugins` をご利用いただきありがとうございます。
-このリポジトリは [Claude Code](https://claude.com/claude-code) 用プラグインの Marketplace です。
+このリポジトリは [Claude Code](https://claude.com/claude-code) / Codex 用プラグインの Marketplace です。
 不具合の報告・改善提案・Pull Request はいつでも歓迎します。
 
 - [不具合 / 改善を報告する（Issue の起票）](#不具合--改善を報告するissue-の起票)
@@ -27,7 +27,7 @@
 ## 報告前のチェックリスト
 
 - [ ] [既存の Issue](https://github.com/9uiLe/plugins/issues?q=is%3Aissue) を検索し、重複がないか確認した。
-- [ ] プラグイン / Claude Code を最新版に更新しても再現するか確認した。
+- [ ] プラグイン / Claude Code / Codex を最新版に更新しても再現するか確認した。
 - [ ] 機微な情報（APIキー・社内コード・個人情報など）がログやスクリーンショットに含まれていないか確認した。
 
 ## 良い報告の書き方
@@ -37,10 +37,10 @@
 
 | 項目 | ポイント |
 | --- | --- |
-| 対象プラグイン / Skill | `tech-docs` / `quality-architect` のどちらか、`create-adr` などどの Skill かを明記する。 |
-| 再現手順 | 「どのコマンドを実行し、Claude に何を指示したか」を番号付きで。第三者が同じ操作をたどれること。 |
+| 対象プラグイン / Skill | `tech-docs` / `quality-architect` / `model-strategy` のどれか、`create-adr` などどの Skill かを明記する。 |
+| 再現手順 | 「どのコマンドを実行し、Claude Code / Codex に何を指示したか」を番号付きで。第三者が同じ操作をたどれること。 |
 | 期待 / 実際の挙動 | 「こうなるはず」と「実際はこうなった」を分けて書く。 |
-| 環境情報 | Claude Code のバージョン（`/status` または `claude --version`）、OS、実行環境（CLI / VS Code / Web）、インストール方法。 |
+| 環境情報 | Claude Code のバージョン（`/status` または `claude --version`）または Codex のバージョン、OS、実行環境、インストール方法。 |
 | ログ・成果物 | エラーメッセージや、生成された HTML / レビュー結果の該当箇所を貼る。スクリーンショットも有効。 |
 
 機能要望の場合は、**「解決したい課題」と「提案する解決策」を分けて**書くと、議論や設計判断がしやすくなります。
@@ -62,15 +62,20 @@
 ```
 .
 ├── .claude-plugin/
-│   └── marketplace.json        ← Marketplace マニフェスト（収録プラグイン一覧）
+│   └── marketplace.json        ← Claude Code Marketplace マニフェスト
+├── .agents/
+│   └── plugins/
+│       └── marketplace.json    ← Codex Marketplace マニフェスト
 ├── plugins/
 │   ├── tech-docs/
 │   │   ├── .claude-plugin/plugin.json
+│   │   ├── .codex-plugin/plugin.json
 │   │   ├── skills/<skill>/SKILL.md   ← 各 Skill の本体（プロンプト/手順）
 │   │   ├── shared-assets/            ← デザインシステム + HTML テンプレート
 │   │   └── README.md
 │   └── quality-architect/
 │       ├── .claude-plugin/plugin.json
+│       ├── .codex-plugin/plugin.json
 │       ├── skills/<skill>/SKILL.md
 │       ├── references/               ← ISO/IEC 25010 各特性のリファレンス
 │       ├── scripts/                  ← 品質ゲート用スクリプト
@@ -85,8 +90,8 @@
 - **Skill の挙動を変える** → 対象プラグインの `skills/<skill>/SKILL.md` を編集します。Skill の説明や手順はここに記述されています。
 - **生成物の見た目（tech-docs）** → `plugins/tech-docs/shared-assets/`（`tokens.css` / `components/` / `templates/`）を編集します。
 - **品質モデルの基準（quality-architect）** → `plugins/quality-architect/references/` の各 Markdown を編集します。
-- **新しいプラグインを追加する** → `plugins/<name>/` を作成し、`.claude-plugin/plugin.json` を用意したうえで、ルートの `.claude-plugin/marketplace.json` の `plugins` 配列にエントリを追加します。`README.md` の収録プラグイン表も更新してください。
-- **バージョンを上げる** → 該当 `plugin.json` と `marketplace.json` の `version` を揃えて更新します。**リリース作業全体の手順は [`RELEASING.md`](./RELEASING.md) を参照** してください（`scripts/release-prepare.sh` で自動化されています）。
+- **新しいプラグインを追加する** → `plugins/<name>/` を作成し、Claude Code 用の `.claude-plugin/plugin.json`、Codex 用の `.codex-plugin/plugin.json`、ルートの `.claude-plugin/marketplace.json` / `.agents/plugins/marketplace.json` にエントリを追加します。`README.md` の収録プラグイン表も更新してください。
+- **バージョンを上げる** → 該当 `.claude-plugin/plugin.json`、`.codex-plugin/plugin.json`、Claude Code 側 `marketplace.json` の `version` を揃えて更新します。**リリース作業全体の手順は [`RELEASING.md`](./RELEASING.md) を参照** してください（`scripts/release-prepare.sh` で自動化されています）。
 - **リリース手順を変える** → `RELEASING.md` / `scripts/**` / `.github/workflows/verify-versions.yml` は同一 PR で更新します（仕様ドリフト防止）。
 
 ### ローカルでの動作確認
@@ -98,7 +103,12 @@
 /plugin install <plugin-name>@9uile-plugins
 ```
 
-JSON（`plugin.json` / `marketplace.json`）を編集した場合は、構文エラーがないことを確認してください。
+```bash
+codex plugin marketplace add /path/to/this/repo
+codex plugin add <plugin-name>@9uile-plugins
+```
+
+JSON（`plugin.json` / `marketplace.json`）を編集した場合は、構文エラーがないことと `scripts/verify-versions.sh` が通ることを確認してください。
 
 ## セキュリティ上の問題の報告
 

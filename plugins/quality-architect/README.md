@@ -1,7 +1,7 @@
 # quality-architect
 
 **ISO/IEC 25010:2023 製品品質モデル**（9 特性・40 副特性）を共通言語として、
-ソフトウェア／システムの**アーキテクチャ設計**と**コードレビュー**を行う Claude Code プラグインです。
+ソフトウェア／システムの**アーキテクチャ設計**と**コードレビュー**を行う Claude Code / Codex プラグインです。
 
 各特性ごとに、定義・調査観点・設計タクティクス・レビューチェックリスト・計測指標・
 **実在確認済みの学術論文／公式文書リファレンス**をまとめたライブラリを内蔵しています。
@@ -23,6 +23,18 @@
 ```
 
 スキルは要求に応じて自動的に起動します。
+
+## インストール
+
+```bash
+# Claude Code
+/plugin marketplace add 9uiLe/plugins
+/plugin install quality-architect@9uile-plugins
+
+# Codex
+codex plugin marketplace add 9uiLe/plugins
+codex plugin add quality-architect@9uile-plugins
+```
 
 ## リファレンス・ライブラリ
 

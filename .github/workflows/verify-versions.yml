@@ -4,7 +4,9 @@ on:
   pull_request:
     paths:
       - ".claude-plugin/marketplace.json"
+      - ".agents/plugins/marketplace.json"
       - "plugins/**/.claude-plugin/plugin.json"
+      - "plugins/**/.codex-plugin/plugin.json"
       - "scripts/**"
       - ".github/workflows/verify-versions.yml"
   push:

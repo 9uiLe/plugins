@@ -79,10 +79,10 @@ SQuaRE シリーズの主な構成（本プラグインで参照する範囲）:
 本プラグインのどのスキルから入っても、以下は **スキル非依存の絶対要件** である。両 SKILL.md の §0 はここを反映しており、矛盾があれば本節を優先する。
 
 1. **ルーティング**: 対象として既存コード／差分／PR／実装が与えられた依頼の唯一の正当な入口は `quality-review` である。`quality-architecture` を起動してしまった場合は、最初の応答でハンドオフ提案を行う（黙って続行しない）。
-2. **決定論ファースト**: 既存コードに対する品質判断（数値・指摘）を出力する前に、必ず次の順で試す。(a) `quality-gate-result.json` を Read、(b) `${CLAUDE_PLUGIN_ROOT}/scripts/quality-gate-<lang>.sh` を Bash で実行、(c) `quality-gates.yml` の `run` を個別実行、(d) いずれも不可なら全項目 `skipped` を明記し総合 `inconclusive` と報告。**いずれも実行せずに LLM 単独で数値を出すことは禁止**。
+2. **決定論ファースト**: 既存コードに対する品質判断（数値・指摘）を出力する前に、必ず次の順で試す。(a) `quality-gate-result.json` を Read、(b) `$PLUGIN_ROOT/scripts/quality-gate-<lang>.sh` を Bash で実行、(c) `quality-gates.yml` の `run` を個別実行、(d) いずれも不可なら全項目 `skipped` を明記し総合 `inconclusive` と報告。**いずれも実行せずに LLM 単独で数値を出すことは禁止**。
 3. **資産検出**: いずれのスキルでも、対象リポジトリ内の `quality-gate-result.json` / `.swiftlint.yml` / `.periphery.yml` / `Mintfile` / `scripts/quality-gate-*.sh` / `.github/workflows/*quality*.y*ml` の存在を確認し、結果をレポート冒頭に転記する。
 4. **数値しきい値**: 対象コードに対する判定文脈で数値しきい値（V(G), カバレッジ, CBO 等）を本文に書く場合、必ず `measured: <実測値>` または `measured: 未実行(skipped: <理由>)` をペアで併記する。設計時（`quality-architecture`）で文献値を引用するときは `（参考値: ...）` ラベル必須で、対象コードへの判定として書かない。
-5. **副作用付きツールの事前同意**: `swift test`, `trivy fs` などビルド／テスト／ネットワークが走るコマンドは AskUserQuestion で実行可否を確認してから実行する（既に同意済みの場合を除く）。
+5. **副作用付きツールの事前同意**: `swift test`, `trivy fs` などビルド／テスト／ネットワークが走るコマンドはユーザー確認で実行可否を確認してから実行する（既に同意済みの場合を除く）。
 
 上記 1〜5 のいずれかが満たせない場合は、応答冒頭で「どの規律が、どの理由でブロックされているか」を明示し、ユーザの判断を仰ぐ。サイレントに省略してはならない。
 

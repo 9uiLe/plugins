@@ -30,3 +30,4 @@ yarn-error.log*
 
 # Claude / Local
 .claude/local/
+.tokensave/
