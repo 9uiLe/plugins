@@ -5,6 +5,8 @@
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-07-02
+
 ### Added
 
 - **quality-architect** (v0.1.4): 結合・凝集・複雑度・モジュール境界に関する指摘への「削減アクション」必須化。`references/07a-coupling-deep-dive.md` に §6.3.1「削減アクション・カタログ」（検出状況 → 下げる軸 → 具体的手順の対応表と提示書式）を追加し、`quality-review`（step 5・指摘テンプレ・§5）と `quality-architecture`（章 4'・§4）が BALANCE = FALSE の結合・複雑性を検出した際に Khononov のリバランス 3 軸（Strength↓ / Distance↓ / Volatility 隔離）に基づく具体的な削減手順の併記を要求するように。アクションは severity / verdict に影響しない（H9 維持）。
@@ -18,7 +20,6 @@
 ### Fixed
 
 - **model-strategy** (v0.1.1): `00-pricing.md` の「Fable 5 は新トークナイザで Opus 系比 30% 増 → 実効 2.6 倍」という誤記載を訂正。Fable 5 のトークナイザは Opus 4.8 と同一で、実効コストは名目通り約 2 倍（30% 増は Opus 4.7 系トークナイザ vs 旧世代モデルの比較）。
-
 ## [0.1.5] - 2026-06-15
 
 ### Changed
@@ -71,7 +72,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/9uiLe/plugins/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/9uiLe/plugins/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/9uiLe/plugins/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/9uiLe/plugins/compare/v0.1.2...v0.1.3
