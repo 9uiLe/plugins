@@ -30,6 +30,19 @@ declare -a ROWS=()
 OVERALL=0
 RAN=0
 
+GENERATED_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+COMMIT_SHA="unknown"
+GIT_ROOT="unknown"
+if command -v git >/dev/null 2>&1 && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  COMMIT_SHA="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
+  GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo unknown)"
+fi
+json_escape() {
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+TARGET_JSON="$(json_escape "$TARGET")"
+GIT_ROOT_JSON="$(json_escape "$GIT_ROOT")"
+
 have() { command -v "$1" >/dev/null 2>&1; }
 
 # record <gate> <tool> <status:pass|fail|skipped> <measured> <threshold> <note>
@@ -153,10 +166,10 @@ fi
 
 # --- 結果 JSON 出力 ---
 {
-  printf '{\n  "model":"ISO/IEC 25010:2023",\n  "language":"swift",\n  "overall":"%s",\n  "ran":%s,\n  "gates":[\n' \
-    "$VERDICT" "$RAN"
+  printf '{\n  "model":"ISO/IEC 25010:2023",\n  "language":"swift",\n  "source":"wrapper",\n  "generated_at":"%s",\n  "commit_sha":"%s",\n  "git_root":"%s",\n  "target":"%s",\n  "overall":"%s",\n  "ran":%s,\n  "gates":[\n' \
+    "$GENERATED_AT" "$COMMIT_SHA" "$GIT_ROOT_JSON" "$TARGET_JSON" "$VERDICT" "$RAN"
   for i in "${!ROWS[@]}"; do
-    printf '    %s%s\n' "${ROWS[$i]}" "$([ $i -lt $((${#ROWS[@]}-1)) ] && echo ,)"
+    printf '    %s%s\n' "${ROWS[$i]}" "$([ "$i" -lt $((${#ROWS[@]}-1)) ] && echo ,)"
   done
   printf '  ]\n}\n'
 } > "$RESULT_JSON"

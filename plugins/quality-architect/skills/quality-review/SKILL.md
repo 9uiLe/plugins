@@ -1,214 +1,159 @@
 ---
 name: quality-review
-description: "Review EXISTING code, a diff, a PR, or a repository against the ISO/IEC 25010:2023 product quality model, producing severity-rated findings and a quality scorecard. Always runs deterministic static analysis before any LLM judgement. Reviewing whether the EXISTING design itself is sound (design review / design-validity assessment of existing code) is part of THIS skill — see §1 step 2.5 — not `quality-architecture`. Japanese triggers: 「品質観点でレビューして」「25010 でレビュー」「実装をレビューして」「PR を品質特性で見て」「指摘して」「この設計は妥当か」. For designing a NEW/replacement architecture (not yet existing code), use `quality-architecture` instead."
+description: "Review EXISTING code, diffs, PRs, and repositories against the ISO/IEC 25010:2023 product quality model. Produces severity-rated findings, design-vs-implementation labels, deterministic static-analysis scorecards, and cited recommendations. Always attempts deterministic measurement before LLM judgement. Existing-code design validity reviews belong here; new or replacement architecture design belongs in `quality-architecture`. Japanese triggers: 「品質観点でレビューして」「25010 でレビュー」「実装をレビューして」「PR を品質特性で見て」「指摘して」「この設計は妥当か」."
 ---
 
-# quality-review — ISO/IEC 25010 でコード/差分を網羅レビューする
+# quality-review
 
-このスキルは **対象コードを 9 特性・40 副特性で網羅的にレビュー**し、
-重大度付きの指摘とスコアカードを出力する。**各指摘の推奨には、学術論文／公式文書を必ず引用する。**
+既存コード、差分、PR、リポジトリを ISO/IEC 25010:2023 の 9 特性・40 副特性でレビューする。測れるものは先に静的解析ツールへ委譲し、LLM の判断は数値化できない残余に閉じ込める。各指摘には重大度、層、箇所、根拠リファレンスを付ける。
 
-AI の揺らぎを抑えるため、**測れる指標は静的解析ツールに委譲し（決定論パート）**、
-LLM の判断は数値化できない残余（考察パート）に閉じ込める。詳しくは
-`$PLUGIN_ROOT/references/static-evaluation.md`、設定は
-`$PLUGIN_ROOT/quality-gates.yml` を参照する。
+`$PLUGIN_ROOT` は、Claude Code では `${CLAUDE_PLUGIN_ROOT}`、Codex ではこの `SKILL.md` の 2 階層上（`quality-architect` ディレクトリ）を指す。
 
-リファレンス・ライブラリ: プラグインルート相対の `references/`
-（索引は `00-overview.md`、各特性は `01`〜`09`、静的評価方法論は `static-evaluation.md`。各特性ファイルに「コードレビュー チェックリスト」がある）
+必ず `$PLUGIN_ROOT/references/00-overview.md` §5.1 と `$PLUGIN_ROOT/references/static-evaluation.md` を読む。矛盾があれば `00-overview.md` §5.1 を優先する。指摘に使う特性だけ `$PLUGIN_ROOT/references/0N-*.md` を読む。設定とプロファイルは `$PLUGIN_ROOT/quality-gates.yml` を読む。
 
-この文書で `PLUGIN_ROOT` と書く場合は、Claude Code では `${CLAUDE_PLUGIN_ROOT}`、Codex ではこの `SKILL.md` の 2 階層上にある `quality-architect` プラグインルートを指す。
+## 0. 入口と資産検出
 
-**スキル選択と決定論ファースト原則は `00-overview.md §5.1（プラグイン共通の絶対規律）` がカノン。本ファイルの §0 と §1 step 3 はその反映であり、矛盾があれば §5.1 を優先する。**
+新規アーキテクチャ、非機能要件、ADR、まだ存在しない設計案の比較は `quality-architecture` へハンドオフする。既存コードの設計妥当性レビューはこのスキルで扱う。design-level 指摘が支配的で局所修正では解けない場合だけ、置換設計の検討として `quality-architecture` への前方ハンドオフを報告に書く。
 
----
+レビュー対象が指定されなければ現在の差分を既定にする。大規模なら重点特性を提案する。trivial diff なら §2.1 の軽量フォーマットを使える。
 
-## 0. このスキルを使ってよいかの判定（必須・最初に実行）
-
-### 0.1 設計依頼の逆ハンドオフ
-
-ユーザが「設計したい／新規アーキテクチャを考えたい／非機能要件をこれから決めたい／ADR を書きたい」と言っており、対象として既存コードを与えていない場合は、本スキルではなく `quality-architecture` に切り替える。
-
-### 0.2 プロジェクト資産の検出（必須・LLM 出力の前に Bash で実行）
-
-対象リポジトリのルートで次の Bash を必ず実行し、**出力（または「リポジトリパス未指定」の旨）をレポート冒頭の「### 0. プロジェクト資産インベントリ」に転記する**:
+最初に対象リポジトリで資産を検出し、出力冒頭へ転記する。チャット貼り付けのみで対象パスが無い場合は `対象パス未指定（チャット入力のみ）` と書く。
 
 ```bash
-{ test -f quality-gate-result.json && echo "HAS quality-gate-result.json"; \
-  test -f coupling-gate-result.json && echo "HAS coupling-gate-result.json"; \
-  test -f .swiftlint.yml && echo "HAS .swiftlint.yml"; \
-  test -f .periphery.yml && echo "HAS .periphery.yml"; \
-  test -f Mintfile && echo "HAS Mintfile"; \
-  test -f Package.swift && echo "HAS Package.swift"; \
-  ls .github/workflows 2>/dev/null | grep -iE 'quality|lint|coverage|coupling' | sed 's/^/HAS workflow: /'; \
-  ls scripts 2>/dev/null | grep -iE 'quality-gate|coupling-gate' | sed 's/^/HAS script: /'; \
+{
+  test -f quality-gate-result.json && echo "HAS quality-gate-result.json";
+  test -f coupling-gate-result.json && echo "HAS coupling-gate-result.json";
+  find . -maxdepth 2 -type f \( -name 'quality-gate-*.sh' -o -name 'coupling-gate-*.sh' \) 2>/dev/null | sed 's/^/HAS script: /';
+  find .github/workflows -maxdepth 1 -type f 2>/dev/null | grep -Ei 'quality|lint|coverage|security|coupling' | sed 's/^/HAS workflow: /';
+  for f in Package.swift .swiftlint.yml .periphery.yml Mintfile package.json pnpm-workspace.yaml tsconfig.json pyproject.toml requirements.txt go.mod Cargo.toml pom.xml build.gradle build.gradle.kts; do
+    test -f "$f" && echo "HAS manifest/config: $f";
+  done
 } 2>&1 | sort -u
 ```
 
-- 対象がチャットに貼り付けられた差分のみで作業ディレクトリが該当リポジトリではない場合は、転記欄に `対象パス未指定（チャット入力のみ）` と書き、§1 step 3 のフォールバック（個別 `run` または全 skipped）に進む。
-- 上のコマンドで `HAS quality-gate-result.json` が出た場合、§1 step 3 では **必ずそれを最優先で Read** する（再実行しない）。
-- 上のコマンドで `HAS .swiftlint.yml` や `HAS Package.swift` が出た場合、**プロジェクト側の `.swiftlint.yml` のしきい値を尊重** し、プラグイン同梱の `quality-gates.yml` の値は二次扱いとする。
+## 1. 手順
 
----
+1. **範囲と言語を確定する**
+   - `git diff`、対象ファイル、PR、ディレクトリ、リポジトリ全体のどれかを明記する。
+   - 対象言語を特定し、`quality-gates.yml` に該当 profile があるか確認する。profile が無い言語は `profile: none` とし、step 3 のフォールバックを使う。
+   - 版は原則 `ISO/IEC 25010:2023`。ユーザーが 2011 版を明示した場合だけ `2011` と書く。
 
-## 1. 進め方（必ずこの順番で）
+2. **設計妥当性を先に見る**
+   - 個別欠陥の前に、採用されている設計判断、境界、依存方向、失敗モード、制約との整合をトップダウンに評価する。
+   - この所見は考察パートとして扱い、決定論パートで確定した measured / threshold / verdict を上書きしない。
+   - design-level / implementation-level は重大度と直交するラベルとして全指摘に付ける。
 
-1. **レビュー範囲の確定**
-   - 対象を確認する: 作業ツリーの差分 (`git diff`)、特定 PR、ディレクトリ、リポジトリ全体のいずれか。
-   - 指定がなければ「現在の差分」を既定とし、合意を取る。大規模な場合は重点特性を絞る提案をする。
+3. **決定論パートの source を選ぶ**
+   - 検出したプロジェクト側の lint / coverage / build 設定がしきい値を持つ場合は、プラグイン同梱 `quality-gates.yml` の既定値より優先する。
+   - `ci-artifact`: 既存 `quality-gate-result.json` を最優先で読む。mtime が 24 時間以内か、`commit_sha` があれば `git rev-parse HEAD` と一致するか、`target` が対象範囲と矛盾しないかを確認する。不一致なら使わず `artifact mismatch` と書いて次へ進む。メタデータが無い場合は `artifact-integrity: unknown` と明記して採否理由を書く。
+   - `wrapper`: profile があり `$PLUGIN_ROOT/scripts/quality-gate-<profile>.sh` が存在する場合、ユーザー確認または事前許可の上で実行する。
+   - `individual`: wrapper が無い場合、`quality-gates.yml` の profile 内 `run` を個別に実行する。profile が無い言語では lizard、jscpd、Trivy、Semgrep など言語横断ツールが利用できれば `measured-only` として実測値だけ載せ、threshold 未定義の PASS/FAIL を作らない。
+   - `none`: いずれも不可なら全行 `未実行 (skipped: <理由>)` とし、総合 `inconclusive` を宣言する。
 
-2. **対象の把握と言語の特定**
-   - `git diff` / 対象ファイルを Read し、変更の意図・技術スタック・実行環境を把握する。
-   - **対象言語を特定**する（不明なら確認）。`quality-gates.yml` に該当 profile があるか確認する。
+4. **実行確認と非対話フォールバック**
+   - ビルド、テスト、ネットワーク、依存インストール、長時間実行を伴うコマンドは事前確認を取る。ただしユーザーが既に実行許可を明言している場合は確認を省ける。
+   - 質問できない環境では、検証済み artifact を採用し、次に副作用の小さいローカル静的ツールだけを試し、最後は `none` に落とす。確認なしにビルド、テスト、ネットワーク実行へ進まない。
 
-2.5. **設計妥当性トリアージ（考察パート・最初のトップダウン評価／このステップが「レビューでまず設計を見る」を満たす）**
-   - 個別の欠陥を探す前に、まず **「この差分／コードが採用しているアーキテクチャ・設計判断そのものが、要件・文脈に照らして妥当か」をトップダウンで評価する**。「レビューでも結局まず設計の妥当性を考えるべき＝それなら architecture スキルでは？」という疑問への答えはここ: **既存コードの設計レビューは本スキルの責務であり、`quality-architecture` ではない**（判別軸は「対象が既に在るか」。00-overview §5.2）。
-   - 観点は 25010 の重点特性で 2〜4 点に絞る: 採用方式に妥当な代替はあったか／主要なトレードオフ（例: 性能効率性⇄保守性、セキュリティ⇄使用性、可用性⇄一貫性）を設計が正しく解決しているか／境界・責務分割は妥当か。
-   - **このフェーズの出力は全て「推測(judgment)」**であり決定論パートではない。数値しきい値はここで判定しない（step 3 / 4 に委ねる）。設計上の懸念が大きい特性は step 4-0 の関連度トリアージで「精査対象」へ寄せる。
-   - **前方ハンドオフ（review → architecture）**: 設計そのものを作り直す提案（置換アーキの新規設計）が主目的になったら、それは `quality-architecture` の領域。「現状コードの設計レビューはこのまま継続する／置換アーキを“設計”したいなら quality-architecture へ」と 1 行で提示する。これは §0.1 がブロックする後方向（既存コードのレビューを architecture で受ける）とは別物の、正当な前方遷移（00-overview §5.2）。
+5. **差分帰属を付ける**
+   - 差分/PR レビューで repo-wide 計測を使う場合、各 FAIL に `diff-caused` / `pre-existing` / `unknown` を付ける。
+   - `path:line` が差分 hunks に含まれる、または base/head の両方を測って head だけ悪化した場合は `diff-caused`。差分外の既存箇所なら `pre-existing`。判定材料が無ければ `unknown`。
+   - `pre-existing` は品質リスクとして報告してよいが、その PR の回帰として断定しない。
 
-3. **静的評価レイヤー（決定論パート）を先に実行**
-   - **【必須チェックポイント】このステップに入る前に、§0.2 のインベントリ結果を踏まえ、ユーザー確認を 1 回行う**（Claude Code では AskUserQuestion、Codex では通常の確認応答を使う。**二重質問禁止 — 1 ゲート / 1 セッション**）。文面テンプレ:
-     > 「決定論パートの実行方針を確認します。検出した資産: <0.2 の転記内容>。
-     >  1. 既存 `quality-gate-result.json` (+ あれば `coupling-gate-result.json`) を採用（再実行なし・最速）
-     >  2. `$PLUGIN_ROOT/scripts/quality-gate-swift.sh` を実行（`swift test --enable-code-coverage`, `trivy fs` 等を走らせる。数分かかる）
-     >  3. 個別 `run` コマンドを実行（部分的に skipped になり得る）
-     >  4. 静的解析をスキップして LLM 考察のみで進める（決定論パートは「未実施」と明記される）
-     >
-     > **追加オプション（保守性 / モジュール性の深掘りが必要な場合のみ）**: 上記に加えて結合の深掘り (07a 補論) シグナルも計測する。
-     >  - 2a / 3a. 上記 2 / 3 と同時に `$PLUGIN_ROOT/scripts/coupling-gate-swift.sh` も実行（`git log --since`, `jscpd`, `semgrep` 等を走らせる）。出力 `coupling-gate-result.json` を考察パートで参照。
-     >  - 既定はオフ。`07-maintainability.md` の検出 finding に対する severity 下方修正候補がある場合のみ提案する」
-   - **auto-mode（質問を省略してよい唯一の条件）**: 0.2 で `HAS quality-gate-result.json` が出ており、かつそのファイルの mtime が 24 時間以内、かつユーザが事前に「CI 結果でよい／最速で」を明言している場合のみ、選択肢 1 を採用して質問を省く。それ以外は **必ず質問する**。`coupling-gate-result.json` の存在は auto-mode を発火させない（追加判断材料は§3 で考慮）。
-   - **CI の結果があればそれを最優先**: 選択肢 1 が選ばれたら `quality-gate-result.json` を Read して数値をそのまま採用する（最も再現性が高い）。`HAS coupling-gate-result.json` も検出されていれば、それも Read して merge contract (§2) に従い 07-maintainability 指摘に attach する。
-   - **無ければ／選択肢 2 ならラッパースクリプトを実行**: Swift なら `bash "$PLUGIN_ROOT/scripts/quality-gate-swift.sh" <対象>` を Bash で実行し、出力 JSON を採用する。スクリプトがツール実行・パース・しきい値判定まで行うため、LLM の解釈揺れが入らない。
-   - **2a / 3a が選択された場合**: 続けて `bash "$PLUGIN_ROOT/scripts/coupling-gate-swift.sh" --since=<window>` を実行し、`coupling-gate-result.json` を取得。**シグナル数値は `推測` ラベル付きで採用**（07a §5 / §9 H5）。観測ウィンドウ `--since=<window>` を本文に必ず併記（H5）。
-   - 選択肢 3 ならスクリプトを使わず `quality-gates.yml` の `run` コマンドを個別に実行する。
-   - **ツールが未インストール／実行不可なら、その項目を「未実行(skipped)」と明記する。数値を推測・捏造しない。** 全項目 skipped のとき、または選択肢 4 が選ばれたときは結果を `inconclusive` とし、決定論パートは「未実施」と報告する（**「未実施」を `pass` と誤読させない**）。
-   - 取得した数値を `threshold` と機械的に突き合わせ、超過を決定論的な指摘とする（同じコードなら毎回同じ結果）。
+6. **9 特性トリアージを行う**
+   - `00-overview.md` の特性一覧だけを使い、9 特性それぞれを `精査対象` / `該当薄` に分類する。各行に 1 行根拠を書く。
+   - 精査対象の特性ファイルだけ読む。該当薄もスコアカードには残し、「見ていない」のではなく「低リスク判断」として可視化する。
 
-4. **特性ごとのチェック（9 特性を網羅・考察パート）**
-   - **4-0. 関連度トリアージ（リファレンス Read の前に必ず実行）**: 9 特性それぞれについて、step 2 で把握した差分の内容と `00-overview.md` の特性一覧だけを根拠に、**「精査対象」か「該当薄（低リスク）」かを判定**する。この時点では各特性ファイル（`0N-*.md`）本体を**まだ読まない**。判定結果を 2 群に分けて明示する（例: 精査対象=保守性・セキュリティ / 該当薄=移植性・互換性…）。差分が広範囲・判断に迷う特性は精査対象に寄せる（取りこぼし防止を優先）。
-   - **4-1. 精査対象のみ Read**: 「精査対象」と判定した特性に**限って** `$PLUGIN_ROOT/references/0N-*.md` を**実際に Read し**、「コードレビュー チェックリスト」を適用する。該当薄の特性のリファレンス本体は読み込まない（コンテキスト節約）。
-   - **該当薄の特性も省略しない**: スコアカードには 9 特性すべてを載せ、該当薄は「該当なし/低リスク（1 行で根拠）」と明記して網羅を示す。リファレンスを読んでいないこと自体は問題ない（差分に当該観点の表面が無いという判定の表明）。
-   - **決定論パートで既に確定した項目は再判断しない**（数値をそのまま採用）。ここでは静的化できない観点のみを評価し、**「推測」であることを明示**する（profile の `judgment` を参照）。
-   - 副特性レベルで具体的に見る（例: セキュリティ → 機密性なら機微データの暗号化/ログ出力、真正性なら認証実装）。
+7. **指摘を構造化する**
+   - 必須項目: 特性/副特性、層、重大度、箇所 `path:line`、問題、推奨、根拠リファレンス、数値根拠、差分帰属。
+   - 重大度: Critical / High / Medium / Low。Critical はデータ漏洩、認証回避、全断、データ破壊、安全上の重大危険など即時対応が必要な欠陥。High は本番障害、重要経路のセキュリティ/契約破壊、局所修正不能な設計境界誤り。Medium は局所的な不具合、劣化、将来リスク。Low は可読性、軽微な規約、低確率リスク。保守性では、変更不能、局所修正不能な境界誤り、広範な障害誘発、修正コストの非線形増大を High 以上の根拠にできる。単なる閾値超過だけで Critical にしない。
+   - 結合、凝集、複雑度、モジュール境界の指摘では `$PLUGIN_ROOT/references/07a-coupling-deep-dive.md` §6.3.1 の catalog を読み、下げる軸と具体手順を 1〜2 行で書く。
 
-5. **指摘の構造化**
-   - 各指摘を以下で記録する:
-     - **特性 / 副特性**（25010 のどこか）
-     - **層**: `design-level`（設計・方式・境界そのものの誤り。step 2.5 由来）/ `implementation-level`（許容できる設計内の局所的欠陥）。重大度とは直交する軸で、両方を必ず付ける。
-     - **重大度**: Critical / High / Medium / Low
-     - **箇所**: `path:line`
-     - **問題**と**推奨**（具体的な修正方針）
-     - **削減アクション**（結合・凝集・複雑度・モジュール境界に関する指摘では**必須**）: `$PLUGIN_ROOT/references/07a-coupling-deep-dive.md` §6.3.1 の catalog から「下げる軸（Strength / Distance / Volatility）」と具体的手順を選び、同節の書式で 1〜2 行併記する。**アクションの有無・内容は severity / verdict に影響しない**（H9 と直交。推奨の中身を具体化するだけ）
-     - **根拠リファレンス**（`0N-*.md` の学術/公式文献を引用）
-   - **design-level の指摘が支配的で、局所修正では解消しない**と判断したら、step 2.5 の前方ハンドオフ（置換アーキの設計は `quality-architecture`）を報告に明記する。
+8. **07a 結合シグナルは必要時だけ読む**
+   - `coupling-gate-result.json` を採用する、または coupling wrapper を明示的に実行する場合だけ `$PLUGIN_ROOT/references/07a-review-integration.md` を読む。
+   - 未検出/未選択なら 07a merge contract は読まず、報告に `07a: 未適用` とだけ書く。
 
-6. **スコアカード（決定論／考察を分離）**
-   - **決定論パート**: ツール名・実測値・しきい値・判定を表で示す（再現可能）。
-   - **考察パート**: 9 特性ごとの所見と相対評価（◎/○/△/× 等）。各所見が決定論パート由来か LLM 判断（推測）かを明示。
-   - Critical/High を上位に並べた指摘一覧を添える。
+9. **報告する**
+   - 最重要指摘 3〜5 件と全体評価を要約する。
+   - `--comment` などで PR 投稿を指示された場合は、`path:line` がある指摘を inline comment 候補として重複に注意して投稿する。
 
-7. **報告**
-   - 最重要の指摘 3〜5 件と全体評価を要約する。`--comment` 等で PR へ投稿する指示があれば従う。
+## 2. 出力フォーマット
 
----
+通常レビューでは以下を省略しない。
 
-## 2. 出力フォーマット（必須）
-
-以下の章立てを **省略・空欄不可** で出力する。特に「決定論パート」「スコアカード」は省略禁止。
-
-```
+```text
 ## 品質レビュー（ISO/IEC 25010）
 
-### 0. プロジェクト資産インベントリ
-（§0.2 のコマンド出力をそのまま転記。何も無い場合は「該当資産なし」と明記）
+0. プロジェクト資産インベントリ
+<§0 の検出結果。無ければ「該当資産なし」>
 
-### サマリ
+サマリ
 - 対象 / 範囲 / 版(2011|2023) / 言語・適用 profile
-- 決定論パートの source: ci-artifact / wrapper / individual / none(全 skipped)
-- 設計妥当性トリアージ（step 2.5）の所見: 採用設計は妥当 / 要再考（design-level 指摘 N 件・うち再設計提案の有無）
-- 最重要指摘 Top N
+- 決定論パート source: ci-artifact | wrapper | individual | none
+- artifact-integrity: verified | mismatch | unknown | not-used
+- 設計妥当性: 妥当 | 要再考（design-level 指摘 N 件）
+- 07a: 未適用 | artifact | wrapper
+- 総合: pass | fail | inconclusive | review-only
 
 ### 決定論パート（静的解析ツール由来・再現可能）
-| 指標 | ツール | measured（実測値） | threshold（しきい値） | 判定 |
-| --- | --- | --- | --- | --- |
-| 循環的複雑度(最大) | lizard | 23 | ≤10 high / ≤20 critical | ✗ Critical |
-| 依存脆弱性(Crit/High) | Trivy | 0 | 0 | ✓ |
-| カバレッジ | swift test | 0.62 | ≥ 0.70 | ✗ High |
-| ハードコード密度 | （未実行） | 未実行 (skipped: ツール未導入) | — | skipped |
+| 指標 | ツール | measured | threshold | 判定 | scope | attribution | source |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cyclomatic-complexity | lizard | 23 | >20=fail | fail | repo-wide | diff-caused | wrapper |
+| dependency-vulnerabilities | Trivy | 未実行 (skipped: tool missing) | HIGH,CRITICAL=0 | skipped | repo-wide | unknown | individual |
+| generic-complexity | lizard | 12 | threshold未定義(profileなし) | measured-only | target-only | unknown | individual |
 
-注意:
-- **measured 列はいかなる行でも空欄にしない**。数値、または `未実行 (skipped: <理由>)` のいずれかを必ず書く。
-- `未実行` を書いた行は判定 `skipped`（pass ではない）。全行 skipped の表は許容するが、サマリで `inconclusive` を必ず宣言する。
-- 数値しきい値を本文の指摘で引用する場合、その指標は **必ずこの表に行を持つ**。表に行が無いしきい値引用は §5 違反。
+### 9 特性トリアージ
+| 特性 | 判定 | 根拠 |
+| --- | --- | --- |
+| 機能適合性 | 精査対象 | API 契約変更あり |
+| 性能効率性 | 該当薄 | 実行経路変更なし |
+| ...9 特性すべて... | | |
 
 ### スコアカード（考察パート）
-| 特性 | 評価 | 主な所見 | 根拠 |
+| 特性 | 評価 | 根拠種別 | 所見 |
 | --- | --- | --- | --- |
-| 機能適合性 | ○ | … | 決定論(カバレッジ measured=0.62) |
-| セキュリティ | △ | SAST 深掘りは推測 | 推測(judgment) |
-| …（9 特性すべて） | | | |
+| 保守性 | △ | deterministic+LLM(推測) | 最大 CCN 超過、境界責務が不明瞭 |
 
-所見で数字を引用する場合は決定論パートの行を参照する。
-
-### 指摘一覧（重大度順）
-#### [Critical] <タイトル> — セキュリティ/機密性
-- 層: design-level / implementation-level
-- 箇所: path:line
-- 問題: …
-- 推奨: …
-- 削減アクション: （結合・複雑性指摘のみ必須）<軸>を下げる — <具体的手順>（07a §6.3.1 の書式。期待効果 1 文を添える）
-- 根拠: （ISO/IEC 25010; OWASP ASVS など）
-- 数値根拠: 決定論パートの行（例: `循環的複雑度(最大)` 行、measured=23）／無ければ「数値根拠なし(推測)」と明記
-- （任意）07a 補足: 結合の深掘り (07a) シグナルが attach されている場合のみ。例: `Khononov Distance: cross-service (推測; module_unit=spm-target, --since=6.months)` — 重大度の **下方修正のみ** 可（07a §9 H9）。
+### 指摘
+1. [High][design-level][保守性/モジュール性] path/to/file.swift:42
+   - 問題:
+   - 推奨:
+   - 削減アクション:
+   - 根拠:
+   - 数値根拠:
+   - 差分帰属:
 ```
 
-### 2.1 結合の深掘り (07a) シグナルの merge contract 【EXPERIMENTAL / Phase 2】
+`measured` は空欄禁止。数値または `未実行 (skipped: <理由>)` のどちらかを書く。profile が無く閾値未定義の場合は、`measured` に実測値を書き、`判定` を `measured-only` にする。全行 skipped ならサマリで `inconclusive` を宣言する。本文でしきい値を引用する場合、その指標は決定論パートに同じ measured/threshold/source で存在していなければならない。
 
-> ⚠️ 07a の結合シグナル (`coupling-gate-result.json`) は **experimental layer**（`quality-gates.yml` の `planned-deterministic.coupling: experimental: true`）である。**既定はオフ**。verdict 確定権を持たず、寄与できるのは severity の **下方修正のみ**。決定論パート表には行を追加せず、考察パートの所見 attach に閉じる。
+### 2.1 trivial diff fast-path
 
-`HAS coupling-gate-result.json` が検出されているか、§1 step 3 で 2a/3a が選ばれた場合のみ、本セクションを適用する。**未検出/未選択時は本セクションを丸ごとスキップ**（既存挙動を保つ）。
+typo、コメント、ドキュメント、非実行メタデータのみの差分で、依存、設定、API、権限、ビルド、テスト、セキュリティ境界に影響しない場合は軽量フォーマットを使える。
 
-- **dedup キー**: `(path:line, finding_kind)`。同一の保守性 finding に対し、07-maintainability 由来の row と 07a 由来の補足 row が衝突した場合は **1 件に統合**する。
-- **precedence**: 既存 07/08 の決定論パート行が **verdict precedence**（PASS/FAIL の確定権）を持つ。07a 由来の SIGNAL は **補足として attach** され、verdict の反転や severity 上方修正には使えない（07a §9 H9 規律）。
-- **severity 下方修正のみ可**: 例えば 07-maintainability で `CBO=15` が `High` 判定された場合、`coupling-gate-result.json` の `intrusive_hits=0` + `distance-level=intra-namespace` + `volatility-proxy=stable` が同時に成立しているなら、当該 finding の severity を `Medium` に **下げる根拠** にはなる。逆に CBO=8（PASS）を 07a 由来で `High` に **上げてはならない**。
-- **intrusive override の特例**: `coupling-gate-result.json.intrusive_override = true` の場合、Khononov BALANCE 観点での「常時 FAIL」を補足コメントに明記する。ただし 07/08 のしきい値判定がそれによって反転するわけではない（precedence ルール維持）。
-- **観測ウィンドウの明示**: 07a 由来の volatility 数値を引用するときは `--since=<window>` を 1 件 1 件の attach 内に併記する（H5）。一括省略禁止。
-- **共有要素の明示**: Integration Strength 段を attach に書くときは `(symbol: ...) / (type: ...) / (contract: ...)` を併記する。書けないなら段名を attach に書かず、SIGNAL 数値のみ参照する（H3）。
-- **Khononov の決定論扱い禁止**: 07a シグナルは全て `推測` ラベル付きで採用。考察パート由来の所見扱いとし、決定論パート表の行として記載しない（**07a SIGNAL は §2 決定論パート表に行を追加しない**。考察パートの所見・指摘内 attach に閉じる）。
+- 資産インベントリ、サマリ、決定論パート source、設計妥当性は残す。
+- 決定論パートは `review-only` または `none(全 skipped)` でよい。
+- 9 特性は「精査対象」と「その他 8 特性: 該当薄（trivial diff のため）」のように圧縮してよい。
+- High 以上の懸念が見つかった時点で通常フォーマットへ戻す。
 
----
+## 3. 引用規律
 
-## 3. リファレンス引用のルール（厳守）
+全指摘に学術論文、規格、公式文書、または本プラグインの参照ファイルを引用する。参照ファイルに無い指摘は `根拠リファレンスなし（推測）` と明記し、断定を弱める。セキュリティは OWASP/NIST 等の一次情報を優先する。ISO/IEC 25010 の特性名だけを根拠にせず、可能なら該当副特性と品質測度も書く。
 
-- すべての推奨に **出典を併記**する。出典は `0N-*.md` の「リファレンス」節の**学術論文・公式文書のみ**。
-- ブログ・出典不明の主張を根拠にしない。リファレンスに無い指摘は推測である旨を明示する。
-- セキュリティ指摘は可能なら該当する OWASP/NIST 項目番号、保守性指摘はメトリクス（循環的複雑度・結合度等）を添える。
-- **保守性指摘で結合度 / 凝集 / 連結度（Connascence）/ モジュール境界を扱う場合は、補論 `references/07a-coupling-deep-dive.md` を引用する**。本ファイル §0.2 で `HAS coupling-gate-result.json` が出ている場合は、決定論パートで proxy 数値（`observed_change_frequency`, `distance_level`, `intrusive_hits` 等）を採用する（`07a` §5 / §9 H5 規律により観測ウィンドウ `--since=<window>` を本文併記）。
+## 4. 成功基準
 
----
+最終応答前に確認する。
 
-## 4. 重大度の基準
+- 決定論パートの数値は artifact または実行結果由来で、捏造が無い。
+- 考察パートが決定論パートの measured / threshold / verdict を上書きしていない。
+- skipped / measured-only / inconclusive が正しく表示されている。
+- 9 特性の可視化があり、精査対象と該当薄の根拠がある。
+- 各指摘に層、重大度、箇所、引用、数値根拠、差分帰属がある。
+- 既存コードレビューと新規設計検討のルーティングが混ざっていない。
 
-- **Critical**: 本番で重大被害（データ漏洩・破壊、全断、認証回避）。
-- **High**: 高確率で障害/脆弱性につながる、または保守を著しく阻害。
-- **Medium**: 品質低下だが回避策あり。改善推奨。
-- **Low**: 軽微・スタイル寄り。任意。
+## 5. 禁止事項
 
----
-
-## 5. やってはいけないこと
-
-- ❌ 9 特性の一部しか見ずに「レビュー完了」とする（網羅性を担保し、見ていない特性は明示）。
-- ❌ 根拠リファレンス無しの「べき論」だけの指摘。
-- ❌ 重大度を付けずに指摘を羅列する。
-- ❌ 推測を断定として書く。確証がなければその旨を示す。
-- ❌ 差分の意図を無視した一般論レビュー。
-- ❌ **ツールを実行せずに複雑度・カバレッジ・脆弱性件数などの数値を“推測”で書く**。未実行なら「未実行」と明記する。
-- ❌ 決定論パートで確定した数値を、考察パートで主観的に上書きする。
-- ❌ §0.2 のプロジェクト資産インベントリを実行・転記せずに §1 以降に進む。
-- ❌ §1 step 3 のユーザー確認（決定論パート実行方針の確認）を行わずに静的解析ツールを実行する／LLM 単独レビューを書く。
-- ❌ 本文や指摘で数値しきい値（V(G) ≤ 10, カバレッジ ≥ 0.70 等）を引用したのに、§2 決定論パート表に対応行（measured 値または skipped）が存在しない。
-- ❌ 全行 skipped の決定論パート表を出しながら、サマリで `inconclusive` を宣言せずに重大度付き指摘を断定的に書く。
-- ❌ 結合・凝集・複雑度・モジュール境界に関する指摘を、削減アクション（07a §6.3.1: どの軸をどう下げるか + 期待効果）を添えずに問題指摘だけで終える。
-- ⚠️ **Khononov（07a）を引用する指摘を書く前に、`references/07a-coupling-deep-dive.md` §9（H1〜H10 禁則）を必ず Read し従う**。同節がカノン。代表例: Pain 式 `Pain = S × D × V` を 2 留保なしに精密メトリクス化しない（H2/H10。canonical 第一表現は §6.1 の BALANCE 論理式）／Martin の Instability を Integration Strength の代理にしない（H2）／07a シグナルで既存しきい値の verdict 反転・severity 上方修正をしない（H9: 下方修正のみ）。
+- 決定論パートを試さずに LLM 単独で数値を出す。
+- profile 未定義の言語で Swift 固有ツールや Swift しきい値を既定扱いする。
+- repo-wide FAIL を差分起因と断定する。
+- freshness/commit/target が不一致の artifact を verified として使う。
+- 確認なしにビルド、テスト、ネットワーク実行へ進む。
+- 07a シグナルで verdict を反転する、または severity を上方修正する。
