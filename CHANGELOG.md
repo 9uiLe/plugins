@@ -5,6 +5,19 @@
 
 ## [Unreleased]
 
+### Added
+
+- **quality-architect** (v0.1.5): `quality-review` に差分帰属ラベル（`diff-caused` / `pre-existing` / `unknown`）、CI artifact の整合検証（mtime / `commit_sha` / `target` の照合）、trivial diff fast-path（§2.1）、非対話環境フォールバック、成功基準セルフチェック（§4）を追加。`quality-gate-swift.sh` の出力 JSON に `generated_at` / `commit_sha` / `git_root` / `target` / `source` メタデータを追加し、artifact 検証を裏付け。
+- **quality-architect** (v0.1.5): 07a 結合シグナルの merge contract を `references/07a-review-integration.md` へ分離。既定オフの実験層を SKILL 本文から切り出し、coupling シグナル採用時のみ Read する構造に。
+
+### Changed
+
+- **quality-architect** (v0.1.5): `quality-review` SKILL.md を全面改訂（215 → 160 行）。資産インベントリを言語非依存の manifest 駆動に変更し、profile 未定義言語は `profile: none` + 言語横断ツールの `measured-only` フォールバックで対応（Swift 固有ファイルのハードコードを解消）。設計妥当性トリアージを step 2.5 → step 2 に改番し、関連参照 10 箇所（00-overview / README / 07 / 07a / static-evaluation / architecture SKILL / coupling-gate-swift.sh）を同期。
+
+### Fixed
+
+- **quality-architect** (v0.1.5): `quality-gate-swift.sh` / `coupling-gate-swift.sh` の shellcheck SC2086（未クォート変数）を修正。
+
 ## [0.1.6] - 2026-07-02
 
 ### Added
