@@ -79,8 +79,8 @@ SQuaRE シリーズの主な構成（本プラグインで参照する範囲）:
 本プラグインのどのスキルから入っても、以下は **スキル非依存の絶対要件** である。両 SKILL.md の §0 はここを反映しており、矛盾があれば本節を優先する。
 
 1. **ルーティング**: 対象として既存コード／差分／PR／実装が与えられた依頼の唯一の正当な入口は `quality-review` である。`quality-architecture` を起動してしまった場合は、最初の応答でハンドオフ提案を行う（黙って続行しない）。
-2. **決定論ファースト**: 既存コードに対する品質判断（数値・指摘）を出力する前に、必ず次の順で試す。(a) `quality-gate-result.json` を Read、(b) `$PLUGIN_ROOT/scripts/quality-gate-<lang>.sh` を Bash で実行、(c) `quality-gates.yml` の `run` を個別実行、(d) いずれも不可なら全項目 `skipped` を明記し総合 `inconclusive` と報告。**いずれも実行せずに LLM 単独で数値を出すことは禁止**。
-3. **資産検出**: いずれのスキルでも、対象リポジトリ内の `quality-gate-result.json` / `.swiftlint.yml` / `.periphery.yml` / `Mintfile` / `scripts/quality-gate-*.sh` / `.github/workflows/*quality*.y*ml` の存在を確認し、結果をレポート冒頭に転記する。
+2. **決定論ファースト**: 既存コードに対する品質判断（数値・指摘）を出力する前に、必ず次の順で試す。(a) `quality-gate-result.json` を Read し、commit/target/freshness が分かる場合は照合する、(b) `quality-gates.yml` の対象 profile に対応する `$PLUGIN_ROOT/scripts/quality-gate-<profile>.sh` を Bash で実行、(c) profile 内の `run` を個別実行、(d) profile が無い場合は言語横断ツールを `measured-only` として扱う、(e) いずれも不可なら全項目 `skipped` を明記し総合 `inconclusive` と報告。**いずれも実行せずに LLM 単独で数値を出すことは禁止**。
+3. **資産検出**: いずれのスキルでも、対象リポジトリ内の `quality-gate-result.json` / `coupling-gate-result.json` / `scripts/quality-gate-*.sh` / `scripts/coupling-gate-*.sh` / `.github/workflows/*quality*.y*ml` / 対象 profile に関係する manifest・lint・coverage 設定の存在を確認し、結果をレポート冒頭に転記する。Swift 固有ファイルだけを共通要件として扱わない。07a のレビュー時 merge contract は `07a-review-integration.md` に置く。
 4. **数値しきい値**: 対象コードに対する判定文脈で数値しきい値（V(G), カバレッジ, CBO 等）を本文に書く場合、必ず `measured: <実測値>` または `measured: 未実行(skipped: <理由>)` をペアで併記する。設計時（`quality-architecture`）で文献値を引用するときは `（参考値: ...）` ラベル必須で、対象コードへの判定として書かない。
 5. **副作用付きツールの事前同意**: `swift test`, `trivy fs` などビルド／テスト／ネットワークが走るコマンドはユーザー確認で実行可否を確認してから実行する（既に同意済みの場合を除く）。
 
@@ -102,10 +102,10 @@ SQuaRE シリーズの主な構成（本プラグインで参照する範囲）:
 
 利用者がしばしば混同するのは「**設計の妥当性を評価する**のはどちらか」という問い。「設計を見る＝architecture」と考えると誤る。正しい軸は **対象が既に在るか否か**:
 
-- **既存コード／差分の設計が妥当かを評価する**（＝設計レビュー）→ `quality-review`。同スキル §1 step 2.5「設計妥当性トリアージ」が、欠陥チェックの前にトップダウンで設計判断の妥当性を評価する。指摘は `design-level` / `implementation-level` に分類する。
+- **既存コード／差分の設計が妥当かを評価する**（＝設計レビュー）→ `quality-review`。同スキル §1 step 2「設計妥当性」が、欠陥チェックの前にトップダウンで設計判断の妥当性を評価する。指摘は `design-level` / `implementation-level` に分類する。
 - **これから作る設計を構築・比較する**（まだコードが無い）→ `quality-architecture`。
 
-つまり「レビューでもまず設計を見るべき」は正しく、その設計評価は **review の中に step 2.5 として実在する**。architecture に逃がす必要はない。
+つまり「レビューでもまず設計を見るべき」は正しく、その設計評価は **review の中に step 2 として実在する**。architecture に逃がす必要はない。
 
 #### 前方ハンドオフ（review → architecture）
 

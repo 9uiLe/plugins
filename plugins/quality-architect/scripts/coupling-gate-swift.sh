@@ -3,7 +3,7 @@
 #
 # ⚠️ EXPERIMENTAL: 本スクリプトは Phase 2 試作の experimental layer。出力は verdict 確定権を
 #    持たず、既存 quality-gate-swift.sh の PASS/FAIL を上書きしない。寄与できるのは severity の
-#    下方修正のみ（07a §9 H9）。考察パートの所見 attach に閉じる（quality-review SKILL §2.1）。
+#    下方修正のみ（07a §9 H9）。考察パートの所見 attach に閉じる（07a-review-integration.md）。
 #
 # 目的: Khononov 2024 の 3 次元モデル (Integration Strength × Distance × Volatility)
 #       を量子化された SIGNAL として算出し、`coupling-gate-result.json` に出力する。
@@ -418,7 +418,7 @@ fi
   printf '  "h9_warning":"既存 07/08 のしきい値・PASS/FAIL を上書きしない。重大度の下方修正のみ可",\n'
   printf '  "signals":[\n'
   for i in "${!ROWS[@]}"; do
-    printf '    %s%s\n' "${ROWS[$i]}" "$([ $i -lt $((${#ROWS[@]}-1)) ] && echo ,)"
+  printf '    %s%s\n' "${ROWS[$i]}" "$([ "$i" -lt $((${#ROWS[@]}-1)) ] && echo ,)"
   done
   printf '  ]\n}\n'
 } > "$RESULT_JSON"

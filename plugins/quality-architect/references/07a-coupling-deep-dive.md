@@ -453,9 +453,9 @@ Khononov 2024 は古典理論を Ch.5 と Ch.6 で取り込み直しており、
 
 ## §11. 設計時の結合検討（コードが無い段階）
 
-> **位置づけ**: 本節は §6.5 hint table（**静的 SIGNAL 前提＝レビュー時専用**）の **設計時版＝質的判断版** である。設計段階（コード未生成・PR 無し）でモジュール／サービス境界を決めるとき、`quality-architecture` スキルが §1 step 3・§2 から本節を入口として参照する。**`quality-review`（既存コード）側は本節ではなく §6.5 と `quality-review` スキルの §2.1 merge contract を使う**。
+> **位置づけ**: 本節は §6.5 hint table（**静的 SIGNAL 前提＝レビュー時専用**）の **設計時版＝質的判断版** である。設計段階（コード未生成・PR 無し）でモジュール／サービス境界を決めるとき、`quality-architecture` スキルが §1 step 3・§2 から本節を入口として参照する。**`quality-review`（既存コード）側は本節ではなく §6.5 と `07a-review-integration.md` の Merge Contract を使う**。
 >
-> ⚠️ **設計時は実測値を書かない**（00-overview §5.1 ルール 4 / quality-architecture §3.5）。本節で結合 3 次元に言及する数値・段は **すべて `（参考値: Khononov 2024, Ch.<n>）` ラベル付き** で扱い、対象コードへの実測判定として書いてはならない。実測が必要になった瞬間、それは review 領域であり `coupling-gate-swift.sh` / §6.5 / §2.1 に移譲する。
+> ⚠️ **設計時は実測値を書かない**（00-overview §5.1 ルール 4 / quality-architecture §3.5）。本節で結合 3 次元に言及する数値・段は **すべて `（参考値: Khononov 2024, Ch.<n>）` ラベル付き** で扱い、対象コードへの実測判定として書いてはならない。実測が必要になった瞬間、それは review 領域であり `coupling-gate-swift.sh` / §6.5 / `07a-review-integration.md` の Merge Contract に移譲する。
 >
 > 🚫 本節は **新しい数値しきい値を導入しない**。Khononov 2024 は結合 3 次元に数値カットオフを与えない（§10 確認済み: 図 7.14 / 8.2 / 表 9.1 はいずれも順序尺度）。本節も段の「確定」ではなく境界設計の「検討手順」を提供するに留まる。
 
@@ -502,6 +502,6 @@ Khononov 2024 は古典理論を Ch.5 と Ch.6 で取り込み直しており、
 | 入力 | 静的 SIGNAL（`coupling-gate-result.json`: intrusive_hits / duplicates / contract_layer_present 等） | 設計意図からの定性見積り（計測なし） |
 | 出力の性格 | SIGNAL から段の **候補を絞る**（experimental・要レビュア確定） | 境界設計の **検討手順**（段は目標として選ぶ） |
 | 数値の扱い | proxy 数値を `推測` ラベルで採用（H5: `--since=<window>` 併記） | 実測値を書かない（`参考値` ラベルのみ） |
-| 使うスキル | `quality-review`（同スキル §2.1 merge contract 経由） | `quality-architecture`（同スキル §1 step 3 / §2 章 4'） |
+| 使うスキル | `quality-review`（`07a-review-integration.md` の Merge Contract 経由） | `quality-architecture`（同スキル §1 step 3 / §2 章 4'） |
 
 両者は **同じ §3〜§6 の語彙・§6.1 canonical を共有**するが、**入力（SIGNAL か設計意図か）と数値規律（実測 `推測` か `参考値` か）が異なる**。設計時に SIGNAL 数値を捏造して §6.5 を使ってはならず、レビュー時に §11 の定性見積りで実測を代替してはならない。
