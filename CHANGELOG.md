@@ -5,6 +5,8 @@
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-07-03
+
 ### Added
 
 - **quality-architect** (v0.1.5): `quality-review` に差分帰属ラベル（`diff-caused` / `pre-existing` / `unknown`）、CI artifact の整合検証（mtime / `commit_sha` / `target` の照合）、trivial diff fast-path（§2.1）、非対話環境フォールバック、成功基準セルフチェック（§4）を追加。`quality-gate-swift.sh` の出力 JSON に `generated_at` / `commit_sha` / `git_root` / `target` / `source` メタデータを追加し、artifact 検証を裏付け。
@@ -17,7 +19,6 @@
 ### Fixed
 
 - **quality-architect** (v0.1.5): `quality-gate-swift.sh` / `coupling-gate-swift.sh` の shellcheck SC2086（未クォート変数）を修正。
-
 ## [0.1.6] - 2026-07-02
 
 ### Added
@@ -85,7 +86,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.6...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.7...HEAD
+[0.1.7]: https://github.com/9uiLe/plugins/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/9uiLe/plugins/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/9uiLe/plugins/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/9uiLe/plugins/compare/v0.1.3...v0.1.4
