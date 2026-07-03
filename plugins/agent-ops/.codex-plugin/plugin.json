@@ -1,0 +1,39 @@
+{
+  "name": "agent-ops",
+  "version": "0.1.0",
+  "description": "Operational discipline for agentic development: handoff-driven delegation to external agents (Codex), skeptical auditing, fixed-rubric first-touch UX review loops, and crystallizing session learnings into lint/scripts/skills.",
+  "author": {
+    "name": "9uiLe",
+    "url": "https://github.com/9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins/tree/master/plugins/agent-ops",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": [
+    "delegation",
+    "handoff",
+    "audit",
+    "ux-review",
+    "knowledge-management",
+    "agent-workflow"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Agent Ops",
+    "shortDescription": "Run agent delegation and review loops",
+    "longDescription": "Operate handoff-driven delegation to external agents, skeptical audit gates, fixed-rubric first-touch UX review loops, and session learning crystallization.",
+    "developerName": "9uiLe",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/9uiLe/plugins/tree/master/plugins/agent-ops",
+    "defaultPrompt": [
+      "Create a handoff for Codex and audit it",
+      "Run a first-touch UX review loop",
+      "Crystallize this session into a durable process"
+    ],
+    "brandColor": "#0EA5E9"
+  }
+}

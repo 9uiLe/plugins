@@ -5,6 +5,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- プラグイン **agent-ops** (v0.1.0) を収録 — Fable 実行履歴から抽出したエージェント運用規律プラグイン。指示書駆動の外部エージェント委譲と懐疑的監査を行う Skill `codex-handoff`、固定ルーブリックの初見ユーザー評価を実機で反復する Skill `first-touch-review`、セッション知見を lint / script / skill / ADR に資産化する Skill `crystallize`、リファレンス 8 編を提供。
+
 ## [0.1.7] - 2026-07-03
 
 ### Added
