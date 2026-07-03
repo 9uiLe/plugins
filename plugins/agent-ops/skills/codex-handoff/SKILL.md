@@ -23,6 +23,7 @@ Codex の価格・モデル判断は、インストールされていれば `mod
 
 ## 2. フロー
 
+0. **状態を読んで運用モードを宣言する**: `PLUGIN_ROOT/references/06-operating-protocol.md` に従い、対象プロジェクトの台帳 (`docs/handoff-ledger.md`) からフェーズと Fable-off カウンタを読み、最初の応答で今回のモード (著者・批評体制) を宣言する。以降の手順はユーザーに記憶させず、監督役が各ステップで次の行動を提示する。
 1. **実行経路を確認する**: 外部エージェントは必ずトークン計測プロキシ (`headroom wrap codex`) 経由で起動する。直接起動してしまった場合は即停止し、痕跡がないことを確認してから正しい経路で再実行する。
 2. **指示書を作成する**: `PLUGIN_ROOT/references/00-handoff-template.md` のテンプレートに従う。著者を自分にするか Fable にするかは `PLUGIN_ROOT/references/05-fable-independence.md` のフェーズに従う。
 3. **着手前ゲートを組み込む**: `PLUGIN_ROOT/references/03-preflight-gate.md` に従い、M0 (調査・作戦フェーズ) を指示書の先頭マイルストーンに置く。高リスク・新規タスク類型では、委譲前にアンサンブル批評を追加する。
@@ -39,6 +40,7 @@ Codex の価格・モデル判断は、インストールされていれば `mod
 
 | ファイル | いつ読むか |
 | --- | --- |
+| `references/06-operating-protocol.md` | 発火直後 (運用モード判定と進行の自動化) |
 | `references/00-handoff-template.md` | 指示書を作るとき |
 | `references/03-preflight-gate.md` | 指示書を委譲する前 (M0 設計・アンサンブル批評) |
 | `references/02-execution-codex.md` | Codex を起動する前 |
