@@ -5,6 +5,17 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-04
+
+### Added
+
+- **agent-ops** `codex-handoff` に着手前ゲート・振り返り台帳・Fable 非依存化プログラムを追加 — 指示書テンプレートへ「非目標」「未確定事項と仮定」「事前調査」セクションと M0 (調査・作戦フェーズ) を追加し、未確定事項を「確認が必要 / 仮定して進められる」の二分類で着手前に回収するゲート (references/03)、委譲ごとの振り返り 4 行 + 4 指標の台帳 (references/04)、ベースライン記録・批評採掘・Fable-off 訓練からなる Fable 非依存化プログラム (references/05) を新設。監査チェックリストに「指示書起因」タグを追加。(#38)
+- **agent-ops** 運用プロトコルを追加 — 手順の記憶を台帳先頭の状態ヘッダ (フェーズ / ベースライン件数 / Fable-off カウンタ) へ移し、監督役セッションが発火直後に運用モードを宣言して各ステップの次の行動を提示する自動進行を新設 (references/06)。ユーザーが覚えるのはトリガーフレーズのみ。(#39)
+
+### Changed
+
+- **agent-ops** プラグイン版を v0.1.0 → v0.2.0 に更新。
+
 ## [0.1.8] - 2026-07-03
 
 ### Added
@@ -91,7 +102,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.8...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/9uiLe/plugins/compare/v0.1.8...v0.2.0
 [0.1.8]: https://github.com/9uiLe/plugins/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/9uiLe/plugins/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/9uiLe/plugins/compare/v0.1.5...v0.1.6
