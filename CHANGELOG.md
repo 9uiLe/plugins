@@ -5,10 +5,11 @@
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-07-03
+
 ### Added
 
 - プラグイン **agent-ops** (v0.1.0) を収録 — Fable 実行履歴から抽出したエージェント運用規律プラグイン。指示書駆動の外部エージェント委譲と懐疑的監査を行う Skill `codex-handoff`、固定ルーブリックの初見ユーザー評価を実機で反復する Skill `first-touch-review`、セッション知見を lint / script / skill / ADR に資産化する Skill `crystallize`、リファレンス 8 編を提供。
-
 ## [0.1.7] - 2026-07-03
 
 ### Added
@@ -90,7 +91,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.7...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.8...HEAD
+[0.1.8]: https://github.com/9uiLe/plugins/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/9uiLe/plugins/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/9uiLe/plugins/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/9uiLe/plugins/compare/v0.1.4...v0.1.5
