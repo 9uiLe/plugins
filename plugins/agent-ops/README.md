@@ -23,6 +23,9 @@
 | [00-handoff-template.md](./references/00-handoff-template.md) | 外部エージェントへ渡す指示書テンプレート |
 | [01-audit-checklist.md](./references/01-audit-checklist.md) | 自己報告を信用しない懐疑的監査チェックリスト |
 | [02-execution-codex.md](./references/02-execution-codex.md) | `headroom wrap codex` 経由の実行経路 |
+| [03-preflight-gate.md](./references/03-preflight-gate.md) | 着手前ゲート (M0 調査・作戦フェーズとアンサンブル批評) |
+| [04-retrospective-ledger.md](./references/04-retrospective-ledger.md) | 委譲ごとの振り返り 4 行と 4 指標の台帳 |
+| [05-fable-independence.md](./references/05-fable-independence.md) | Fable 非依存化プログラム (DR 目標) |
 | [10-first-touch-rubric.md](./references/10-first-touch-rubric.md) | 初見ユーザー評価の固定ルーブリック |
 | [11-loop-protocol.md](./references/11-loop-protocol.md) | 同一条件で再評価する反復プロトコル |
 | [12-quantify-visual.md](./references/12-quantify-visual.md) | スクリーンショット・録画による視覚定量化 |
