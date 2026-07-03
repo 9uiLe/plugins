@@ -24,15 +24,24 @@ Codex の価格・モデル判断は、インストールされていれば `mod
 ## 2. フロー
 
 1. **実行経路を確認する**: 外部エージェントは必ずトークン計測プロキシ (`headroom wrap codex`) 経由で起動する。直接起動してしまった場合は即停止し、痕跡がないことを確認してから正しい経路で再実行する。
-2. **指示書を作成する**: `PLUGIN_ROOT/references/00-handoff-template.md` のテンプレートに従う。
-3. **ゲートを設計する**: 失敗コストが大きい・技術的不確実性がある場合は、本実装の前に Go/No-Go スパイクを挟む。長い作業はマイルストーンに分割し、各末尾で委譲先を停止させ承認を待つ。
-4. **実行する**: 起動形態・フラグは `PLUGIN_ROOT/references/02-execution-codex.md` に従う。
-5. **監査する**: `PLUGIN_ROOT/references/01-audit-checklist.md` を適用する。指摘は重大度順に列挙して差し戻すか、証拠を確認して受け入れる。
+2. **指示書を作成する**: `PLUGIN_ROOT/references/00-handoff-template.md` のテンプレートに従う。著者を自分にするか Fable にするかは `PLUGIN_ROOT/references/05-fable-independence.md` のフェーズに従う。
+3. **着手前ゲートを組み込む**: `PLUGIN_ROOT/references/03-preflight-gate.md` に従い、M0 (調査・作戦フェーズ) を指示書の先頭マイルストーンに置く。高リスク・新規タスク類型では、委譲前にアンサンブル批評を追加する。
+4. **ゲートを設計する**: 失敗コストが大きい・技術的不確実性がある場合は、本実装の前に Go/No-Go スパイクを挟む。長い作業はマイルストーンに分割し、各末尾で委譲先を停止させ承認を待つ。
+5. **実行する**: 起動形態・フラグは `PLUGIN_ROOT/references/02-execution-codex.md` に従う。M0 の「確認が必要」がゼロになるまで M1 を承認しない。
+6. **監査する**: `PLUGIN_ROOT/references/01-audit-checklist.md` を適用する。指摘は重大度順に列挙して差し戻すか、証拠を確認して受け入れる。各指摘に「指示書起因かどうか」のタグを付ける。
+7. **振り返る**: `PLUGIN_ROOT/references/04-retrospective-ledger.md` の形式で台帳に記録し、繰り返し現れた欠落はテンプレートへ還流する。
 
-## 3. リファレンス
+## 3. 著者体制と Fable 非依存化
+
+このスキルの最終目標は、Fable が利用できなくなっても、自分の指示 + Opus/Codex で同等の委譲品質を維持できる状態である。ベースライン記録・批評採掘・Fable-off 訓練・フェーズ移行は `PLUGIN_ROOT/references/05-fable-independence.md` に従う。
+
+## 4. リファレンス
 
 | ファイル | いつ読むか |
 | --- | --- |
 | `references/00-handoff-template.md` | 指示書を作るとき |
-| `references/01-audit-checklist.md` | 委譲先の成果物を受け入れる前 |
+| `references/03-preflight-gate.md` | 指示書を委譲する前 (M0 設計・アンサンブル批評) |
 | `references/02-execution-codex.md` | Codex を起動する前 |
+| `references/01-audit-checklist.md` | 委譲先の成果物を受け入れる前 |
+| `references/04-retrospective-ledger.md` | 監査後、委譲 1 件を締めるとき |
+| `references/05-fable-independence.md` | 著者体制を決めるとき / Fable-off 訓練のとき |
