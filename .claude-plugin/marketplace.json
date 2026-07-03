@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins by 9uiLe.",
-    "version": "0.1.8"
+    "version": "0.2.0"
   },
   "plugins": [
     {
@@ -55,7 +55,7 @@
       "name": "agent-ops",
       "source": "./plugins/agent-ops",
       "description": "Operational discipline for agentic development: handoff-driven delegation to external agents (Codex), skeptical auditing, fixed-rubric first-touch UX review loops, and crystallizing session learnings into lint/scripts/skills.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "category": "development",
       "tags": [
         "delegation",
