@@ -69,6 +69,25 @@ else
   fi
 fi
 
+# Every plugin in the Claude marketplace must also be listed in the Codex
+# marketplace manifest, or it cannot be installed from Codex. Generalized from
+# agent-ops being registered only in .claude-plugin/marketplace.json.
+AGENTS_MARKETPLACE_JSON="$REPO_ROOT/.agents/plugins/marketplace.json"
+if [[ ! -f "$AGENTS_MARKETPLACE_JSON" ]]; then
+  log error "Codex marketplace manifest not found: $AGENTS_MARKETPLACE_JSON"
+  fail=1
+else
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    if jq -e --arg n "$name" '.plugins[] | select(.name == $n)' "$AGENTS_MARKETPLACE_JSON" >/dev/null; then
+      log ok "$name: listed in .agents/plugins/marketplace.json"
+    else
+      log error "$name: missing from .agents/plugins/marketplace.json (not installable from Codex)"
+      fail=1
+    fi
+  done < <(list_plugins)
+fi
+
 if (( fail != 0 )); then
   log error "verify-versions failed ($checked plugins checked)"
   exit 1

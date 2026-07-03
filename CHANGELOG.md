@@ -5,6 +5,14 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **agent-ops** を Codex マーケットプレイスマニフェスト (`.agents/plugins/marketplace.json`) に登録 — v0.1.8 収録時からの登録漏れにより、`codex plugin add agent-ops@9uile-plugins` がプラグイン未検出で失敗していた。
+
+### Added
+
+- `scripts/verify-versions.sh` に Codex マニフェスト掲載チェックを追加 — Claude 側 marketplace.json に載る全プラグインが `.agents/plugins/marketplace.json` にも掲載されていることを検査し、登録漏れを CI で検出する。
+
 ## [0.2.0] - 2026-07-04
 
 ### Added
