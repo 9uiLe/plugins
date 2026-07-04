@@ -5,6 +5,8 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-04
+
 ### Changed
 
 - **agent-ops** スキル名を `codex-handoff` から `agent-handoff` にリネーム。旧名でのスキル呼び出しは新名 `agent-handoff` に変わる。
@@ -17,7 +19,6 @@
 
 - `scripts/verify-versions.sh` に Codex マニフェスト掲載チェックを追加 — Claude 側 marketplace.json に載る全プラグインが `.agents/plugins/marketplace.json` にも掲載されていることを検査し、登録漏れを CI で検出する。
 - **agent-ops** `codex-handoff` の委譲先を Claude Code / Codex 両対応に一般化 — Claude Code 用実行経路 (references/02-execution-claude.md) を追加し、運用プロトコル・参照表・マニフェスト説明を委譲先選択後の運用規律として整理した。
-
 ## [0.2.0] - 2026-07-04
 
 ### Added
@@ -115,7 +116,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/9uiLe/plugins/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/9uiLe/plugins/compare/v0.1.8...v0.2.0
 [0.1.8]: https://github.com/9uiLe/plugins/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/9uiLe/plugins/compare/v0.1.6...v0.1.7
