@@ -1,13 +1,11 @@
 ---
-name: codex-handoff
+name: agent-handoff
 description: "Operate handoff-driven delegation to model-strategy-selected external agents: write canonical handoff instructions, choose the target-specific headroom execution route, design gates, and audit evidence. Japanese triggers: 「Claude Code に作業させて」「Codex に作業させて」「指示書を作成して委譲して」「外部エージェントに実装させて」「監督とレビューを担当して」."
 ---
 
-# codex-handoff 運用規律
+# agent-handoff 運用規律
 
 外部エージェントへ作業を委譲するとき、指示書・停止点・監査証跡を先に固定してから実行する。
-
-スキル名の `codex-handoff` は歴史的経緯であり、委譲先は Claude Code / Codex のいずれでもよい。
 
 この文書で `PLUGIN_ROOT` と書く場合は、Claude Code では `${CLAUDE_PLUGIN_ROOT}`、Codex ではこの `SKILL.md` の 2 階層上にある `agent-ops` プラグインルートを指す。リファレンスはすべて `PLUGIN_ROOT/references/` 配下。
 
@@ -19,7 +17,7 @@ description: "Operate handoff-driven delegation to model-strategy-selected exter
 
 ## 1. 既存プラグインとの境界
 
-`model-strategy` は、どのモデル・effort・委譲先を選ぶかを判断する。`codex-handoff` は、選んだ後の委譲の運用規律 (指示書・ゲート・監査) を担う。
+`model-strategy` は、どのモデル・effort・委譲先を選ぶかを判断する。`agent-handoff` は、選んだ後の委譲の運用規律 (指示書・ゲート・監査) を担う。
 
 委譲先の価格・モデル・effort 判断は、インストールされていれば `model-strategy` を参照し、このスキルでは重複させない。
 
