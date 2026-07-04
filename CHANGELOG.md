@@ -5,6 +5,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **agent-ops** スキル名を `codex-handoff` から `agent-handoff` にリネーム。旧名でのスキル呼び出しは新名 `agent-handoff` に変わる。
+
 ### Fixed
 
 - **agent-ops** を Codex マーケットプレイスマニフェスト (`.agents/plugins/marketplace.json`) に登録 — v0.1.8 収録時からの登録漏れにより、`codex plugin add agent-ops@9uile-plugins` がプラグイン未検出で失敗していた。
@@ -12,6 +16,7 @@
 ### Added
 
 - `scripts/verify-versions.sh` に Codex マニフェスト掲載チェックを追加 — Claude 側 marketplace.json に載る全プラグインが `.agents/plugins/marketplace.json` にも掲載されていることを検査し、登録漏れを CI で検出する。
+- **agent-ops** `codex-handoff` の委譲先を Claude Code / Codex 両対応に一般化 — Claude Code 用実行経路 (references/02-execution-claude.md) を追加し、運用プロトコル・参照表・マニフェスト説明を委譲先選択後の運用規律として整理した。
 
 ## [0.2.0] - 2026-07-04
 
