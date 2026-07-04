@@ -1,7 +1,7 @@
 {
   "name": "agent-ops",
   "version": "0.2.0",
-  "description": "Operational discipline for agentic development: handoff-driven delegation to external agents (Codex), skeptical auditing, fixed-rubric first-touch UX review loops, and crystallizing session learnings into lint/scripts/skills.",
+  "description": "Operational discipline for agentic development: handoff-driven delegation to external agents (Claude Code or Codex), skeptical auditing, fixed-rubric first-touch UX review loops, and crystallizing session learnings into lint/scripts/skills.",
   "author": {
     "name": "9uiLe",
     "url": "https://github.com/9uiLe"
@@ -30,7 +30,7 @@
     ],
     "websiteURL": "https://github.com/9uiLe/plugins/tree/master/plugins/agent-ops",
     "defaultPrompt": [
-      "Create a handoff for Codex and audit it",
+      "Create a handoff for Claude Code or Codex and audit it",
       "Run a first-touch UX review loop",
       "Crystallize this session into a durable process"
     ],
