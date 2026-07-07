@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "compact-plus",
+  "version": "0.1.0",
+  "description": "Preserve Claude Code session state before and after context compaction: transcript backup, LLM-generated 10-section state files, warn-threshold reminders, and post-compact recovery guidance injected via hooks. Ported from u-ichi/compact-plus (MIT).",
+  "author": {
+    "name": "9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": ["claude-code", "compact", "hooks", "session-recovery", "context-management"],
+  "skills": "./skills/"
+}
