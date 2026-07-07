@@ -155,7 +155,7 @@ upstream v1.0.2 からこのリポジトリに移植するにあたり、以下�
 
 - `scripts/get-session-id.sh` を同梱し、upstream が前提としていた作者 dotfiles (`~/.claude/scripts/get-session-id.sh`) への依存を解消した。
 - `scripts/compact-warn-statusline.sh` を同梱し、warn マーカー生成を自己完結化した (上の「warn 通知の statusline 配線」を参照)。
-- `skills/compact-plus/SKILL.md` を日本語化し、Claude Code 専用移植のため `codex_description` frontmatter を削除した。
+- `skills/compact-plus/SKILL.md` を日本語化した。`codex_description` frontmatter は削除 — このリポジトリの Codex 対応は SKILL.md frontmatter ではなく `.codex-plugin/plugin.json` と `.agents/plugins/marketplace.json` (Codex マニフェスト) で行う方式のため (CONTRIBUTING.md 参照)。
 - バージョンを upstream の `1.0.2` から `0.1.0` として再スタートした (このリポジトリのリリースゲート「リリース版 ≥ max(プラグイン版)」に合わせるため)。
 
 移植後のレビューで確認された以下の点についても、upstream のロジックに手を加えて修正した (このリポジトリ独自の変更点であり、upstream には反映されていない):
