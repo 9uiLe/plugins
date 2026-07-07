@@ -50,6 +50,14 @@
         "subagents",
         "token-economy"
       ]
+    },
+    {
+      "name": "compact-plus",
+      "source": "./plugins/compact-plus",
+      "description": "Preserve Claude Code session state before and after context compaction: transcript backup, LLM-generated state files, warn-threshold reminders, and post-compact recovery guidance. Ported from u-ichi/compact-plus (MIT).",
+      "version": "0.1.0",
+      "category": "productivity",
+      "tags": ["compaction", "session-recovery", "hooks", "context-management"]
     }
   ]
 }
