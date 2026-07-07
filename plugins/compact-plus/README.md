@@ -145,6 +145,25 @@ upstream (u-ichi/compact-plus) は、warn マーカー (`${TMPDIR}/claude-compac
 - コンテキスト使用率の表示自体を他プラグインに譲りたい場合 (例: model-strategy プラグインの `context-statusline.sh`) は、環境変数 `COMPACT_PLUS_STATUSLINE_DELEGATE` に**絶対パスで**そのコマンドを設定すると、同じ statusline JSON をそのコマンドへ委譲して表示する (`${CLAUDE_PLUGIN_ROOT}` が使えない事情は同上)。warn マーカーの生成・削除ロジックは委譲時も変わらず動く。
 - `jq` が必要 (未インストールなら案内メッセージのみ表示し、statusline を壊さない。fail-open)。
 
+**既に独自の statusLine を使っている場合の共存レシピ**: 表示を失わずに warn マーカー機能だけを足せる。
+
+1. `statusLine.command` を compact-plus の `compact-warn-statusline.sh` の絶対パスに差し替える。
+2. これまで使っていた statusLine スクリプトの絶対パスを、環境変数 `COMPACT_PLUS_STATUSLINE_DELEGATE` に設定する。
+
+```json
+{
+  "env": {
+    "COMPACT_PLUS_STATUSLINE_DELEGATE": "/absolute/path/to/your/existing-statusline.sh"
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "/absolute/path/to/plugins/compact-plus/scripts/compact-warn-statusline.sh"
+  }
+}
+```
+
+compact-plus が先に warn マーカーの判定・生成を行い、その後まったく同じ statusline JSON を既存スクリプトへ委譲するので、表示はこれまでどおり保たれる。委譲先は自作スクリプトでも他プラグイン (例: model-strategy の `context-statusline.sh`) でもよい。
+
 ### `/compact` 引数
 
 `/compact 重要な設計判断は必ず残して` のように任意の自然文引数を渡すと、state 生成 LLM に priority guidance として反映される。
