@@ -1,0 +1,38 @@
+{
+  "name": "tech-docs",
+  "version": "0.1.1",
+  "description": "Generate ADRs, technical specifications, and general engineering documents as single-file HTML pages using a consistent design system.",
+  "author": {
+    "name": "9uiLe",
+    "url": "https://github.com/9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins/tree/master/plugins/tech-docs",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": [
+    "documentation",
+    "adr",
+    "spec",
+    "design-system",
+    "html"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Tech Docs",
+    "shortDescription": "Generate ADRs, specs, and technical docs",
+    "longDescription": "Create ADRs, technical specifications, and general engineering documentation as single-file HTML pages using the bundled design system.",
+    "developerName": "9uiLe",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/9uiLe/plugins/tree/master/plugins/tech-docs",
+    "defaultPrompt": [
+      "Create an ADR for this architectural decision",
+      "Draft a technical specification for this feature",
+      "Write a polished HTML runbook"
+    ],
+    "brandColor": "#2563EB"
+  }
+}

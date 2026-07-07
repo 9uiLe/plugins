@@ -1,0 +1,39 @@
+{
+  "name": "model-strategy",
+  "version": "0.1.1",
+  "description": "Cost-effective model and effort selection for Claude Code workflows.",
+  "author": {
+    "name": "9uiLe",
+    "url": "https://github.com/9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins/tree/master/plugins/model-strategy",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": [
+    "model-selection",
+    "effort",
+    "cost-optimization",
+    "subagents",
+    "pricing",
+    "token-economy"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Model Strategy",
+    "shortDescription": "Choose Claude model and effort levels",
+    "longDescription": "Classify tasks and recommend cost-effective Claude model, effort, and delegation choices using a reference-backed decision matrix.",
+    "developerName": "9uiLe",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/9uiLe/plugins/tree/master/plugins/model-strategy",
+    "defaultPrompt": [
+      "Choose the most cost-effective model for this task",
+      "Decide whether to delegate this implementation",
+      "Explain the model and effort trade-off"
+    ],
+    "brandColor": "#7C3AED"
+  }
+}

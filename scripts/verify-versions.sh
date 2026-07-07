@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# verify-versions.sh — assert plugin.json and marketplace.json versions agree
+# verify-versions.sh — assert Claude/Codex plugin.json and marketplace.json versions agree
 # Used both as a release post-condition and as a CI gate on every PR.
 # shellcheck shell=bash source=./lib/version.sh
 
@@ -17,10 +17,16 @@ while IFS= read -r name; do
   [[ -n "$name" ]] || continue
   checked=$((checked + 1))
   plugin_ver="$(read_plugin_version "$name")"
+  codex_plugin_ver="$(read_codex_plugin_version "$name")"
   marketplace_ver="$(read_marketplace_plugin_version "$name")"
 
   if ! is_semver "$plugin_ver"; then
-    log error "$name: plugin.json version is not valid semver: '$plugin_ver'"
+    log error "$name: .claude-plugin/plugin.json version is not valid semver: '$plugin_ver'"
+    fail=1
+    continue
+  fi
+  if ! is_semver "$codex_plugin_ver"; then
+    log error "$name: .codex-plugin/plugin.json version is not valid semver: '$codex_plugin_ver'"
     fail=1
     continue
   fi
@@ -30,7 +36,10 @@ while IFS= read -r name; do
     continue
   fi
   if [[ "$plugin_ver" != "$marketplace_ver" ]]; then
-    log error "$name: version mismatch (plugin.json=$plugin_ver, marketplace.json=$marketplace_ver)"
+    log error "$name: version mismatch (.claude-plugin/plugin.json=$plugin_ver, marketplace.json=$marketplace_ver)"
+    fail=1
+  elif [[ "$codex_plugin_ver" != "$plugin_ver" ]]; then
+    log error "$name: version mismatch (.codex-plugin/plugin.json=$codex_plugin_ver, .claude-plugin/plugin.json=$plugin_ver)"
     fail=1
   else
     log ok "$name: $plugin_ver"
@@ -58,6 +67,25 @@ else
   else
     log ok "metadata.version: $meta_ver (>= max plugin $max_ver)"
   fi
+fi
+
+# Every plugin in the Claude marketplace must also be listed in the Codex
+# marketplace manifest, or it cannot be installed from Codex. Generalized from
+# agent-ops being registered only in .claude-plugin/marketplace.json.
+AGENTS_MARKETPLACE_JSON="$REPO_ROOT/.agents/plugins/marketplace.json"
+if [[ ! -f "$AGENTS_MARKETPLACE_JSON" ]]; then
+  log error "Codex marketplace manifest not found: $AGENTS_MARKETPLACE_JSON"
+  fail=1
+else
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    if jq -e --arg n "$name" '.plugins[] | select(.name == $n)' "$AGENTS_MARKETPLACE_JSON" >/dev/null; then
+      log ok "$name: listed in .agents/plugins/marketplace.json"
+    else
+      log error "$name: missing from .agents/plugins/marketplace.json (not installable from Codex)"
+      fail=1
+    fi
+  done < <(list_plugins)
 fi
 
 if (( fail != 0 )); then

@@ -193,6 +193,26 @@ canonical はこの区別を反映する（`COMPLEXITY = NOT MODULARITY` が総�
 - **Volatility を下げる**: 安定化（API を凍結する、変更頻度の高い部分を抽出する）。
 - BALANCE = TRUE になるまで、3 次元のうち最も改修コストの低い軸から調整する。
 
+#### §6.3.1 削減アクション・カタログ（運用補助・本リポジトリ合成）
+
+> 位置づけ: §6.3 の 3 軸（Khononov 2024, Ch.11）を「指摘に添える具体的アクション」へ運用化した **本リポジトリ独自の catalog** である（§6.5 と同じく Khononov 2024 の verbatim ではない。出典として引用する場合は 3 軸の考え方のみ Ch.11 に帰属させること）。**severity・PASS/FAIL 判定には一切影響しない**（H9: 本 catalog は推奨の内容であって判定入力ではない）。
+
+| 検出状況（例） | 下げる軸 | 具体的アクション例 |
+| --- | --- | --- |
+| Intrusive Coupling（内部実装への依存、リフレクション、private 相当への到達） | Strength | 依存先の公開 API / 明示コントラクトのみを使うよう書き換え。必要な機能が公開されていなければ依存先に API 追加を提案（Intrusive → Functional 以下へ） |
+| Functional Coupling（業務ロジック・業務シーケンスの境界跨ぎ共有、cross-boundary duplicates） | Strength または Distance | 重複ロジックをどちらか一方の境界へ集約し他方はコントラクト経由で呼ぶ。または 2 部品を同一境界内へ移設（Distance 短縮） |
+| Model Coupling（ドメインモデル型の境界跨ぎ共有） | Strength | 境界専用の DTO / integration-specific model を導入し、内部モデルを非公開化（Model → Contract） |
+| 大域的複雑性（強 Strength × 遠 Distance、§6.1 `S AND D`） | どちらか一方 | XOR を成立させる: 強く結合したままなら同一境界へ寄せる（Distance↓）、遠いまま保つなら Contract 化（Strength↓）。両方同時に着手しない（改修コストの低い軸から） |
+| 局所的複雑性（弱 Strength × 近 Distance の部品が過剰分割で散在、§6.1 `NOT S AND NOT D`） | Distance（構成整理） | 過剰分割を統合し境界数を減らす。§6.4 の通り「さらに疎結合化」は逆効果（distributed monolith） |
+| 高 Volatility の結合先（Core サブドメイン等）への強依存 | Volatility（隔離） | 変更頻度の高い部分を安定インターフェースの背後に抽出・隔離（accidental volatility のみ削減対象。essential は設計では消えない、§5.2） |
+
+**アクション提示の書式**（指摘・設計成果物に添える 1〜2 行）:
+
+```
+削減アクション: <軸: Strength|Distance|Volatility>を下げる — <上表から選んだ具体的手順>（Khononov 2024, Ch.11）
+期待効果: BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY が <FALSE→TRUE になる理由 1 文>
+```
+
 ### §6.4 「Decouple everything は誤り」原則
 
 Khononov 2024 は「decouple everything」アプローチを **明示的に否定** する。過剰な疎結合は distributed monolith を生み、Distance だけが伸びて Strength が下がらない反パターンとなる（出典: coupling.dev/posts/core-concepts/balance/）。
@@ -433,9 +453,9 @@ Khononov 2024 は古典理論を Ch.5 と Ch.6 で取り込み直しており、
 
 ## §11. 設計時の結合検討（コードが無い段階）
 
-> **位置づけ**: 本節は §6.5 hint table（**静的 SIGNAL 前提＝レビュー時専用**）の **設計時版＝質的判断版** である。設計段階（コード未生成・PR 無し）でモジュール／サービス境界を決めるとき、`quality-architecture` スキルが §1 step 3・§2 から本節を入口として参照する。**`quality-review`（既存コード）側は本節ではなく §6.5 と `quality-review` スキルの §2.1 merge contract を使う**。
+> **位置づけ**: 本節は §6.5 hint table（**静的 SIGNAL 前提＝レビュー時専用**）の **設計時版＝質的判断版** である。設計段階（コード未生成・PR 無し）でモジュール／サービス境界を決めるとき、`quality-architecture` スキルが §1 step 3・§2 から本節を入口として参照する。**`quality-review`（既存コード）側は本節ではなく §6.5 と `07a-review-integration.md` の Merge Contract を使う**。
 >
-> ⚠️ **設計時は実測値を書かない**（00-overview §5.1 ルール 4 / quality-architecture §3.5）。本節で結合 3 次元に言及する数値・段は **すべて `（参考値: Khononov 2024, Ch.<n>）` ラベル付き** で扱い、対象コードへの実測判定として書いてはならない。実測が必要になった瞬間、それは review 領域であり `coupling-gate-swift.sh` / §6.5 / §2.1 に移譲する。
+> ⚠️ **設計時は実測値を書かない**（00-overview §5.1 ルール 4 / quality-architecture §3.5）。本節で結合 3 次元に言及する数値・段は **すべて `（参考値: Khononov 2024, Ch.<n>）` ラベル付き** で扱い、対象コードへの実測判定として書いてはならない。実測が必要になった瞬間、それは review 領域であり `coupling-gate-swift.sh` / §6.5 / `07a-review-integration.md` の Merge Contract に移譲する。
 >
 > 🚫 本節は **新しい数値しきい値を導入しない**。Khononov 2024 は結合 3 次元に数値カットオフを与えない（§10 確認済み: 図 7.14 / 8.2 / 表 9.1 はいずれも順序尺度）。本節も段の「確定」ではなく境界設計の「検討手順」を提供するに留まる。
 
@@ -467,7 +487,7 @@ Khononov 2024 は古典理論を Ch.5 と Ch.6 で取り込み直しており、
 - [ ] **Strength 段を1つ選び、共有要素を併記したか**: 境界ごとに目標 Integration Strength 段（Intrusive/Functional/Model/Contract）を選び、`(type: ...) / (contract: ...) / (symbol: ...)` を直近に併記したか（H3）。未併記なら `推測` ラベルに格下げ。
 - [ ] **Distance を見積ったか**: 境界の Distance 段（Methods〜Systems）を見積り、変更コスト比例／ライフサイクル結合反比例の含意（§4.2）を踏まえたか。
 - [ ] **Volatility を essential/accidental で分けたか**: 結合先の変更圧力を見積り、設計で減らす対象を accidental に限定したか（§5.2）。
-- [ ] **三重苦を避けたか**: 強 Strength × 遠 Distance × 高 Volatility が同時に成立する境界を作っていないか（§6.1 大域的複雑性 + 高 Volatility）。該当すれば §6.3 のどの軸で rebalance するか明記。
+- [ ] **三重苦を避けたか**: 強 Strength × 遠 Distance × 高 Volatility が同時に成立する境界を作っていないか（§6.1 大域的複雑性 + 高 Volatility）。該当すれば §6.3.1 の削減アクション書式（下げる軸 + 具体的手順 + 期待効果）で明記。
 - [ ] **XOR を成立させたか**: 各境界で `STRENGTH XOR DISTANCE`（強なら近く / 遠いなら弱く）か、または低 Volatility による緩和（`OR NOT VOLATILITY`）を説明できるか（§6.1）。
 - [ ] **decouple everything になっていないか**: 過剰な疎結合で distributed monolith を招いていないか（§6.4）。
 - [ ] **canonical 表現を併記したか**: 「pain / balance」表現に canonical `BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY` を併記したか（H10）。`Pain = S × D × V` 単独引用や精密メトリクス化をしていないか（H2）。
@@ -482,6 +502,6 @@ Khononov 2024 は古典理論を Ch.5 と Ch.6 で取り込み直しており、
 | 入力 | 静的 SIGNAL（`coupling-gate-result.json`: intrusive_hits / duplicates / contract_layer_present 等） | 設計意図からの定性見積り（計測なし） |
 | 出力の性格 | SIGNAL から段の **候補を絞る**（experimental・要レビュア確定） | 境界設計の **検討手順**（段は目標として選ぶ） |
 | 数値の扱い | proxy 数値を `推測` ラベルで採用（H5: `--since=<window>` 併記） | 実測値を書かない（`参考値` ラベルのみ） |
-| 使うスキル | `quality-review`（同スキル §2.1 merge contract 経由） | `quality-architecture`（同スキル §1 step 3 / §2 章 4'） |
+| 使うスキル | `quality-review`（`07a-review-integration.md` の Merge Contract 経由） | `quality-architecture`（同スキル §1 step 3 / §2 章 4'） |
 
 両者は **同じ §3〜§6 の語彙・§6.1 canonical を共有**するが、**入力（SIGNAL か設計意図か）と数値規律（実測 `推測` か `参考値` か）が異なる**。設計時に SIGNAL 数値を捏造して §6.5 を使ってはならず、レビュー時に §11 の定性見積りで実測を代替してはならない。

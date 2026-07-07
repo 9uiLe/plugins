@@ -1,7 +1,7 @@
 # quality-architect
 
 **ISO/IEC 25010:2023 製品品質モデル**（9 特性・40 副特性）を共通言語として、
-ソフトウェア／システムの**アーキテクチャ設計**と**コードレビュー**を行う Claude Code プラグインです。
+ソフトウェア／システムの**アーキテクチャ設計**と**コードレビュー**を行う Claude Code / Codex プラグインです。
 
 各特性ごとに、定義・調査観点・設計タクティクス・レビューチェックリスト・計測指標・
 **実在確認済みの学術論文／公式文書リファレンス**をまとめたライブラリを内蔵しています。
@@ -11,9 +11,9 @@
 | Skill | 用途 |
 | --- | --- |
 | `quality-architecture` | 要件から品質特性を優先付けし、各特性のタクティクスでアーキテクチャを設計・評価（ATAM 的トレードオフ分析、根拠リファレンス付き）。**まだコードが無い設計**が対象。 |
-| `quality-review` | コード/差分を 9 特性 40 副特性で網羅レビュー。重大度付き指摘とスコアカードを出力し、各指摘に学術/公式リファレンスを引用。**既存コードの設計が妥当かの「設計レビュー」もこちら**（§1 step 2.5 設計妥当性トリアージ）。 |
+| `quality-review` | コード/差分を 9 特性 40 副特性で網羅レビュー。重大度付き指摘とスコアカードを出力し、各指摘に学術/公式リファレンスを引用。**既存コードの設計が妥当かの「設計レビュー」もこちら**（§1 step 2 設計妥当性）。 |
 
-> **使い分けの軸は「対象が既に在るか」。**「設計の妥当性を見る＝architecture」ではありません。既存コードの設計評価は `quality-review` の step 2.5 が担い、欠陥チェックの前にトップダウンで設計判断の妥当性を評価します。review が「設計を作り直すべき」と結論し、置換アーキの新規設計に進む場合のみ `quality-architecture` へ前方ハンドオフします。
+> **使い分けの軸は「対象が既に在るか」。**「設計の妥当性を見る＝architecture」ではありません。既存コードの設計評価は `quality-review` の step 2 が担い、欠陥チェックの前にトップダウンで設計判断の妥当性を評価します。review が「設計を作り直すべき」と結論し、置換アーキの新規設計に進む場合のみ `quality-architecture` へ前方ハンドオフします。
 
 ## 使い方
 
@@ -23,6 +23,18 @@
 ```
 
 スキルは要求に応じて自動的に起動します。
+
+## インストール
+
+```bash
+# Claude Code
+/plugin marketplace add 9uiLe/plugins
+/plugin install quality-architect@9uile-plugins
+
+# Codex
+codex plugin marketplace add 9uiLe/plugins
+codex plugin add quality-architect@9uile-plugins
+```
 
 ## リファレンス・ライブラリ
 
@@ -38,7 +50,7 @@ references/
 ├── 05-reliability.md               信頼性
 ├── 06-security.md                  セキュリティ
 ├── 07-maintainability.md           保守性
-├── 07a-coupling-deep-dive.md       結合の深掘り補論（Khononov 2024 — Integration Strength × Distance × Volatility / Connascence / BALANCE）
+├── 07a-coupling-deep-dive.md       結合の深掘り補論（Khononov 2024 — Integration Strength × Distance × Volatility / BALANCE / §6.3.1 削減アクション・カタログ）
 ├── 08-flexibility.md               柔軟性（旧: 移植性）
 ├── 09-safety.md                    安全性（2023 で新設）
 └── static-evaluation.md            静的評価レイヤーの方法論

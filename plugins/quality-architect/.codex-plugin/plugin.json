@@ -1,0 +1,39 @@
+{
+  "name": "quality-architect",
+  "version": "0.1.5",
+  "description": "Design and review software architecture against the ISO/IEC 25010:2023 product quality model.",
+  "author": {
+    "name": "9uiLe",
+    "url": "https://github.com/9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins/tree/master/plugins/quality-architect",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": [
+    "iso-25010",
+    "software-quality",
+    "architecture",
+    "code-review",
+    "quality-attributes",
+    "non-functional-requirements"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Quality Architect",
+    "shortDescription": "Design and review with ISO/IEC 25010",
+    "longDescription": "Use the ISO/IEC 25010:2023 product quality model to design proposed architectures, review existing systems, and produce severity-rated findings backed by references.",
+    "developerName": "9uiLe",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/9uiLe/plugins/tree/master/plugins/quality-architect",
+    "defaultPrompt": [
+      "Review this codebase using ISO/IEC 25010",
+      "Design architecture trade-offs for this feature",
+      "Assess whether this design is valid"
+    ],
+    "brandColor": "#0F766E"
+  }
+}

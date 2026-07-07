@@ -1,0 +1,38 @@
+{
+  "name": "compact-plus",
+  "version": "0.1.0",
+  "description": "Preserve Claude Code session state before and after context compaction: transcript backup, LLM-generated state files, warn-threshold reminders, and post-compact recovery guidance. Ported from u-ichi/compact-plus (MIT).",
+  "author": {
+    "name": "9uiLe",
+    "url": "https://github.com/9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins/tree/master/plugins/compact-plus",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "compact",
+    "hooks",
+    "session-recovery",
+    "context-management"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Compact Plus",
+    "shortDescription": "Preserve session state across compaction",
+    "longDescription": "Back up the transcript and generate a structured state file before context compaction, then inject recovery guidance afterwards. In Codex, the compact-plus skill serves as the manual pre-compaction state-save fallback.",
+    "developerName": "9uiLe",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/9uiLe/plugins/tree/master/plugins/compact-plus",
+    "defaultPrompt": [
+      "Save the session state before compaction",
+      "Prepare a compact-plus state file",
+      "Explain what survives context compaction"
+    ],
+    "brandColor": "#F59E0B"
+  }
+}

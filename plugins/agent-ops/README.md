@@ -1,0 +1,54 @@
+# agent-ops
+
+エージェント開発を「指示書・証拠・反復」で運用するための、Claude Code / Codex 対応プラグインです。
+
+**原則: 委譲先の自己報告ではなく、検証可能な証拠だけを受け入れる。**
+
+## 提供するもの
+
+### Skills
+
+| Skill | 役割 |
+| --- | --- |
+| `agent-handoff` | 指示書駆動で外部エージェントに実装を委譲し、証拠ベースで監査する |
+| `first-touch-review` | 固定ルーブリックの初見ユーザー評価を実機またはシミュレータで反復する |
+| `crystallize` | セッションで得た知見を lint / script / skill / ADR に資産化する |
+
+トリガー例: 「Claude Code に作業させて」「Codex に作業させて」「初見ユーザーとして評価して」「ノウハウをスキル化して」
+
+### References
+
+| ファイル | 内容 |
+| --- | --- |
+| [00-handoff-template.md](./references/00-handoff-template.md) | 外部エージェントへ渡す指示書テンプレート |
+| [01-audit-checklist.md](./references/01-audit-checklist.md) | 自己報告を信用しない懐疑的監査チェックリスト |
+| [02-execution-claude.md](./references/02-execution-claude.md) | `headroom wrap claude` 経由の Claude Code 実行経路 |
+| [02-execution-codex.md](./references/02-execution-codex.md) | `headroom wrap codex` 経由の Codex 実行経路 |
+| [03-preflight-gate.md](./references/03-preflight-gate.md) | 着手前ゲート (M0 調査・作戦フェーズとアンサンブル批評) |
+| [04-retrospective-ledger.md](./references/04-retrospective-ledger.md) | 委譲ごとの振り返り 4 行と 4 指標の台帳 |
+| [05-fable-independence.md](./references/05-fable-independence.md) | Fable 非依存化プログラム (DR 目標) |
+| [06-operating-protocol.md](./references/06-operating-protocol.md) | 監督役の自動進行 (モード判定・状態ヘッダ更新) |
+| [10-first-touch-rubric.md](./references/10-first-touch-rubric.md) | 初見ユーザー評価の固定ルーブリック |
+| [11-loop-protocol.md](./references/11-loop-protocol.md) | 同一条件で再評価する反復プロトコル |
+| [12-quantify-visual.md](./references/12-quantify-visual.md) | スクリーンショット・録画による視覚定量化 |
+| [20-crystallize-routing.md](./references/20-crystallize-routing.md) | 知見をどの資産へ落とすかのルーティング表 |
+| [21-crystallize-examples.md](./references/21-crystallize-examples.md) | 一般化した資産化例 |
+
+## 既存プラグインとの棲み分け
+
+| Plugin | 担当 |
+| --- | --- |
+| `model-strategy` | モデル・effort・委譲先の選択。`agent-ops` は選択後の委譲運用を扱う |
+| `quality-architect` | 静的なコード・設計レビュー。`agent-ops` の初見レビューは動的・体験的レビューとして補完する |
+
+## インストール
+
+```bash
+# Claude Code
+/plugin marketplace add 9uiLe/plugins
+/plugin install agent-ops@9uile-plugins
+
+# Codex
+codex plugin marketplace add 9uiLe/plugins
+codex plugin add agent-ops@9uile-plugins
+```

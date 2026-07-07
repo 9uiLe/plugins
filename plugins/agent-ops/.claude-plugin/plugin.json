@@ -1,0 +1,19 @@
+{
+  "name": "agent-ops",
+  "version": "0.3.0",
+  "description": "Operational discipline for agentic development: handoff-driven delegation to external agents (Claude Code or Codex), skeptical auditing, fixed-rubric first-touch UX review loops, and crystallizing session learnings into lint/scripts/skills.",
+  "author": {
+    "name": "9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": [
+    "delegation",
+    "handoff",
+    "audit",
+    "ux-review",
+    "knowledge-management",
+    "agent-workflow"
+  ]
+}

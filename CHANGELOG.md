@@ -9,6 +9,65 @@
 
 - プラグイン **compact-plus** (v0.1.0) を収録 — Claude Code の `/compact` 前後でセッション状態を保存・復元するプラグイン。transcript backup、LLM 生成の 10 見出し state file、閾値超過時の `/compact` 推奨通知、圧縮後の復旧誘導を hook で提供。[u-ichi/compact-plus](https://github.com/u-ichi/compact-plus) (MIT License) の移植で、session id 取得スクリプトと warn 通知用 statusline スクリプトを同梱して自己完結化した。
 
+## [0.3.0] - 2026-07-04
+
+### Changed
+
+- **agent-ops** スキル名を `codex-handoff` から `agent-handoff` にリネーム。旧名でのスキル呼び出しは新名 `agent-handoff` に変わる。
+
+### Fixed
+
+- **agent-ops** を Codex マーケットプレイスマニフェスト (`.agents/plugins/marketplace.json`) に登録 — v0.1.8 収録時からの登録漏れにより、`codex plugin add agent-ops@9uile-plugins` がプラグイン未検出で失敗していた。
+
+### Added
+
+- `scripts/verify-versions.sh` に Codex マニフェスト掲載チェックを追加 — Claude 側 marketplace.json に載る全プラグインが `.agents/plugins/marketplace.json` にも掲載されていることを検査し、登録漏れを CI で検出する。
+- **agent-ops** `codex-handoff` の委譲先を Claude Code / Codex 両対応に一般化 — Claude Code 用実行経路 (references/02-execution-claude.md) を追加し、運用プロトコル・参照表・マニフェスト説明を委譲先選択後の運用規律として整理した。
+## [0.2.0] - 2026-07-04
+
+### Added
+
+- **agent-ops** `codex-handoff` に着手前ゲート・振り返り台帳・Fable 非依存化プログラムを追加 — 指示書テンプレートへ「非目標」「未確定事項と仮定」「事前調査」セクションと M0 (調査・作戦フェーズ) を追加し、未確定事項を「確認が必要 / 仮定して進められる」の二分類で着手前に回収するゲート (references/03)、委譲ごとの振り返り 4 行 + 4 指標の台帳 (references/04)、ベースライン記録・批評採掘・Fable-off 訓練からなる Fable 非依存化プログラム (references/05) を新設。監査チェックリストに「指示書起因」タグを追加。(#38)
+- **agent-ops** 運用プロトコルを追加 — 手順の記憶を台帳先頭の状態ヘッダ (フェーズ / ベースライン件数 / Fable-off カウンタ) へ移し、監督役セッションが発火直後に運用モードを宣言して各ステップの次の行動を提示する自動進行を新設 (references/06)。ユーザーが覚えるのはトリガーフレーズのみ。(#39)
+
+### Changed
+
+- **agent-ops** プラグイン版を v0.1.0 → v0.2.0 に更新。
+
+## [0.1.8] - 2026-07-03
+
+### Added
+
+- プラグイン **agent-ops** (v0.1.0) を収録 — Fable 実行履歴から抽出したエージェント運用規律プラグイン。指示書駆動の外部エージェント委譲と懐疑的監査を行う Skill `codex-handoff`、固定ルーブリックの初見ユーザー評価を実機で反復する Skill `first-touch-review`、セッション知見を lint / script / skill / ADR に資産化する Skill `crystallize`、リファレンス 8 編を提供。
+## [0.1.7] - 2026-07-03
+
+### Added
+
+- **quality-architect** (v0.1.5): `quality-review` に差分帰属ラベル（`diff-caused` / `pre-existing` / `unknown`）、CI artifact の整合検証（mtime / `commit_sha` / `target` の照合）、trivial diff fast-path（§2.1）、非対話環境フォールバック、成功基準セルフチェック（§4）を追加。`quality-gate-swift.sh` の出力 JSON に `generated_at` / `commit_sha` / `git_root` / `target` / `source` メタデータを追加し、artifact 検証を裏付け。
+- **quality-architect** (v0.1.5): 07a 結合シグナルの merge contract を `references/07a-review-integration.md` へ分離。既定オフの実験層を SKILL 本文から切り出し、coupling シグナル採用時のみ Read する構造に。
+
+### Changed
+
+- **quality-architect** (v0.1.5): `quality-review` SKILL.md を全面改訂（215 → 160 行）。資産インベントリを言語非依存の manifest 駆動に変更し、profile 未定義言語は `profile: none` + 言語横断ツールの `measured-only` フォールバックで対応（Swift 固有ファイルのハードコードを解消）。設計妥当性トリアージを step 2.5 → step 2 に改番し、関連参照 10 箇所（00-overview / README / 07 / 07a / static-evaluation / architecture SKILL / coupling-gate-swift.sh）を同期。
+
+### Fixed
+
+- **quality-architect** (v0.1.5): `quality-gate-swift.sh` / `coupling-gate-swift.sh` の shellcheck SC2086（未クォート変数）を修正。
+## [0.1.6] - 2026-07-02
+
+### Added
+
+- **quality-architect** (v0.1.4): 結合・凝集・複雑度・モジュール境界に関する指摘への「削減アクション」必須化。`references/07a-coupling-deep-dive.md` に §6.3.1「削減アクション・カタログ」（検出状況 → 下げる軸 → 具体的手順の対応表と提示書式）を追加し、`quality-review`（step 5・指摘テンプレ・§5）と `quality-architecture`（章 4'・§4）が BALANCE = FALSE の結合・複雑性を検出した際に Khononov のリバランス 3 軸（Strength↓ / Distance↓ / Volatility 隔離）に基づく具体的な削減手順の併記を要求するように。アクションは severity / verdict に影響しない（H9 維持）。
+- **model-strategy** (v0.1.1): Codex CLI 対応。`SKILL.md` に実行環境判定（§0.5）と Codex での委譲代替手順（`/model`・`codex exec -m`・低 reasoning effort の別実行）、`references/07-codex.md`（GPT 系モデル価格・reasoning effort・サブスク制限の決定基準）を追加。
+- **model-strategy** (v0.1.1): Fable 5 のサブスクリプション提供条件（〜2026-07-07 は週次上限 50% キャップで同梱、以降は API 単価の従量クレジット、セーフガードによる Opus 4.8 自動フォールバック）を `00-pricing.md` §4 に追加し、`01`/`02`/`03`/`SKILL.md` の判断基準を提供フェーズ別に更新。
+
+### Changed
+
+- **quality-architect** (v0.1.4): 両 SKILL.md に verbatim 重複していた Khononov 引用禁則（Pain 式の 2 留保・Instability 代理禁止・H9 片方向）を `07a §9` への単一ソース参照に置換し、規律の二重管理を解消。
+
+### Fixed
+
+- **model-strategy** (v0.1.1): `00-pricing.md` の「Fable 5 は新トークナイザで Opus 系比 30% 増 → 実効 2.6 倍」という誤記載を訂正。Fable 5 のトークナイザは Opus 4.8 と同一で、実効コストは名目通り約 2 倍（30% 増は Opus 4.7 系トークナイザ vs 旧世代モデルの比較）。
 ## [0.1.5] - 2026-06-15
 
 ### Changed
@@ -61,7 +120,12 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/9uiLe/plugins/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/9uiLe/plugins/compare/v0.1.8...v0.2.0
+[0.1.8]: https://github.com/9uiLe/plugins/compare/v0.1.7...v0.1.8
+[0.1.7]: https://github.com/9uiLe/plugins/compare/v0.1.6...v0.1.7
+[0.1.6]: https://github.com/9uiLe/plugins/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/9uiLe/plugins/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/9uiLe/plugins/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/9uiLe/plugins/compare/v0.1.2...v0.1.3

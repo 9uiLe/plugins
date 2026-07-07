@@ -9,8 +9,10 @@ description: "Design NEW or PROPOSED architecture using the ISO/IEC 25010:2023 p
 要件から品質特性を優先付けし、各特性の設計タクティクスでアーキテクチャを構築・評価する。
 **すべての設計判断・推奨には、リファレンス・ライブラリ中の学術論文／公式文書を引用する。**
 
-リファレンス・ライブラリ: `${CLAUDE_PLUGIN_ROOT}/references/`
+リファレンス・ライブラリ: プラグインルート相対の `references/`
 （索引は `00-overview.md`、各特性は `01`〜`09`、静的評価方法論は `static-evaluation.md`）
+
+この文書で `PLUGIN_ROOT` と書く場合は、Claude Code では `${CLAUDE_PLUGIN_ROOT}`、Codex ではこの `SKILL.md` の 2 階層上にある `quality-architect` プラグインルートを指す。
 
 **スキル選択と決定論ファースト原則は `00-overview.md §5.1（プラグイン共通の絶対規律）` がカノン。本ファイルの §0 と §3.5 はその反映であり、矛盾があれば §5.1 を優先する。**
 
@@ -20,7 +22,7 @@ description: "Design NEW or PROPOSED architecture using the ISO/IEC 25010:2023 p
 
 このスキルは **新規／提案中のアーキテクチャ設計** 専用である。**既存コード／差分／PR／実装のレビュー**は姉妹スキル `quality-review` の領域で、決定論ファーストの静的解析手順がそこにのみ定義されている。
 
-**よくある誤選択の予防**: 「レビューでもまず設計の妥当性を見るべきだから architecture では？」という直感は誤り。**既存コードの設計が妥当かを評価する『設計レビュー』も `quality-review` の責務**（同スキル §1 step 2.5「設計妥当性トリアージ」）。判別軸は「設計を見るか否か」ではなく **「対象が既に在るか否か」**。ただし review が「設計そのものを作り直すべき」と結論し、ユーザが**置換アーキの新規設計**を望む場合は、本スキルへの**前方ハンドオフが正当**（§0.1 がブロックするのは“既存コードのレビューを本スキルで処理する”後方向のみ）。
+**よくある誤選択の予防**: 「レビューでもまず設計の妥当性を見るべきだから architecture では？」という直感は誤り。**既存コードの設計が妥当かを評価する『設計レビュー』も `quality-review` の責務**（同スキル §1 step 2「設計妥当性」）。判別軸は「設計を見るか否か」ではなく **「対象が既に在るか否か」**。ただし review が「設計そのものを作り直すべき」と結論し、ユーザが**置換アーキの新規設計**を望む場合は、本スキルへの**前方ハンドオフが正当**（§0.1 がブロックするのは“既存コードのレビューを本スキルで処理する”後方向のみ）。
 
 ### 0.1 客観条件（最優先・LLM の主観判断より上位）
 
@@ -59,9 +61,9 @@ description: "Design NEW or PROPOSED architecture using the ISO/IEC 25010:2023 p
    - 代表的トレードオフ: セキュリティ⇄使用性、性能効率性⇄保守性、可用性⇄一貫性(CAP)、移植性⇄性能最適化。
 
 3. **特性ごとのタクティクス導出**
-   - 優先した各特性について、対応する `${CLAUDE_PLUGIN_ROOT}/references/0N-*.md` を**実際に Read し**、「設計タクティクス/パターン」節から候補を選ぶ。
+   - 優先した各特性について、対応する `$PLUGIN_ROOT/references/0N-*.md` を**実際に Read し**、「設計タクティクス/パターン」節から候補を選ぶ。
    - 副特性レベルまで降りる（例: 信頼性 → 障害許容性なら Circuit Breaker / Bulkhead / リトライ+バックオフ）。
-   - **モジュール／サービス境界を新規に定義する設計の場合は、`${CLAUDE_PLUGIN_ROOT}/references/07a-coupling-deep-dive.md` §11（設計時の結合検討）を Read し**、境界をまたぐ依存ごとに結合バランスを **定性的に** 評価する（§11.1 ヒューリスティクス → §11.2 チェックリスト）。設計時なので実測値は書かず、結合 3 次元（Integration Strength × Distance × Volatility）への言及は `（参考値: Khononov 2024, Ch.<n>）` ラベルで扱う（§3.5）。SIGNAL ベースの §6.5 hint table は **レビュー時専用** なので設計時には使わない（07a §11.3）。
+   - **モジュール／サービス境界を新規に定義する設計の場合は、`$PLUGIN_ROOT/references/07a-coupling-deep-dive.md` §11（設計時の結合検討）を Read し**、境界をまたぐ依存ごとに結合バランスを **定性的に** 評価する（§11.1 ヒューリスティクス → §11.2 チェックリスト）。設計時なので実測値は書かず、結合 3 次元（Integration Strength × Distance × Volatility）への言及は `（参考値: Khononov 2024, Ch.<n>）` ラベルで扱う（§3.5）。SIGNAL ベースの §6.5 hint table は **レビュー時専用** なので設計時には使わない（07a §11.3）。
 
 4. **トレードオフ分析（ATAM 的に）**
    - 候補アーキテクチャを 1〜複数案出し、各案を重点特性の軸で評価する。
@@ -94,6 +96,7 @@ description: "Design NEW or PROPOSED architecture using the ISO/IEC 25010:2023 p
 **章 4'（モジュール境界と結合バランス）の書き方**（境界を新規定義する設計の場合のみ出力）:
 - 境界をまたぐ依存ごとに、評価レベル（`module_unit:`）・目標 Integration Strength 段（共有要素併記）・Distance 段・Volatility 見積りを表で示し、`BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY`（07a §6.1 canonical）で評価する。
 - 数値・段は `（参考値: Khononov 2024, Ch.<n>）` ラベル付き（実測判定にしない・§3.5）。
+- **BALANCE = FALSE の境界（特に強 Strength × 遠 Distance の大域的複雑性）には、07a §6.3.1 の削減アクション書式（下げる軸 + 具体的手順 + 期待効果）を必ず添える**。低 Volatility による許容（`OR NOT VOLATILITY`）で残す場合はその根拠を 1 行書く。
 - 末尾に 07a §11.2 の設計時結合チェックリストを貼り、各項目の充足を示す。
 - 詳細手順と禁則は `07a §11`（§11.1 ヒューリスティクス / §11.2 チェックリスト / §11.3 §6.5 との混同禁止）に従う。
 
@@ -131,5 +134,5 @@ description: "Design NEW or PROPOSED architecture using the ISO/IEC 25010:2023 p
 - ❌ 過剰設計：要求にない品質特性のための仕組みを足し込まない。
 - ❌ 既存コード／差分／PR のレビュー依頼を本スキルで処理する（→ `quality-review` にハンドオフ。§0 参照）。
 - ❌ 対象コードに対する判定値として数値しきい値を引用する（V(G) ≤ 10, カバレッジ ≥ 0.70 等）。設計時は `（参考値: ...）` ラベル必須。実測値が必要なら `quality-review` に切り替える。
-- ⚠️ **Khononov の `Pain = Strength × Distance × Volatility` を「精密メトリクス」として本文に書く**。同式は書籍本文 verbatim（Ch.10 §10.2.1, 邦訳 p.182「メンテナンスの労力 ＝ 強度 ＊ 距離 ＊ 変動性」）だが、書籍自身が 2 値スケール前提（高=1/低=0）+「正確な科学ではない」警告（§10.3, p.184）を付している。引用時はこの 2 留保を必ず併記し、連続値の精密指標として提示しない。canonical 第一表現は `references/07a-coupling-deep-dive.md` §6.1 の `BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY`（こちらも書籍 verbatim）（07a §9 H2 規律）。
-- ❌ **Robert C. Martin の Instability `I = Ce / (Ce + Ca)` を Khononov Integration Strength の代理として引用する**。Khononov 2024 は依存をカウントするアプローチを名指しで否定している（07a §9 H2 規律）。
+- ❌ BALANCE = FALSE（特に強 Strength × 遠 Distance の大域的複雑性）と評価した境界を、削減アクション（07a §6.3.1 の書式）を添えずに提案に残す。
+- ⚠️ **Khononov（07a）を引用する前に、`references/07a-coupling-deep-dive.md` §9（H1〜H10 禁則）を必ず Read し従う**。同節がカノン。代表例: Pain 式 `Pain = S × D × V` を 2 留保なしに精密メトリクス化しない（H2/H10。canonical 第一表現は §6.1 の BALANCE 論理式）／Martin の Instability を Integration Strength の代理にしない（H2）。
