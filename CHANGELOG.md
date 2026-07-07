@@ -5,6 +5,8 @@
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-07-07
+
 ### Added
 
 - プラグイン **compact-plus** (v0.1.0) を収録 — Claude Code の `/compact` 前後でセッション状態を保存・復元するプラグイン。transcript backup、LLM 生成の 10 見出し state file、閾値超過時の `/compact` 推奨通知、圧縮後の復旧誘導を hook で提供。[u-ichi/compact-plus](https://github.com/u-ichi/compact-plus) (MIT License) の移植で、session id 取得スクリプトと warn 通知用 statusline スクリプトを同梱して自己完結化した。
@@ -124,7 +126,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/9uiLe/plugins/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/9uiLe/plugins/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/9uiLe/plugins/compare/v0.1.8...v0.2.0
 [0.1.8]: https://github.com/9uiLe/plugins/compare/v0.1.7...v0.1.8
