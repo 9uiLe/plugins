@@ -23,6 +23,12 @@ import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 
 const FABLE_MODEL = "claude-fable-5";
+// Top-tier Codex model pinned for the advisor, passed explicitly on every codex
+// run so the served model can't silently drop below the top tier via a stale
+// per-cwd app-server default. Env-overridable so a renamed model id needs no
+// code change; runCodex additionally falls back to the codex default if this
+// model fails, so a bad / retired / ungated id can never kill the review.
+const CODEX_MODEL = process.env.SECOND_OPINION_CODEX_MODEL || "gpt-5.6-sol";
 const VALID_EFFORTS = ["none", "minimal", "low", "medium", "high", "xhigh"];
 // Assistant-reasoning byte budget in default (non-full) mode. Human messages and
 // tool errors are NEVER trimmed; only the middle of the reasoning chain is.
@@ -558,10 +564,20 @@ async function runCodex(promptText, { model, effort }, timeoutMs) {
   }
   const tmp = path.join(os.tmpdir(), `second-opinion-codex-${process.pid}-${Date.now()}.md`);
   fs.writeFileSync(tmp, promptText, "utf8");
-  const args = [companion, "task", "--prompt-file", tmp];
-  if (model) args.push("--model", model);
-  if (effort) args.push("--effort", effort);
-  const r = await runProcess("node", args, null, timeoutMs);
+  // Pin the model explicitly so the advisor can't silently drop below the top
+  // tier via a stale app-server default. But never let a bad / renamed / ungated
+  // model id kill the review: if the pinned run yields no output, retry once
+  // WITHOUT --model (defer to the codex default) and label the degradation.
+  const pinnedModel = model || CODEX_MODEL;
+  const baseArgs = [companion, "task", "--prompt-file", tmp];
+  const effortArgs = effort ? ["--effort", effort] : [];
+  let usedModel = pinnedModel;
+  let r = await runProcess("node", [...baseArgs, "--model", pinnedModel, ...effortArgs], null, timeoutMs);
+  if (r.code !== 0 || !r.stdout.trim()) {
+    // Pinned model failed — degrade to the codex default rather than dying.
+    r = await runProcess("node", [...baseArgs, ...effortArgs], null, timeoutMs);
+    usedModel = `(codex default; pinned ${pinnedModel} failed)`;
+  }
   try {
     fs.unlinkSync(tmp);
   } catch {
@@ -569,7 +585,7 @@ async function runCodex(promptText, { model, effort }, timeoutMs) {
   }
   return {
     backend: "codex",
-    model: model || "(default)",
+    model: usedModel,
     effort: effort || "(default)",
     ...r
   };
