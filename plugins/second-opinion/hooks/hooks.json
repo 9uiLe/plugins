@@ -1,0 +1,16 @@
+{
+  "description": "Capture the current session transcript path so the second-opinion skill can read it from later shell commands.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/capture-transcript.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

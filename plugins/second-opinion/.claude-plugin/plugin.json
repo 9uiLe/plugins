@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "second-opinion",
+  "version": "0.1.0",
+  "description": "Summon a second-opinion reviewer (advisor) over your current session: mechanically extract the conversation context and send it unedited to Codex (gpt-5 series) and/or Fable (claude-fable-5) backends, which return a fixed five-section verdict (blind spots, convergence, ship/no-ship, decisive constraint, strongest counterargument). Backend, model, and effort are selectable at call time.",
+  "author": {
+    "name": "9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "advisor",
+    "second-opinion",
+    "code-review",
+    "codex",
+    "fable",
+    "context-transfer",
+    "hooks"
+  ],
+  "skills": "./skills/"
+}
