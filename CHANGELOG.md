@@ -5,6 +5,12 @@
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-07-10
+
+### Added
+
+- プラグイン **second-opinion** (v0.1.1) を収録 — Claude Code ビルトイン `advisor` 相当の第二意見レビュープラグイン。現在のセッションを機械抽出（要約なし。`origin.kind` で本物の人間発言のみ抽出し、全ツールエラーを verbatim、コンパクション要約は合成として明示退避）し、Codex (`codex-companion task`) と Fable (`claude -p --model claude-fable-5`) へ無編集で渡して固定 5 セクション（盲点／収束判定／ship-noship／決定的制約／最強の反論）の判定を得る。backend (codex / fable / both)・model・effort を実行時選択（無指定は AskUserQuestion）。SessionStart hook で現在の transcript を特定し、`/second-opinion:setup` で依存 (codex / claude CLI) を点検する。Claude Code 専用プラグイン。
+- `scripts/verify-versions.sh` に Claude 専用プラグインの許容機構 (`CLAUDE_ONLY_PLUGINS` allowlist) を追加 — 意図的に `.codex-plugin` マニフェストと Codex マーケットプレイス登録を持たないプラグインを dual-registration 必須チェックから除外し、逆に Claude 専用なのに Codex マーケットプレイスへ登録された誤りも検出する。`write_plugin_version` とリリーススクリプトの staging も Claude 専用プラグインでは Codex マニフェストを触らないようガードした。
 ## [0.3.1] - 2026-07-07
 
 ### Added
@@ -126,7 +132,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/9uiLe/plugins/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/9uiLe/plugins/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/9uiLe/plugins/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/9uiLe/plugins/compare/v0.1.8...v0.2.0
