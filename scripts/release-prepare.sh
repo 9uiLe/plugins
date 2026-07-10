@@ -144,12 +144,17 @@ fi
 
 confirm_typed "v${RELEASE_VERSION}" "About to commit & push branch ${BRANCH}."
 
-git add \
-  ".claude-plugin/marketplace.json" \
-  "$(plugin_json "$PLUGIN")" \
-  "$(codex_plugin_json "$PLUGIN")" \
-  "CHANGELOG.md" \
+add_files=(
+  ".claude-plugin/marketplace.json"
+  "$(plugin_json "$PLUGIN")"
+  "CHANGELOG.md"
   "releases/v${RELEASE_VERSION}.md"
+)
+# Claude-only plugins have no Codex manifest to stage.
+if ! is_claude_only_plugin "$PLUGIN"; then
+  add_files+=("$(codex_plugin_json "$PLUGIN")")
+fi
+git add "${add_files[@]}"
 
 git commit -m "chore(release): v${RELEASE_VERSION}" >/dev/null
 log ok "committed: chore(release): v${RELEASE_VERSION}"

@@ -5,6 +5,21 @@
 
 MARKETPLACE_JSON="$REPO_ROOT/.claude-plugin/marketplace.json"
 
+# Plugins that are intentionally Claude Code-only: they ship no .codex-plugin
+# manifest and are not registered in the Codex marketplace. Every other plugin
+# must be dual-registered; verify-versions enforces that to catch accidental
+# omissions. To make a plugin Claude-only, add its name here.
+CLAUDE_ONLY_PLUGINS=("second-opinion")
+
+# is_claude_only_plugin <name> — return 0 if the plugin is Claude Code-only
+is_claude_only_plugin() {
+  local name="$1" p
+  for p in "${CLAUDE_ONLY_PLUGINS[@]}"; do
+    [[ "$p" == "$name" ]] && return 0
+  done
+  return 1
+}
+
 # list_plugins — print plugin names declared in marketplace.json
 list_plugins() {
   jq -r '.plugins[].name' "$MARKETPLACE_JSON"
@@ -74,7 +89,10 @@ write_plugin_version() {
   local name="$1" new="$2"
   is_semver "$new" || die "invalid semver: $new"
   write_json_version "$(plugin_json "$name")" "$new" "$(plugin_json "$name")"
-  write_json_version "$(codex_plugin_json "$name")" "$new" "$(codex_plugin_json "$name")"
+  # Claude-only plugins have no Codex manifest to update.
+  if ! is_claude_only_plugin "$name"; then
+    write_json_version "$(codex_plugin_json "$name")" "$new" "$(codex_plugin_json "$name")"
+  fi
 }
 
 # write_marketplace_plugin_version <name> <new-version>

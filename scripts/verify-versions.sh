@@ -17,16 +17,10 @@ while IFS= read -r name; do
   [[ -n "$name" ]] || continue
   checked=$((checked + 1))
   plugin_ver="$(read_plugin_version "$name")"
-  codex_plugin_ver="$(read_codex_plugin_version "$name")"
   marketplace_ver="$(read_marketplace_plugin_version "$name")"
 
   if ! is_semver "$plugin_ver"; then
     log error "$name: .claude-plugin/plugin.json version is not valid semver: '$plugin_ver'"
-    fail=1
-    continue
-  fi
-  if ! is_semver "$codex_plugin_ver"; then
-    log error "$name: .codex-plugin/plugin.json version is not valid semver: '$codex_plugin_ver'"
     fail=1
     continue
   fi
@@ -37,6 +31,20 @@ while IFS= read -r name; do
   fi
   if [[ "$plugin_ver" != "$marketplace_ver" ]]; then
     log error "$name: version mismatch (.claude-plugin/plugin.json=$plugin_ver, marketplace.json=$marketplace_ver)"
+    fail=1
+    continue
+  fi
+
+  # Claude-only plugins ship no Codex manifest; the Claude/marketplace agreement
+  # checked above is all that applies.
+  if is_claude_only_plugin "$name"; then
+    log ok "$name: $plugin_ver (Claude-only)"
+    continue
+  fi
+
+  codex_plugin_ver="$(read_codex_plugin_version "$name")"
+  if ! is_semver "$codex_plugin_ver"; then
+    log error "$name: .codex-plugin/plugin.json version is not valid semver: '$codex_plugin_ver'"
     fail=1
   elif [[ "$codex_plugin_ver" != "$plugin_ver" ]]; then
     log error "$name: version mismatch (.codex-plugin/plugin.json=$codex_plugin_ver, .claude-plugin/plugin.json=$plugin_ver)"
@@ -79,6 +87,15 @@ if [[ ! -f "$AGENTS_MARKETPLACE_JSON" ]]; then
 else
   while IFS= read -r name; do
     [[ -n "$name" ]] || continue
+    if is_claude_only_plugin "$name"; then
+      if jq -e --arg n "$name" '.plugins[] | select(.name == $n)' "$AGENTS_MARKETPLACE_JSON" >/dev/null; then
+        log error "$name: is Claude-only but IS listed in .agents/plugins/marketplace.json (would advertise a non-functional Codex install)"
+        fail=1
+      else
+        log ok "$name: Claude-only (correctly absent from Codex marketplace)"
+      fi
+      continue
+    fi
     if jq -e --arg n "$name" '.plugins[] | select(.name == $n)' "$AGENTS_MARKETPLACE_JSON" >/dev/null; then
       log ok "$name: listed in .agents/plugins/marketplace.json"
     else
