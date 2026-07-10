@@ -37,10 +37,13 @@ advisor の価値は「盲点を持つ当人が curate していない生のコ�
 - **effort**（codex / fable 共通の設問。1問で可）:
   - `high`（推奨）/ `medium` / `xhigh` / `low`（`none` `minimal` は「その他」で受ける）
 - **model（codex 選択時のみ）**:
-  - `既定（未指定・推奨）` … Codex CLI の設定に委ねる（`--model` を渡さない）
-  - `spark（gpt-5.3-codex-spark）` … 注: ChatGPT アカウント連携の Codex では非対応のことがある。失敗したら既定に切り替える
+  - `gpt-5.6-sol（既定・推奨）` … second-opinion が `--model gpt-5.6-sol` を**明示的に**渡す。上位モデルを保証し、app-server の陳腐化した既定（`config.toml` を起動時にしか読まない常駐プロセス）に左右されない。実体は `scripts/second-opinion.mjs` の `CODEX_MODEL` 定数（環境変数 `SECOND_OPINION_CODEX_MODEL` で上書き可）。
+  - `spark（gpt-5.3-codex-spark）` … 注: ChatGPT アカウント連携の Codex では非対応のことがある。失敗したら `gpt-5.6-sol` に戻す
   - その他（ユーザーが gpt-5 系の識別子を直接入力）
 - **model（fable）**: 常に `claude-fable-5` 固定。質問不要。
+
+> 上位モデル（Fable = `claude-fable-5` / Codex = `gpt-5.6-sol`）はアドバイザーの品質要件。codex は既定でも明示ピン留めされるため、未指定でも gpt-5.6-sol を下回らない。
+> **フォールバック**: ピン留めモデルが（改名・廃止・未ゲート等で）失敗した場合、`runCodex` は `--model` なしで一度だけ再試行し、codex 既定へ退避してレビュー自体は落とさない。ヘッダに `model=(codex default; pinned … failed)` と明示される。モデル ID を変えたいときは `CODEX_MODEL` 定数か `SECOND_OPINION_CODEX_MODEL` を更新する。
 
 複数を一度に聞くときは AskUserQuestion の複数設問（最大4問）にまとめてよい。
 
