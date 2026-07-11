@@ -294,6 +294,9 @@ function parseClaudeTranscript(records) {
 function parseCodexTranscript(records) {
   const toolNameById = new Map();
   const events = [];
+  const hasHumanEventRecords = records.some(
+    (obj) => obj?.type === "event_msg" && obj?.payload?.type === "user_message"
+  );
 
   for (const obj of records) {
     if (obj?.type !== "response_item") continue;
@@ -306,6 +309,11 @@ function parseCodexTranscript(records) {
   }
 
   for (const obj of records) {
+    if (hasHumanEventRecords && obj?.type === "event_msg" && obj?.payload?.type === "user_message") {
+      const text = codexHumanEventText(obj.payload);
+      if (text) events.push({ kind: "user", text });
+      continue;
+    }
     if (obj?.type !== "response_item") continue;
     const payload = obj.payload || {};
 
@@ -313,7 +321,13 @@ function parseCodexTranscript(records) {
       const text = contentToBlocks(payload.content).map(blockText).join("\n").trim();
       if (!text) continue;
       if (payload.role === "user") {
-        events.push({ kind: "user", text });
+        // Modern rollouts also store injected environment/developer context as
+        // role=user response items. Prefer event_msg/user_message, which is the
+        // host's genuine-human event stream, and use response items only for
+        // older rollouts that have no such records.
+        if (!hasHumanEventRecords && !isCodexInjectedUserText(text)) {
+          events.push({ kind: "user", text });
+        }
       } else if (payload.role === "assistant") {
         events.push({ kind: "assistant", text });
       }
@@ -351,6 +365,17 @@ function parseCodexTranscript(records) {
   }
 
   return events;
+}
+
+function codexHumanEventText(payload) {
+  if (typeof payload.message === "string") return payload.message.trim();
+  return contentToBlocks(payload.message).map(blockText).join("\n").trim();
+}
+
+function isCodexInjectedUserText(text) {
+  return /^\s*(?:# AGENTS\.md instructions\b|<environment_context>|<INSTRUCTIONS>|<system-reminder>)/i.test(
+    text
+  );
 }
 
 function isCodexToolCall(type) {

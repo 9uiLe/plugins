@@ -32,6 +32,7 @@ test("extract reads user, reasoning, tool errors, and assistant output from a Co
   assert.match(result.stdout, /Codex reasoning summary/);
   assert.match(result.stdout, /Codex final response/);
   assert.match(result.stdout, /command failed/);
+  assert.doesNotMatch(result.stdout, /automatically injected/);
 });
 
 test("extract preserves Claude Code transcript behavior", () => {

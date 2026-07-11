@@ -17,7 +17,8 @@ in a fixed five-section contract.
 2. **Extracts a fixed-format context** (`scripts/second-opinion.mjs`) from Claude Code JSONL or
    Codex rollout JSONL: task definition, every genuine human message, transcript-visible assistant
    output/reasoning summaries, a tool-activity digest, and **every detectable tool error verbatim**.
-   Codex encrypted reasoning is never decrypted or guessed.
+   Codex genuine-human turns come from `event_msg/user_message`, so injected environment context is
+   not attributed to the user. Codex encrypted reasoning is never decrypted or guessed.
 3. **Dispatches to the chosen backend(s)** and prints a five-section verdict per backend:
    - **Fable** via `claude -p --model claude-fable-5` (headless, tools disabled).
    - **Codex** via an isolated `codex exec` session (read-only and ephemeral).
