@@ -1,15 +1,15 @@
 ---
 name: second-opinion
-description: "Summon an external second-opinion reviewer (advisor) over the CURRENT session. Mechanically extract the conversation (no summarising by you) and send it unedited to Codex and/or Fable, which return a fixed five-section verdict: blind spots, convergence, ship/no-ship, decisive constraint, strongest counterargument. Backend, model, and effort are chosen at call time; if model/effort are unspecified, ask the user. Japanese triggers: 「セカンドオピニオンが欲しい」「アドバイザーに相談」「第三者の意見が欲しい」「Codex に見てもらって」「Fable に見てもらって」「この方針でいいか外部レビューして」「詰まったので別の視点が欲しい」."
+description: "Summon an external second-opinion reviewer over the CURRENT Claude Code or Codex session. Mechanically extract the conversation (no summarising by you) and send it unedited to Codex and/or Fable for a fixed five-section verdict: blind spots, convergence, ship/no-ship, decisive constraint, strongest counterargument. Backend, model, and effort are chosen at call time; if model/effort are unspecified, ask the user. Japanese triggers: 「セカンドオピニオンが欲しい」「アドバイザーに相談」「第三者の意見が欲しい」「Codex に見てもらって」「Fable に見てもらって」「この方針でいいか外部レビューして」「詰まったので別の視点が欲しい」."
 ---
 
 # second-opinion — 外部アドバイザー召喚
 
 Claude Code ビルトインの `advisor` と同じ狙い。**今の作業セッション全体を、盲点を持つ本人（あなた）が編集しないまま**、より独立した外部レビュアー（Codex / Fable）へ渡し、鋭い第二意見を得る。
 
-## 0. 大原則: あなたはコンテキストを要約しない
+## 0. 大原則: 作業エージェントはコンテキストを要約しない
 
-advisor の価値は「盲点を持つ当人が curate していない生のコンテキスト」にある。**あなたがセッションを要約して渡してはならない。** 抽出は `scripts/second-opinion.mjs` が機械的に行う（タスク定義・全ユーザー発言・思考の連鎖・全ツールエラーを固定フォーマットで抽出）。あなたの仕事は「backend / model / effort を決めて、スクリプトを起動し、結果をユーザーへ渡す」ことだけ。
+advisor の価値は「盲点を持つ当人が curate していない生のコンテキスト」にある。**セッションを要約して渡してはならない。** 抽出は `scripts/second-opinion.mjs` が機械的に行う。Claude Code では生の assistant 出力、Codex では transcript に平文保存された reasoning summary と assistant 出力を含める（暗号化された reasoning は復号・推測しない）。仕事は「backend / model / effort を決め、スクリプトを起動し、結果をユーザーへ渡す」ことだけ。
 
 ## 1. いつ使うか
 
@@ -22,7 +22,7 @@ advisor の価値は「盲点を持つ当人が curate していない生のコ�
 
 ### 2.1 backend を決める
 
-ユーザーの言い方から判断する。判断できなければ AskUserQuestion で聞く。
+ユーザーの言い方から判断する。判断できなければ、ホストで利用可能な質問 UI または通常の会話で聞く。
 
 | ユーザーの意図 | `--backend` |
 | --- | --- |
@@ -30,9 +30,9 @@ advisor の価値は「盲点を持つ当人が curate していない生のコ�
 | 「Fable に見て」 | `fable` |
 | 「両方に」「セカンドオピニオン」（無指定） | `both`（2体の独立レビュー。和集合が最優先の材料） |
 
-### 2.2 model / effort を決める（無指定なら必ず AskUserQuestion）
+### 2.2 model / effort を決める（無指定なら必ずユーザーへ確認）
 
-引数で model / effort が与えられていればそれを使う。**与えられていなければ `AskUserQuestion` で質問し、backend に応じた選択肢を出す**:
+引数で model / effort が与えられていればそれを使う。**与えられていなければ、利用可能な質問 UI（なければ通常の会話）で質問し、backend に応じた選択肢を出す**:
 
 - **effort**（codex / fable 共通の設問。1問で可）:
   - `high`（推奨）/ `medium` / `xhigh` / `low`（`none` `minimal` は「その他」で受ける）
@@ -45,27 +45,38 @@ advisor の価値は「盲点を持つ当人が curate していない生のコ�
 > 上位モデル（Fable = `claude-fable-5` / Codex = `gpt-5.6-sol`）はアドバイザーの品質要件。codex は既定でも明示ピン留めされるため、未指定でも gpt-5.6-sol を下回らない。
 > **フォールバック**: ピン留めモデルが（改名・廃止・未ゲート等で）失敗した場合、`runCodex` は `--model` なしで一度だけ再試行し、codex 既定へ退避してレビュー自体は落とさない。ヘッダに `model=(codex default; pinned … failed)` と明示される。モデル ID を変えたいときは `CODEX_MODEL` 定数か `SECOND_OPINION_CODEX_MODEL` を更新する。
 
-複数を一度に聞くときは AskUserQuestion の複数設問（最大4問）にまとめてよい。
+質問 UI が複数設問に対応する場合は、model / effort を一度に聞いてよい。
 
 ### 2.3 深さ（stakes 連動）
 
-盲点は初期の前提に潜む。既定の抽出は「タスク定義＋全ユーザー発言＋思考の連鎖＋全ツールエラー」を必ず含み、長すぎる思考連鎖のみ中央を間引く。**ship 判断前・詰まり時など高リスクなら `--full` を付けて全文を渡す**（コストは上がるが漏れを防ぐ）。軽い確認は既定（間引きあり）で十分。
+盲点は初期の前提に潜む。既定の抽出は「タスク定義＋全ユーザー発言＋transcript 上で可視な assistant 出力／reasoning summary＋全ツールエラー」を含み、長すぎる assistant 連鎖のみ中央を間引く。**ship 判断前・詰まり時など高リスクなら `--full` を付けて全文を渡す**（コストは上がるが漏れを防ぐ）。軽い確認は既定で十分。
 
 ### 2.4 起動する
 
 ```bash
-SO="${CLAUDE_PLUGIN_ROOT:-}/scripts/second-opinion.mjs"
-[ -f "$SO" ] || SO="$(find "$HOME/.claude/plugins" -path '*/second-opinion/scripts/second-opinion.mjs' 2>/dev/null | head -1)"
+SO=""
+for ROOT in "${PLUGIN_ROOT:-}" "${CLAUDE_PLUGIN_ROOT:-}"; do
+  [ -n "$ROOT" ] && [ -f "$ROOT/scripts/second-opinion.mjs" ] && SO="$ROOT/scripts/second-opinion.mjs" && break
+done
+[ -f "$SO" ] || SO="$(find "$HOME/.codex/plugins/cache" "$HOME/.claude/plugins" -path '*/second-opinion/scripts/second-opinion.mjs' 2>/dev/null | head -1)"
+
+# Codex host: SessionStart の developer context に
+# SECOND_OPINION_TRANSCRIPT_PATH="..." があれば、その値を正確にコピーする。
+SOURCE_ARGS=()
+# SOURCE_ARGS=(--source "/exact/path/from/SECOND_OPINION_TRANSCRIPT_PATH")
+
 node "$SO" review \
   --backend <codex|fable|both> \
   [--model <model>] \
   [--effort <none|minimal|low|medium|high|xhigh>] \
+  "${SOURCE_ARGS[@]}" \
   [--full]
 ```
 
-（`${CLAUDE_PLUGIN_ROOT}` が空でもフォールバックでスクリプトを探す。以降の `setup` 等も同様に `$SO` の要領で解決してよい。）
+（Codex / Claude Code の plugin cache を順に探索する。以降の `setup` 等も同様に `$SO` を使う。）
 
-- transcript は自動解決される（SessionStart hook が記録した env → codex の env → 最新 mtime の順）。解決に失敗したら `--source <path-to-jsonl>` を添えて再実行する。
+- Claude Code では transcript は SessionStart hook が記録した env から自動解決される。
+- Codex では SessionStart hook が developer context に出した `SECOND_OPINION_TRANSCRIPT_PATH` を編集せず `--source` へ渡す。transcript の形式は安定 API ではないため、抽出結果の counts がすべて 0 なら処理を止め、互換性エラーとして報告する。
 - `--backend both` は Codex と Fable を順に走らせ、両者の指摘を並べる。**両方が挙げた点を最優先、片方だけの点は盲点候補として扱う。**
 
 ### 2.5 結果を渡す
@@ -84,5 +95,6 @@ node "$SO" review \
 
 ## 4. 準備 / トラブル時
 
-- 初回や backend が動かないときは `/second-opinion:setup` を実行（依存 codex / claude の可用性、transcript 解決可否を点検し、不足を導入案内）。
-- SessionStart hook は**プラグイン導入後の新しいセッションから**有効。導入直後の現行セッションは env 未設定のため、`resolve` が最新 mtime にフォールバックする（同時に複数セッションを開いていると誤選択の可能性 → その場合は `--source` で明示）。
+- 初回や backend が動かないときは `node "$SO" setup` を実行する。Claude Code では `/second-opinion:setup` も利用できる。
+- SessionStart hook は**プラグイン導入後の新しいセッションから**有効。Codex では `/hooks` で plugin hook を信頼してから新しいスレッドを開始する。
+- 導入直後の Claude Code セッションは env 未設定のため、`resolve` が最新 mtime にフォールバックする。同時セッションがある場合は `--source` で明示する。

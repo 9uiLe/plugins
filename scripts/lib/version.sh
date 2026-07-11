@@ -9,12 +9,12 @@ MARKETPLACE_JSON="$REPO_ROOT/.claude-plugin/marketplace.json"
 # manifest and are not registered in the Codex marketplace. Every other plugin
 # must be dual-registered; verify-versions enforces that to catch accidental
 # omissions. To make a plugin Claude-only, add its name here.
-CLAUDE_ONLY_PLUGINS=("second-opinion")
+CLAUDE_ONLY_PLUGINS=()
 
 # is_claude_only_plugin <name> — return 0 if the plugin is Claude Code-only
 is_claude_only_plugin() {
   local name="$1" p
-  for p in "${CLAUDE_ONLY_PLUGINS[@]}"; do
+  for p in "${CLAUDE_ONLY_PLUGINS[@]-}"; do
     [[ "$p" == "$name" ]] && return 0
   done
   return 1

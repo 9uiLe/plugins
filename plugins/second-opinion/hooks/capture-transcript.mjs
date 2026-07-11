@@ -37,8 +37,25 @@ function readHookInput() {
 
 try {
   const input = readHookInput();
-  appendEnvVar(TRANSCRIPT_PATH_ENV, input.transcript_path);
-  appendEnvVar(SESSION_ID_ENV, input.session_id);
+  if (process.env.CLAUDE_ENV_FILE) {
+    appendEnvVar(TRANSCRIPT_PATH_ENV, input.transcript_path);
+    appendEnvVar(SESSION_ID_ENV, input.session_id);
+  } else if (input.transcript_path) {
+    // Codex command hooks cannot persist shell environment variables for later
+    // turns. SessionStart can, however, add deterministic developer context.
+    // The skill passes this exact path back to the mechanical extractor.
+    process.stdout.write(
+      JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: "SessionStart",
+          additionalContext:
+            `SECOND_OPINION_TRANSCRIPT_PATH=${JSON.stringify(input.transcript_path)}. ` +
+            "When the second-opinion skill runs, pass this exact value with --source; " +
+            "do not summarize or curate the transcript."
+        }
+      })
+    );
+  }
 } catch {
   // Swallow all errors: a capture failure must never disrupt the session.
 }

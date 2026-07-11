@@ -6,8 +6,8 @@
 //   2. Extract a FIXED-FORMAT context from it (task def + every human message +
 //      assistant reasoning + tool digest + every tool error). --full = verbatim.
 //   3. Dispatch that context, wrapped in the five-section advisor contract, to
-//      one or both backends (Fable via `claude -p`, Codex via codex-companion
-//      `task`), with runtime-selected model/effort, and print their verdicts.
+//      one or both backends (Fable via `claude -p`, Codex via `codex exec`),
+//      with runtime-selected model/effort, and print their verdicts.
 //
 // Subcommands:
 //   review   --backend <codex|fable|both> [--model M] [--effort E] [--full]
@@ -182,19 +182,28 @@ function detectSlashCommand(rawText) {
 function parseTranscript(filePath) {
   const raw = fs.readFileSync(filePath, "utf8");
   const lines = raw.split("\n");
+  const records = [];
+  for (const line of lines) {
+    const s = line.trim();
+    if (!s) continue;
+    try {
+      records.push(JSON.parse(s));
+    } catch {
+      // Ignore partial/corrupt JSONL records; transcripts may be read while active.
+    }
+  }
+  const isCodex = records.some(
+    (obj) => obj?.type === "session_meta" || (obj?.payload && obj?.type === "response_item")
+  );
+  return isCodex ? parseCodexTranscript(records) : parseClaudeTranscript(records);
+}
+
+function parseClaudeTranscript(records) {
   const toolNameById = new Map();
   const events = [];
 
   // First pass: build tool_use id -> name map.
-  for (const line of lines) {
-    const s = line.trim();
-    if (!s) continue;
-    let obj;
-    try {
-      obj = JSON.parse(s);
-    } catch {
-      continue;
-    }
+  for (const obj of records) {
     const blocks = contentToBlocks(obj?.message?.content);
     for (const b of blocks) {
       if (b && b.type === "tool_use" && b.id) toolNameById.set(b.id, b.name || "?");
@@ -202,15 +211,7 @@ function parseTranscript(filePath) {
   }
 
   // Second pass: emit events.
-  for (const line of lines) {
-    const s = line.trim();
-    if (!s) continue;
-    let obj;
-    try {
-      obj = JSON.parse(s);
-    } catch {
-      continue;
-    }
+  for (const obj of records) {
     const type = obj.type || obj?.message?.role || "";
     const blocks = contentToBlocks(obj?.message?.content);
 
@@ -288,6 +289,147 @@ function parseTranscript(filePath) {
   }
 
   return events;
+}
+
+function parseCodexTranscript(records) {
+  const toolNameById = new Map();
+  const events = [];
+  const hasHumanEventRecords = records.some(
+    (obj) => obj?.type === "event_msg" && obj?.payload?.type === "user_message"
+  );
+
+  for (const obj of records) {
+    if (obj?.type !== "response_item") continue;
+    const payload = obj.payload || {};
+    const callId = payload.call_id || payload.id;
+    const name = codexToolName(payload);
+    if (callId && name && isCodexToolCall(payload.type)) {
+      toolNameById.set(callId, name);
+    }
+  }
+
+  for (const obj of records) {
+    if (hasHumanEventRecords && obj?.type === "event_msg" && obj?.payload?.type === "user_message") {
+      const text = codexHumanEventText(obj.payload);
+      if (text) events.push({ kind: "user", text });
+      continue;
+    }
+    if (obj?.type !== "response_item") continue;
+    const payload = obj.payload || {};
+
+    if (payload.type === "message") {
+      const text = contentToBlocks(payload.content).map(blockText).join("\n").trim();
+      if (!text) continue;
+      if (payload.role === "user") {
+        // Modern rollouts also store injected environment/developer context as
+        // role=user response items. Prefer event_msg/user_message, which is the
+        // host's genuine-human event stream, and use response items only for
+        // older rollouts that have no such records.
+        if (!hasHumanEventRecords && !isCodexInjectedUserText(text)) {
+          events.push({ kind: "user", text });
+        }
+      } else if (payload.role === "assistant") {
+        events.push({ kind: "assistant", text });
+      }
+      continue;
+    }
+
+    if (payload.type === "reasoning") {
+      const text = contentToBlocks(payload.summary).map(blockText).join("\n").trim();
+      if (text) events.push({ kind: "assistant", text });
+      continue;
+    }
+
+    if (isCodexToolCall(payload.type)) {
+      const name = codexToolName(payload) || "?";
+      const input = codexToolInput(payload);
+      events.push({
+        kind: "tool_use",
+        name,
+        id: payload.call_id || payload.id,
+        argline: summarizeInput(name, input)
+      });
+      continue;
+    }
+
+    if (isCodexToolOutput(payload.type)) {
+      const name = toolNameById.get(payload.call_id) || codexToolName(payload) || "?";
+      const text = codexToolOutputText(payload);
+      events.push({
+        kind: "tool_result",
+        name,
+        isError: codexToolOutputIsError(payload, text),
+        text
+      });
+    }
+  }
+
+  return events;
+}
+
+function codexHumanEventText(payload) {
+  if (typeof payload.message === "string") return payload.message.trim();
+  return contentToBlocks(payload.message).map(blockText).join("\n").trim();
+}
+
+function isCodexInjectedUserText(text) {
+  return /^\s*(?:# AGENTS\.md instructions\b|<environment_context>|<INSTRUCTIONS>|<system-reminder>)/i.test(
+    text
+  );
+}
+
+function isCodexToolCall(type) {
+  return ["function_call", "custom_tool_call", "tool_search_call", "web_search_call"].includes(type);
+}
+
+function isCodexToolOutput(type) {
+  return ["function_call_output", "custom_tool_call_output", "tool_search_output"].includes(type);
+}
+
+function codexToolName(payload) {
+  if (payload.name) return payload.name;
+  if (payload.type === "web_search_call") return "web_search";
+  if (payload.type === "tool_search_call" || payload.type === "tool_search_output") return "tool_search";
+  return null;
+}
+
+function codexToolInput(payload) {
+  const input = payload.arguments ?? payload.input ?? payload.action ?? "";
+  if (typeof input !== "string") return input;
+  try {
+    return JSON.parse(input);
+  } catch {
+    return input;
+  }
+}
+
+function codexToolOutputText(payload) {
+  const output = payload.output ?? payload.tools ?? payload;
+  if (typeof output === "string") return output.trim();
+  try {
+    return JSON.stringify(output);
+  } catch {
+    return String(output);
+  }
+}
+
+function codexToolOutputIsError(payload, text) {
+  if (payload.is_error === true || payload.success === false) return true;
+  if (["failed", "error", "cancelled"].includes(String(payload.status).toLowerCase())) return true;
+
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    parsed = null;
+  }
+  if (parsed && typeof parsed === "object") {
+    if (parsed.is_error === true || parsed.success === false) return true;
+    if (typeof parsed.exit_code === "number" && parsed.exit_code !== 0) return true;
+    if (typeof parsed.code === "number" && parsed.code !== 0) return true;
+    if (["failed", "error", "cancelled"].includes(String(parsed.status).toLowerCase())) return true;
+  }
+  return /(?:"exit_code"\s*:\s*[1-9]\d*|process exited with (?:code|status) [1-9]\d*)/i.test(text);
 }
 
 function summarizeInput(name, input) {
@@ -472,24 +614,6 @@ function buildPromptText(contract, extraction) {
 // backends
 // ---------------------------------------------------------------------------
 
-function resolveCodexCompanion() {
-  if (process.env.SECOND_OPINION_CODEX_COMPANION) {
-    return process.env.SECOND_OPINION_CODEX_COMPANION;
-  }
-  const base = path.join(os.homedir(), ".claude", "plugins", "marketplaces");
-  let markets;
-  try {
-    markets = fs.readdirSync(base);
-  } catch {
-    return null;
-  }
-  for (const m of markets) {
-    const candidate = path.join(base, m, "plugins", "codex", "scripts", "codex-companion.mjs");
-    if (fs.existsSync(candidate)) return candidate;
-  }
-  return null;
-}
-
 function runProcess(cmd, argsList, input, timeoutMs) {
   return new Promise((resolve) => {
     const child = spawn(cmd, argsList, { stdio: ["pipe", "pipe", "pipe"] });
@@ -551,37 +675,35 @@ async function runFable(promptText, { effort }, timeoutMs) {
 }
 
 async function runCodex(promptText, { model, effort }, timeoutMs) {
-  const companion = resolveCodexCompanion();
-  if (!companion) {
-    return {
-      backend: "codex",
-      code: 127,
-      stdout: "",
-      stderr:
-        "codex-companion.mjs not found. Install the openai-codex plugin, or set " +
-        "SECOND_OPINION_CODEX_COMPANION to its path."
-    };
-  }
-  const tmp = path.join(os.tmpdir(), `second-opinion-codex-${process.pid}-${Date.now()}.md`);
-  fs.writeFileSync(tmp, promptText, "utf8");
   // Pin the model explicitly so the advisor can't silently drop below the top
-  // tier via a stale app-server default. But never let a bad / renamed / ungated
+  // tier via a stale host default. But never let a bad / renamed / ungated
   // model id kill the review: if the pinned run yields no output, retry once
   // WITHOUT --model (defer to the codex default) and label the degradation.
   const pinnedModel = model || CODEX_MODEL;
-  const baseArgs = [companion, "task", "--prompt-file", tmp];
-  const effortArgs = effort ? ["--effort", effort] : [];
+  const baseArgs = [
+    "exec",
+    "--sandbox",
+    "read-only",
+    "--ephemeral",
+    "--skip-git-repo-check",
+    "--ignore-user-config",
+    "--color",
+    "never",
+    "-C",
+    os.tmpdir()
+  ];
+  const effortArgs = effort ? ["-c", `model_reasoning_effort=${JSON.stringify(effort)}`] : [];
   let usedModel = pinnedModel;
-  let r = await runProcess("node", [...baseArgs, "--model", pinnedModel, ...effortArgs], null, timeoutMs);
+  let r = await runProcess(
+    "codex",
+    [...baseArgs, "--model", pinnedModel, ...effortArgs, "-"],
+    promptText,
+    timeoutMs
+  );
   if (r.code !== 0 || !r.stdout.trim()) {
     // Pinned model failed — degrade to the codex default rather than dying.
-    r = await runProcess("node", [...baseArgs, ...effortArgs], null, timeoutMs);
+    r = await runProcess("codex", [...baseArgs, ...effortArgs, "-"], promptText, timeoutMs);
     usedModel = `(codex default; pinned ${pinnedModel} failed)`;
-  }
-  try {
-    fs.unlinkSync(tmp);
-  } catch {
-    /* ignore */
   }
   return {
     backend: "codex",
@@ -623,14 +745,18 @@ async function cmdReview(args) {
   if (t.warning) process.stderr.write(`[warning] ${t.warning}\n`);
 
   const events = parseTranscript(t.path);
+  if (!events.some((event) => event.kind === "user")) {
+    fail(
+      "unsupported or empty transcript format: no human messages were extracted; " +
+        "refusing to request a context-free review"
+    );
+  }
   const extraction = buildExtraction(events, { full: !!args.full });
   const promptText = buildPromptText(buildContract(), extraction);
 
   const timeoutMs = Number(process.env.SECOND_OPINION_TIMEOUT_MS || 600000);
-  // Run backends SEQUENTIALLY. The Codex app-server broker spawned by
-  // codex-companion conflicts with a concurrently-running `claude -p` and
-  // yields empty Codex output. An advisor call is not latency-critical, so we
-  // trade parallelism for reliability.
+  // Run backends sequentially so their independent output and failures remain
+  // easy to attribute. Advisor calls favor a deterministic handoff over latency.
   const thunks = [];
   if (backend === "fable" || backend === "both") {
     thunks.push(() => runFable(promptText, { effort: args.effort }, timeoutMs));
@@ -675,10 +801,10 @@ function cmdSetup(args) {
   const report = {
     claude: which("claude"),
     node: which("node"),
-    codex_companion: resolveCodexCompanion(),
+    codex: which("codex"),
     transcript: resolveTranscript(args)
   };
-  const codexOk = !!report.codex_companion;
+  const codexOk = !!report.codex;
   const fableOk = !!report.claude;
   const status = {
     ok: fableOk || codexOk,
@@ -697,7 +823,7 @@ function cmdSetup(args) {
     [
       `second-opinion setup`,
       `  Fable backend (claude -p): ${fableOk ? "READY" : "MISSING — `claude` not on PATH"}`,
-      `  Codex backend (codex-companion task): ${codexOk ? "READY" : "MISSING — openai-codex plugin not found"}`,
+      `  Codex backend (codex exec): ${codexOk ? "READY" : "MISSING — \`codex\` not on PATH"}`,
       `  transcript: ${status.transcript_path || "(unresolved)"} via ${status.transcript_source}`,
       status.transcript_warning ? `  note: ${status.transcript_warning}` : ""
     ]

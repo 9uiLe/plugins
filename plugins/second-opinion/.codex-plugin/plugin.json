@@ -1,0 +1,39 @@
+{
+  "name": "second-opinion",
+  "version": "0.2.0",
+  "description": "Summon a second-opinion reviewer over the current Claude Code or Codex session: mechanically extract the conversation and send it unedited to Codex and/or Fable for a fixed five-section verdict.",
+  "author": {
+    "name": "9uiLe",
+    "url": "https://github.com/9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins/tree/master/plugins/second-opinion",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": [
+    "advisor",
+    "second-opinion",
+    "code-review",
+    "codex",
+    "fable",
+    "context-transfer",
+    "hooks"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Second Opinion",
+    "shortDescription": "Review the current session with an independent model",
+    "longDescription": "Mechanically extract the current Claude Code or Codex session without agent-authored summarization, then send it to Codex, Fable, or both for a fixed five-section second-opinion verdict.",
+    "developerName": "9uiLe",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read"
+    ],
+    "websiteURL": "https://github.com/9uiLe/plugins/tree/master/plugins/second-opinion",
+    "defaultPrompt": [
+      "Get a second opinion on this session",
+      "Ask Fable to review this approach",
+      "Ask Codex whether this is ready to ship"
+    ],
+    "brandColor": "#7C3AED"
+  }
+}
