@@ -7,6 +7,7 @@ on:
       - ".agents/plugins/marketplace.json"
       - "plugins/**/.claude-plugin/plugin.json"
       - "plugins/**/.codex-plugin/plugin.json"
+      - "plugins/second-opinion/**"
       - "scripts/**"
       - ".github/workflows/verify-versions.yml"
   push:
@@ -33,3 +34,6 @@ jobs:
 
       - name: verify-versions
         run: bash scripts/verify-versions.sh
+
+      - name: Test second-opinion
+        run: node --test plugins/second-opinion/tests/second-opinion.test.mjs

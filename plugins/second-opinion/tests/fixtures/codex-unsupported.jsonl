@@ -1,0 +1,2 @@
+{"timestamp":"2026-07-11T00:00:00.000Z","type":"session_meta","payload":{"id":"session-unsupported","cwd":"/tmp/project"}}
+{"timestamp":"2026-07-11T00:00:01.000Z","type":"future_event","payload":{"type":"future_message","body":"unknown schema"}}

@@ -43,6 +43,7 @@ codex plugin add <plugin-name>@9uile-plugins
 | [model-strategy](./plugins/model-strategy) | 従量課金前提でモデル (Fable/Opus/Sonnet/Haiku) と effort をコスパよく使い分ける Skill (`model-effort-guide`) と、安価な委譲先サブエージェント (`sonnet-implementer` / `haiku-scout`) を提供します。公式価格リファレンス付き。 |
 | [agent-ops](./plugins/agent-ops) | エージェント開発を「指示書・証拠・反復」で運用する 3 つの Skill (`agent-handoff` / `first-touch-review` / `crystallize`) を提供します。外部エージェント (Claude Code / Codex) への handoff 駆動委譲、懐疑的監査、固定ルーブリックの first-touch UX レビュー、セッション知見の資産化に対応します。 |
 | [compact-plus](./plugins/compact-plus) | Claude Code の `/compact` 前後でセッション状態を保存・復元します。transcript backup、LLM 生成の state file、閾値超過時の `/compact` 推奨通知、圧縮後の復旧誘導を hook で提供します ([u-ichi/compact-plus](https://github.com/u-ichi/compact-plus) (MIT) の移植)。 |
+| [second-opinion](./plugins/second-opinion) | 現在の Claude Code / Codex セッションを機械抽出し、Codex / Fable の独立レビューへ無編集で渡して、盲点・収束・ship 判定・決定的制約・最強の反論を得る Skill を提供します。 |
 
 ## リポジトリ構成
 
