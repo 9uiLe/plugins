@@ -46,14 +46,14 @@ Create entries during independent positions and update dispositions during synth
 
 Namespace IDs by source (`A-P1`, `B-P1`, `CHAIR-P1`) so independent advisors cannot collide. Preserve IDs through challenge and synthesis.
 
-| Proposal ID | Source | Type | Related proposal IDs | Outcome IDs | Expected contribution / direction | Evidence IDs | Negative effects / affected outcomes | Trade-off authorization | Disposition | Reason / owner / trigger | Verification |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| A-P1 | Advisor A | MEANS / CONSTRAINT / TEST / OUTCOME_CHANGE | ... | O1@1 | ... | E1 | ... or NONE | `<authority/evidence/date>` or NONE | ACCEPT / REJECT / DEFER / CONDITIONAL | ... | ... |
+| Proposal ID | Source | Type | Related proposal IDs | Initial / current Outcome IDs | Link revision | Expected contribution / direction | Evidence IDs | Negative effects / affected outcomes | Trade-off authorization | Disposition | Reason / owner / trigger | Verification |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| A-P1 | Advisor A | MEANS / CONSTRAINT / TEST / OUTCOME_CHANGE | ... | O1@1 / O1@1 | 0 | ... | E1 | ... or NONE | `<authority/evidence/date>` or NONE | ACCEPT / REJECT / DEFER / CONDITIONAL | ... | ... |
 
 ## Proposal link-change log
 
-| Proposal ID | Round | Prior Outcome links | New Outcome links | Change basis | Evidence IDs | Author |
-| --- | --- | --- | --- | --- | --- | --- |
+| Proposal ID | Revision | Round | Prior Outcome links | New Outcome links | Change basis | Evidence IDs | Author |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
 ## Independent position prompt
 
@@ -106,6 +106,8 @@ Use the Proposal Trace Ledger above as the authoritative recommendation ledger. 
 | UNTRACED_PROPOSAL / MEANS_AS_GOAL / UNAUTHORIZED_OUTCOME_CHANGE / HIDDEN_TRADEOFF | ... | ... | ... |
 
 ## Compact low-stakes form
+
+Set structured record `mode: COMPACT` (`FULL` otherwise). COMPACT uses fewer prose fields, but its Outcome and Proposal entries retain every guard-critical field validated by `decision-record-guard.mjs`.
 
 ```text
 Outcome O1@1 [ACTIVE, approved <owner/date>]: <beneficiary>; <baseline> → <target>; trade-offs <...>
