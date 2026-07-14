@@ -9,7 +9,7 @@ Two related skills are included:
 
 `decision-council` is host-neutral. Orca/orchestration can carry messages when available, but the skill can use direct CLIs, host subagents, one-advisor opposition, or disclosed self-critique fallbacks.
 
-It also includes outcome alignment before evidence collection and a sanitized incident-reporting path for reproducible safeguard failures. GitHub issues are filed only with explicit authorization; otherwise the skill returns a ready-to-file draft.
+It also includes outcome alignment before evidence collection, proposal-to-outcome traceability with a deterministic means-goal guard, and a sanitized incident-reporting path for reproducible safeguard failures. GitHub issues are filed only with explicit authorization; otherwise the skill returns a ready-to-file draft.
 
 Summon an external **second-opinion reviewer** over your current **Claude Code or Codex**
 session. The reviewer backend is selectable between **Codex** (OpenAI gpt-5 series),
