@@ -7,6 +7,7 @@
 
 ### Added
 
+- **second-opinion** (v0.3.0): ツール非依存の `decision-council` Skill を追加。Outcome Alignment、証拠 readiness gate、Fable/Codex 等の独立 first round、匿名 challenge、全提案の disposition、議長・役割別モデル/effort 選定、劣化時の confidence 上限、Outcome Review を含む意思決定記録を定義した。再現可能な safeguard failure をサニタイズして GitHub Issue 化するテンプレートと手順も追加。AWS sample Collaborative AI-DLC の Inception/traceability/role separation/human gate/refinement loop を一次資料付きで取り込み、Orca/orchestration は任意 transport に限定した。
 - **second-opinion** (v0.2.0): Codex rollout JSONL の機械抽出、Codex `SessionStart` hook の `transcript_path` 引き継ぎ、`codex exec` による read-only / ephemeral reviewer 起動を追加。`.codex-plugin/plugin.json` と Codex marketplace エントリを追加し、Claude Code / Codex の両ホストから同じ Skill を利用可能にした。Claude Code JSONL と `CLAUDE_ENV_FILE` の既存経路は維持する。
 
 ## [0.3.3] - 2026-07-10

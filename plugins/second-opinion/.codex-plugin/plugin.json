@@ -1,7 +1,7 @@
 {
   "name": "second-opinion",
-  "version": "0.2.0",
-  "description": "Summon a second-opinion reviewer over the current Claude Code or Codex session: mechanically extract the conversation and send it unedited to Codex and/or Fable for a fixed five-section verdict.",
+  "version": "0.3.0",
+  "description": "Get independent Fable/Codex reviews or run an evidence-gated decision council with explicit dissent, model-role selection, and accountable synthesis.",
   "author": {
     "name": "9uiLe",
     "url": "https://github.com/9uiLe"
@@ -16,13 +16,14 @@
     "codex",
     "fable",
     "context-transfer",
+    "decision-making",
     "hooks"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Second Opinion",
     "shortDescription": "Review the current session with an independent model",
-    "longDescription": "Mechanically extract the current Claude Code or Codex session without agent-authored summarization, then send it to Codex, Fable, or both for a fixed five-section second-opinion verdict.",
+    "longDescription": "Get a mechanically extracted second opinion, or run a portable evidence-gated council that preserves independent dissent, selects models by role, and records accountable decisions.",
     "developerName": "9uiLe",
     "category": "Developer Tools",
     "capabilities": [
@@ -32,7 +33,8 @@
     "defaultPrompt": [
       "Get a second opinion on this session",
       "Ask Fable to review this approach",
-      "Ask Codex whether this is ready to ship"
+      "Ask Codex whether this is ready to ship",
+      "Run a decision council before choosing an approach"
     ],
     "brandColor": "#7C3AED"
   }

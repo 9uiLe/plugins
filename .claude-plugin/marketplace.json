@@ -82,8 +82,8 @@
     {
       "name": "second-opinion",
       "source": "./plugins/second-opinion",
-      "description": "Summon an external second-opinion reviewer (advisor) over the current session: mechanically extract the conversation and send it unedited to Codex and/or Fable, which return a fixed five-section verdict (blind spots, convergence, ship/no-ship, decisive constraint, strongest counterargument). Backend, model, and effort are selectable at call time.",
-      "version": "0.2.0",
+      "description": "Get an independent Fable/Codex review, or run an evidence-gated decision council with explicit dissent, model-role selection, missing-information checks, and accountable synthesis.",
+      "version": "0.3.0",
       "category": "development",
       "tags": [
         "advisor",
@@ -91,7 +91,8 @@
         "code-review",
         "codex",
         "fable",
-        "context-transfer"
+        "context-transfer",
+        "decision-making"
       ]
     }
   ]
