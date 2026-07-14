@@ -36,7 +36,7 @@ Readiness rationale:
 
 ## Challenge prompt
 
-> Review the original packet and anonymized positions A/B. Do not seek consensus. State what the competing position gets right, the weakest unsupported part of your own position, factual versus value-based disagreements, one discriminating test, and your revised or retained position with a confidence-change reason. Do not act on the recommendation.
+> Review the original packet and anonymized positions A/B. Do not seek consensus. State what the competing position gets right, the weakest unsupported part of your own position, factual versus value-based disagreements, and one discriminating test. Keep your first-round recommendation by default. Change it only for NEW_EVIDENCE, OVERLOOKED_EVIDENCE, LOGICAL_ERROR, or OPTION_CORRECTION, citing evidence IDs or the concrete reasoning error. Persuasion, acknowledged strengths, or confidence reduction alone are not valid change grounds. Return `recommendation_changed`, `change_basis`, `evidence_ids`, retained/updated confidence, and accepted concerns. If the basis is PERSUASION_ONLY, retain the original recommendation. Do not act on the recommendation.
 
 ## Final decision record
 
@@ -63,8 +63,10 @@ Authority: recommend-only | approved-to-execute
 - Failure or rollback trigger:
 
 ## Advisor record
-| Source/model/effort | Round-one position | Challenge revision | Strongest dissent | Disposition |
-| --- | --- | --- | --- | --- |
+| Source/model/effort | Round-one position | Challenge result | Change basis/evidence | Strongest dissent | Disposition |
+| --- | --- | --- | --- | --- | --- |
+
+Invalid `PERSUASION_ONLY` switches are recorded but do not replace the round-one position.
 
 ## Recommendation ledger
 | Claim or recommendation | Source | Evidence | ACCEPT / REJECT / DEFER / CONDITIONAL | Reason/owner/trigger |

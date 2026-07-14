@@ -60,7 +60,11 @@ Collect all first-round answers before revealing any of them.
 
 ### 5. Challenge without forcing consensus
 
-Anonymize positions as A/B. Ask each advisor what the other gets right, what its own case leaves unsupported, whether disagreement is factual or value-based, which discriminating test would resolve it, and whether its position changes. Preserve both rounds. Never instruct advisors to reach consensus.
+Anonymize positions as A/B. Ask each advisor what the other gets right, what its own case leaves unsupported, whether disagreement is factual or value-based, and which discriminating test would resolve it. Preserve both rounds. Never instruct advisors to reach consensus.
+
+Keep the first-round recommendation by default. Accept a recommendation change only when the advisor identifies `NEW_EVIDENCE`, `OVERLOOKED_EVIDENCE`, `LOGICAL_ERROR`, or `OPTION_CORRECTION`, with concrete evidence IDs or reasoning. Acknowledging the competing position, lowering confidence, or finding it persuasive does not justify switching. Record `PERSUASION_ONLY` changes as invalid and retain the first-round recommendation for synthesis.
+
+Require every challenge response to state `recommendation_changed`, `change_basis`, `evidence_ids`, retained/updated confidence, and accepted concerns. Confidence and concerns may change without changing the recommendation.
 
 For low-stakes reversible choices, compress this to one explicit steelman counterargument. For one advisor, write and freeze an opposing brief before reading its answer. With no external advisor, use isolated advocate/red-team passes if possible; otherwise label the result `SELF-CRITIQUE (NOT INDEPENDENT)`.
 
