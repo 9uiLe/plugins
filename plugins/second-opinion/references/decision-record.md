@@ -96,6 +96,9 @@ Authority: recommend-only | approved-to-execute
 | --- | --- | --- | --- | --- | --- |
 
 Invalid `PERSUASION_ONLY` switches are recorded but do not replace the round-one position.
+Validate the structured advisor challenge audit with `scripts/challenge-guard.mjs`. Record effective recommendations after invalid changes are removed. A cross-switch is never convergence.
+
+Structured audit fields per advisor: `id`, `roundOneRecommendation`, and `challenge` containing `recommendationChanged`, stated `recommendation`, `changeBasis`, `evidenceIds`, concrete `reasoning`, confidence, and accepted concerns. Record `claimedConvergence` at panel level. Preserve invalid attempted switches as findings while treating the guard-derived `effectivePositions` as authoritative for synthesis. Distinguish `protocolClean` from `safeToSynthesize`; a neutralized invalid attempt is visible but need not stop a safe decision.
 
 ## Recommendation ledger
 Use the Proposal Trace Ledger above as the authoritative recommendation ledger. Every material proposal and concern must have a disposition; unlinked proposals are rejected, deferred, or escalated.

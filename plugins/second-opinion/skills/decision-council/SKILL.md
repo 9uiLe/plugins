@@ -74,6 +74,8 @@ Keep the first-round recommendation by default. Accept a recommendation change o
 
 Require every challenge response to state `recommendation_changed`, `change_basis`, `evidence_ids`, retained/updated confidence, and accepted concerns. Confidence and concerns may change without changing the recommendation. Increasing confidence in a means without new evidence for its outcome contribution triggers `MEANS_AS_GOAL` and invalidates the increase.
 
+When Node.js and `scripts/challenge-guard.mjs` are available, validate the structured challenge audit before synthesis. Use its effective positions rather than raw requested switches. A cross-switch is dissent movement, not convergence, even when both changes are individually valid. Without Node.js, apply the same rules textually and disclose that automated validation was unavailable.
+
 Require the challenge to attack or support each proposal-to-outcome causal link, not merely the proposal label. Append every link change with round, prior/new links, basis, evidence, and author. Introducing or revising an outcome is an `OUTCOME_CHANGE` proposal; it does not alter the frozen Outcome Register without explicit owner approval. Agreement on a means is not convergence unless the advisors agree on the same outcome contribution and supporting evidence.
 
 For low-stakes reversible choices, compress this to one explicit steelman counterargument. For one advisor, write and freeze an opposing brief before reading its answer. With no external advisor, use isolated advocate/red-team passes if possible; otherwise label the result `SELF-CRITIQUE (NOT INDEPENDENT)`.
