@@ -127,6 +127,8 @@ Requested/effective configuration table:
 Maximum calls/tokens/cost and authorization:
 Actual usage / variance:
 Degradation/failures:
+Advisor transport completion: COMPLETE | IN_PROGRESS | OUTPUT_MISSING | BLOCKED | NOT_APPLICABLE
+Completion evidence / message IDs:
 Stop/escalation: none | ...
 ```
 

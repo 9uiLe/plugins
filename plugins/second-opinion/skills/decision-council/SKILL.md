@@ -7,7 +7,7 @@ description: "Make and document a consequential decision with evidence-gated, in
 
 Produce a defensible recommendation. Treat advisors as sources of claims and counterarguments, never as authorities whose output can be executed automatically.
 
-Read `../../references/decision-record.md` for the packet, prompts, and final record. Before any advisor dispatch, read and apply `../../references/execution-preflight.md`. When selecting models, effort, or the chair, also read `../../references/model-routing.md`. Read `../../references/ai-dlc-notes.md` when applying or explaining AI-DLC ideas. Read `../../references/incident-reporting.md` when the skill behaves incorrectly or its safeguards fail.
+Read `../../references/decision-record.md` for the packet, prompts, and final record. Before any advisor dispatch, read and apply `../../references/execution-preflight.md`. When using supervised transports, read and apply `../../references/transport-completion.md` before synthesis. When selecting models, effort, or the chair, also read `../../references/model-routing.md`. Read `../../references/ai-dlc-notes.md` when applying or explaining AI-DLC ideas. Read `../../references/incident-reporting.md` when the skill behaves incorrectly or its safeguards fail.
 
 ## Invariants
 
@@ -65,6 +65,8 @@ Send the same neutral packet independently. Require each advisor to return:
 A proposal or concern is material when it could change the recommendation, constrain an accepted proposal, expose a trade-off, require a discriminating test, or change an outcome. When uncertain and the consequence is meaningful, include it rather than silently omitting it.
 
 Collect all first-round answers before revealing any of them.
+
+For supervised dispatches, validate one durable, recoverable, identity-matched `worker_done` per advisor before treating its position as collected. A task or dispatch marked completed is insufficient. On missing output, record `OUTPUT_MISSING`; do not invent the position or silently retry beyond preflight limits.
 
 ### 5. Challenge without forcing consensus
 
