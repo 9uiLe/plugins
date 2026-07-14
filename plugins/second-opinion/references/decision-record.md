@@ -6,6 +6,13 @@
 Decision question:
 Options:
 Decision owner:
+Desired outcome, independent of requested means:
+Beneficiary:
+Observable success / failure:
+Non-goals:
+Accepted tradeoffs:
+Outcome authority and horizon:
+Alternate interpretations and decision impact:
 Constraints / non-negotiables:
 Success criteria and horizon:
 Stakes / reversibility / deadline:
@@ -48,6 +55,12 @@ Authority: recommend-only | approved-to-execute
 - Remaining concern:
 - Missing information and impact if wrong:
 - Reconsideration trigger:
+
+## Outcome review
+- Expected outcome and beneficiary:
+- Baseline / target / observation method:
+- Review owner and date:
+- Failure or rollback trigger:
 
 ## Advisor record
 | Source/model/effort | Round-one position | Challenge revision | Strongest dissent | Disposition |

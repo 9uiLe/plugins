@@ -1,0 +1,93 @@
+name: "Decision Council failure"
+description: Report a reproducible failure of decision-council safeguards or workflow.
+title: "[Decision Council] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report a reproducible protocol failure, not merely disagreement with a recommendation. Remove secrets, personal data, private transcripts, proprietary code, credentials, and internal URLs. Search existing issues first.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight
+      options:
+        - label: I searched open and closed issues for the same failure.
+          required: true
+        - label: I sanitized the reproduction and removed sensitive information.
+          required: true
+
+  - type: dropdown
+    id: invariant
+    attributes:
+      label: Failed safeguard
+      options:
+        - Outcome alignment
+        - Evidence readiness
+        - Advisor independence
+        - Challenge or dissent preservation
+        - Chair synthesis or disposition ledger
+        - Model identity, routing, or fallback
+        - Authorization before execution
+        - Excessive ceremony or blocked completion
+        - Output schema or other workflow behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Observable failure and impact
+      description: Describe what happened and why it matters.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal sanitized reproduction
+      value: |
+        1. Decision and options:
+        2. Outcome/evidence packet:
+        3. Council configuration:
+        4. Step that produced the failure:
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment and routing
+      value: |
+        - Plugin version or commit:
+        - Host / OS:
+        - Models and exact IDs:
+        - Effort levels:
+        - Adapters / optional orchestration:
+        - Evidence readiness:
+        - Independence mode:
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized output, workaround, or related issue
+      description: Include only the minimum information needed to reproduce or diagnose the failure.
+    validations:
+      required: false
