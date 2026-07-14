@@ -1,0 +1,4 @@
+interface:
+  display_name: "Decision Council"
+  short_description: "Evidence-gated decisions with independent dissent"
+  default_prompt: "Use $decision-council to evaluate this decision with independent advisors and record the rationale, concerns, missing evidence, and model-role choices."

@@ -1,5 +1,14 @@
 # second-opinion
 
+Two related skills are included:
+
+| Skill | Use it for | Result |
+| --- | --- | --- |
+| `second-opinion` | A lightweight independent review of the current session | Raw five-section verdicts |
+| `decision-council` | A consequential choice that needs evidence checks, debate, and a durable rationale | Decision record with dissent, concerns, unknowns, and model-role rationale |
+
+`decision-council` is host-neutral. Orca/orchestration can carry messages when available, but the skill can use direct CLIs, host subagents, one-advisor opposition, or disclosed self-critique fallbacks.
+
 Summon an external **second-opinion reviewer** over your current **Claude Code or Codex**
 session. The reviewer backend is selectable between **Codex** (OpenAI gpt-5 series),
 **Fable** (`claude-fable-5`), or both.

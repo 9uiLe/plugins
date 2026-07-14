@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "second-opinion",
-  "version": "0.2.0",
-  "description": "Summon a second-opinion reviewer over the current Claude Code or Codex session: mechanically extract the conversation and send it unedited to Codex and/or Fable for a fixed five-section verdict.",
+  "version": "0.3.0",
+  "description": "Get independent Fable/Codex reviews or run an evidence-gated decision council with explicit dissent, model-role selection, and accountable synthesis.",
   "author": {
     "name": "9uiLe"
   },
@@ -17,6 +17,7 @@
     "codex",
     "fable",
     "context-transfer",
+    "decision-making",
     "hooks"
   ],
   "skills": "./skills/"
