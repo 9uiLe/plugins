@@ -119,6 +119,10 @@ Evidence readiness: PASS | CONDITIONAL | FAIL
 Independence: heterogeneous | same-family | one+frozen-opposition | simulated | none
 Chair selection rationale:
 Model facts verified at:
+Execution preflight: PASS | DEGRADED | AUTHORIZATION_REQUIRED | BLOCKED
+Requested/effective configuration table:
+Maximum calls/tokens/cost and authorization:
+Actual usage / variance:
 Degradation/failures:
 Stop/escalation: none | ...
 ```

@@ -7,7 +7,7 @@ description: "Make and document a consequential decision with evidence-gated, in
 
 Produce a defensible recommendation. Treat advisors as sources of claims and counterarguments, never as authorities whose output can be executed automatically.
 
-Read `../../references/decision-record.md` for the packet, prompts, and final record. When selecting models, effort, or the chair, also read `../../references/model-routing.md`. Read `../../references/ai-dlc-notes.md` when applying or explaining AI-DLC ideas. Read `../../references/incident-reporting.md` when the skill behaves incorrectly or its safeguards fail.
+Read `../../references/decision-record.md` for the packet, prompts, and final record. Before any advisor dispatch, read and apply `../../references/execution-preflight.md`. When selecting models, effort, or the chair, also read `../../references/model-routing.md`. Read `../../references/ai-dlc-notes.md` when applying or explaining AI-DLC ideas. Read `../../references/incident-reporting.md` when the skill behaves incorrectly or its safeguards fail.
 
 ## Invariants
 
@@ -49,6 +49,8 @@ Select roles from task requirements rather than brand preference. Use the strong
 Prefer heterogeneous Fable and Codex first-round advisors when both are callable and have adequate artifact access. Diversity reduces correlated failure but does not prove independence. Record exact model, effort, host, access, source date, and why each role fits. If those facts cannot be verified, label them `UNVERIFIED`.
 
 ### 4. Collect independent positions
+
+First emit and validate the execution-preflight table. Do not send evidence until its status is `PASS` or an explicitly low-stakes `DEGRADED`. Stop on `BLOCKED`; request owner authorization on `AUTHORIZATION_REQUIRED`. Never silently retry or fallback: a fallback is a new participant identity requiring a new preflight. Keep rounds, retries, fallbacks, timeouts, and token/cost ceilings finite and record post-run actual usage when exposed.
 
 Send the same neutral packet independently. Require each advisor to return:
 
