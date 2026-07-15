@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins by 9uiLe.",
-    "version": "0.3.3"
+    "version": "0.3.4"
   },
   "plugins": [
     {
@@ -83,7 +83,7 @@
       "name": "second-opinion",
       "source": "./plugins/second-opinion",
       "description": "Get an independent Fable/Codex review, or run an evidence-gated decision council with explicit dissent, model-role selection, missing-information checks, and accountable synthesis.",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "category": "development",
       "tags": [
         "advisor",

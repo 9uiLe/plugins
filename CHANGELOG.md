@@ -5,6 +5,8 @@
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-07-15
+
 ### Added
 
 - **second-opinion / decision-council**: Issue #55 の手段・目的すり替え防止を追加。owner 承認付き Outcome version、source-namespaced Proposal ID、Proposal→Outcome 因果・trade-off・disposition・verification の台帳、Challenge の link-change 履歴、4種の fail-closed guard、低 stakes compact record を定義し、5つの要求シナリオを決定論的 validator で検証する。
@@ -143,7 +145,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.3.4...HEAD
+[0.3.4]: https://github.com/9uiLe/plugins/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/9uiLe/plugins/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/9uiLe/plugins/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/9uiLe/plugins/compare/v0.3.0...v0.3.1
