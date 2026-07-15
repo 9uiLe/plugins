@@ -36,4 +36,4 @@ jobs:
         run: bash scripts/verify-versions.sh
 
       - name: Test second-opinion
-        run: node --test plugins/second-opinion/tests/second-opinion.test.mjs
+        run: node --test plugins/second-opinion/tests/*.test.mjs
