@@ -1,0 +1,21 @@
+# Transport gate contract
+
+Run this gate before the execution-preflight table, and again before executing or publishing any council output. It enforces the capability fallback order and topology compliance deterministically; agent judgment alone must never decide that a degraded configuration is acceptable (Issue #62). It complements `execution-preflight.md` (#54): preflight verifies per-participant identity/effort/limits, this gate verifies transport selection, decision-category stakes, council topology, and execution eligibility.
+
+## Pre-dispatch gate
+
+Probe the fallback order top-down before any advisor becomes eligible. For every transport ranked above the selected one, record either a probe result (`FAILED` or `UNAVAILABLE`, with concrete evidence such as the failing command output, a timestamp, and a `PROBE`/`RUNTIME` source) or an explicit owner waiver with owner/date provenance. A transport probed `AVAILABLE` cannot be skipped without a waiver. Missing, config-sourced, or undated probe evidence fails closed. Unknown transport labels fail closed.
+
+Stakes come from the decision category, not from reversibility. `ARCHITECTURE`, `SECURITY_POLICY`, `PRODUCT_ROADMAP`, and `AUTONOMOUS_EXECUTION_PLAN` decisions (including any plan that will govern autonomous implementation) are always consequential and fail closed. "The artifact is reversible" never justifies `DEGRADED` on its own; a `LOW` stakes claim requires owner provenance and no forcing category.
+
+For consequential decisions, every participant needs verified effective identity, effort, and artifact access. Any unverified field produces `BLOCKED`, not `DEGRADED`. A requested heterogeneous council (for example Fable + Codex) is satisfied only by identity-verified participants of each requested family; generic same-host subagents never count toward the requested topology and never complete a requested heterogeneous council.
+
+A verified-but-incomplete topology produces `AUTHORIZATION_REQUIRED`. The decision owner may authorize the degraded run only with an approval that enumerates the exact participant configuration — transport, family, model, and effort per participant. An authorization that does not match the actual configuration is rejected. An authorized degraded run dispatches with `DEGRADED` status and mandatory provisional labeling.
+
+## Execution gate
+
+Do not execute or publish a recommendation until the gate reports compliance: pre-dispatch `PASS`, requested topology satisfied, and no recorded protocol failures. Otherwise execution is allowed only for authorized `LOW`-stakes degraded runs or an owner authorization matching the exact degraded configuration, and every produced artifact must carry a visible provisional marker (`PROVISIONAL: produced without a compliant decision council`) until a compliant council re-validates it. A protocol failure after a compliant pre-dispatch still forces provisional labeling.
+
+## Validation
+
+When Node.js is available, validate the gate record with `scripts/transport-gate.mjs`: pipe a JSON record with `decision` (stakes, `stakesBasis`, `categories`, `requestedFamilies`), `selectedTransport`, `probes`, `waivers`, `participants` (id, transport, family, model, effort, `identityVerified`, `effortVerified`, `accessVerified`), and optional `degradedAuthorization`; add `"phase": "EXECUTION"` plus any `protocolFailures` before the execution phase. Statuses are `PASS`, `DEGRADED`, `AUTHORIZATION_REQUIRED`, or `BLOCKED`; the execution phase reports `executionAllowed` and the required provisional marker. Without Node.js, apply the same rules textually and disclose that automated validation was unavailable. The script evaluates recorded evidence; it does not run probes itself — fabricating probe evidence is a protocol failure to report per `incident-reporting.md`.

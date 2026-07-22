@@ -5,6 +5,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- **second-opinion / decision-council**: Issue #62 の transport gate を追加 — consequential な council が fallback 順のプローブを飛ばして generic subagent で `DEGRADED` 続行できた enforcement ギャップを塞ぐ。上位 transport ごとの probe 証拠または owner waiver の必須化、決定カテゴリ (architecture / security policy / product roadmap / 自律実装を統べる計画) による fail-closed な stakes 判定 (可逆性だけでは降格不可)、identity 未検証参加者の consequential `BLOCKED`、heterogeneous council を generic subagent で充足させない topology 検査、正確な参加者構成を列挙した owner 承認、非準拠出力への `PROVISIONAL` マーカー強制を、決定論的 validator `scripts/transport-gate.mjs` + `references/transport-gate.md` として実装し、Issue のインシデント再現を含む 14 テストで検証する。#54 の execution-preflight (参加者単位の identity/effort/limit 検証) を補完する。
+
 ### Removed
 
 - プラグイン **tech-docs** (v0.1.1) を削除 — 2026-07 のスキル棚卸し (decision council: Codex + Fable の独立レビュー) でオーナーが未使用と確認したため。`create-adr` / `create-spec` / `create-doc` の 3 Skill、shared-assets デザインシステム、専用 CI (`verify-vendor.yml` / `vendor-upgrade-check.yml`)、両 marketplace 登録を一括撤去した。既存 ADR (`docs/adr/`) はアセットが `docs/adr/system/` に vendored 済みのため影響なし。新規 ADR は既存 HTML をテンプレートとして作成する (`docs/adr/README.md` 参照)。復元は git 履歴から可能。
