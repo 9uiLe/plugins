@@ -5,6 +5,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-23
+
 ### Added
 
 - **second-opinion / decision-council**: Issue #62 の transport gate を追加 — consequential な council が fallback 順のプローブを飛ばして generic subagent で `DEGRADED` 続行できた enforcement ギャップを塞ぐ。上位 transport ごとの probe 証拠または owner waiver の必須化、決定カテゴリ (architecture / security policy / product roadmap / 自律実装を統べる計画) による fail-closed な stakes 判定 (可逆性だけでは降格不可)、identity 未検証参加者の consequential `BLOCKED`、heterogeneous council を generic subagent で充足させない topology 検査、正確な参加者構成を列挙した owner 承認、非準拠出力への `PROVISIONAL` マーカー強制を、決定論的 validator `scripts/transport-gate.mjs` + `references/transport-gate.md` として実装し、Issue のインシデント再現を含む 14 テストで検証する。#54 の execution-preflight (参加者単位の identity/effort/limit 検証) を補完する。
@@ -17,7 +19,6 @@
 ### Changed
 
 - **quality-architect / quality-architecture**: 削除された `tech-docs` プラグイン (`create-adr` / `create-spec`) への誘導文を SKILL.md から撤去。
-
 ## [0.3.4] - 2026-07-15
 
 ### Added
@@ -158,7 +159,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.3.4...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/9uiLe/plugins/compare/v0.3.4...v0.4.0
 [0.3.4]: https://github.com/9uiLe/plugins/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/9uiLe/plugins/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/9uiLe/plugins/compare/v0.3.1...v0.3.2
