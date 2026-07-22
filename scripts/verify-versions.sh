@@ -16,6 +16,16 @@ checked=0
 while IFS= read -r name; do
   [[ -n "$name" ]] || continue
   checked=$((checked + 1))
+
+  # Guard against dangling marketplace source paths: fail with a diagnostic
+  # instead of letting jq abort the whole script on a missing manifest.
+  claude_manifest="$(plugin_json "$name")"
+  if [[ ! -f "$claude_manifest" ]]; then
+    log error "$name: Claude plugin manifest not found: ${claude_manifest#"$REPO_ROOT"/} (dangling marketplace source?)"
+    fail=1
+    continue
+  fi
+
   plugin_ver="$(read_plugin_version "$name")"
   marketplace_ver="$(read_marketplace_plugin_version "$name")"
 
@@ -63,6 +73,8 @@ else
   max_ver="0.0.0"
   while IFS= read -r name; do
     [[ -n "$name" ]] || continue
+    # Missing manifests (dangling source paths) are reported separately above.
+    [[ -f "$(plugin_json "$name")" ]] || continue
     v="$(read_plugin_version "$name")"
     if semver_gt "$v" "$max_ver"; then
       max_ver="$v"
@@ -77,10 +89,84 @@ else
   fi
 fi
 
+AGENTS_MARKETPLACE_JSON="$REPO_ROOT/.agents/plugins/marketplace.json"
+
+# ---------- filesystem -> marketplace completeness (Issue #64) ----------
+# marketplace.json 起点の検査だけでは「plugins/ に実在するのに未登録のプラグイン」
+# を検出できない。ここでは filesystem を起点に、各プラグインディレクトリが
+# marketplace に登録されていることを検査する。
+PLUGINS_DIR="$REPO_ROOT/plugins"
+for dir in "$PLUGINS_DIR"/*/; do
+  [[ -d "$dir" ]] || continue
+  dirname="$(basename "$dir")"
+  has_claude_manifest=0
+  has_codex_manifest=0
+  [[ -f "$dir/.claude-plugin/plugin.json" ]] && has_claude_manifest=1
+  [[ -f "$dir/.codex-plugin/plugin.json" ]] && has_codex_manifest=1
+
+  # Directories with no manifest at all are stale remnants (or half-added
+  # plugins); they can silently survive because nothing else looks at them.
+  if (( ! has_claude_manifest && ! has_codex_manifest )); then
+    log error "plugins/$dirname: no plugin manifest (.claude-plugin/plugin.json or .codex-plugin/plugin.json); remove the directory or add a manifest"
+    fail=1
+    continue
+  fi
+
+  # Every real plugin directory must be registered in the Claude marketplace,
+  # or it exists as an uninstallable plugin.
+  if jq -e --arg n "$dirname" '.plugins[] | select(.name == $n)' "$MARKETPLACE_JSON" >/dev/null; then
+    log ok "plugins/$dirname: registered in .claude-plugin/marketplace.json"
+  else
+    log error "plugins/$dirname: exists on filesystem but is not registered in .claude-plugin/marketplace.json (not installable)"
+    fail=1
+  fi
+
+  # A plugin that ships a Codex manifest must be installable from Codex too.
+  if (( has_codex_manifest )); then
+    if is_claude_only_plugin "$dirname"; then
+      log error "plugins/$dirname: listed in CLAUDE_ONLY_PLUGINS but ships .codex-plugin/plugin.json (contradictory; remove one)"
+      fail=1
+    elif [[ -f "$AGENTS_MARKETPLACE_JSON" ]] && ! jq -e --arg n "$dirname" '.plugins[] | select(.name == $n)' "$AGENTS_MARKETPLACE_JSON" >/dev/null; then
+      log error "plugins/$dirname: ships .codex-plugin/plugin.json but is not registered in .agents/plugins/marketplace.json"
+      fail=1
+    fi
+  fi
+done
+
+# ---------- marketplace -> filesystem completeness (Issue #64) ----------
+# Each marketplace entry's source path must point at an existing directory;
+# otherwise the entry advertises an uninstallable (dangling) plugin.
+while IFS=$'\t' read -r name src; do
+  [[ -n "$name" ]] || continue
+  if [[ -z "$src" || "$src" == "null" ]]; then
+    log error "$name: .claude-plugin/marketplace.json entry has no source path"
+    fail=1
+  elif [[ ! -d "$REPO_ROOT/${src#./}" ]]; then
+    log error "$name: .claude-plugin/marketplace.json source '$src' does not exist (dangling path)"
+    fail=1
+  else
+    log ok "$name: marketplace source path exists ($src)"
+  fi
+done < <(jq -r '.plugins[] | [.name, (.source // "")] | @tsv' "$MARKETPLACE_JSON")
+
+if [[ -f "$AGENTS_MARKETPLACE_JSON" ]]; then
+  while IFS=$'\t' read -r name src; do
+    [[ -n "$name" ]] || continue
+    if [[ -z "$src" || "$src" == "null" ]]; then
+      log error "$name: .agents/plugins/marketplace.json entry has no source.path"
+      fail=1
+    elif [[ ! -d "$REPO_ROOT/${src#./}" ]]; then
+      log error "$name: .agents/plugins/marketplace.json source.path '$src' does not exist (dangling path)"
+      fail=1
+    else
+      log ok "$name: Codex marketplace source path exists ($src)"
+    fi
+  done < <(jq -r '.plugins[] | [.name, (.source.path // "")] | @tsv' "$AGENTS_MARKETPLACE_JSON")
+fi
+
 # Every plugin in the Claude marketplace must also be listed in the Codex
 # marketplace manifest, or it cannot be installed from Codex. Generalized from
 # agent-ops being registered only in .claude-plugin/marketplace.json.
-AGENTS_MARKETPLACE_JSON="$REPO_ROOT/.agents/plugins/marketplace.json"
 if [[ ! -f "$AGENTS_MARKETPLACE_JSON" ]]; then
   log error "Codex marketplace manifest not found: $AGENTS_MARKETPLACE_JSON"
   fail=1

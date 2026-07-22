@@ -5,6 +5,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- `scripts/verify-versions.sh` に filesystem ↔ marketplace の双方向完全性チェックを追加 (Issue #64) — `plugins/` 直下の実在ディレクトリが marketplace 未登録のまま「インストール不能なプラグイン」として静かに存続する検証ギャップを塞ぐ。(1) マニフェストを持つ全ディレクトリの `.claude-plugin/marketplace.json` 登録、(2) `.codex-plugin` 保有プラグインの `.agents/plugins/marketplace.json` 登録、(3) 両 marketplace の `source` パス実在 (dangling path 検出)、(4) マニフェストなし残骸ディレクトリの検出を fail として検査する。受け入れテスト `scripts/tests/verify-versions-completeness.test.sh` を追加し CI に組み込んだ。
+
 ### Removed
 
 - プラグイン **tech-docs** (v0.1.1) を削除 — 2026-07 のスキル棚卸し (decision council: Codex + Fable の独立レビュー) でオーナーが未使用と確認したため。`create-adr` / `create-spec` / `create-doc` の 3 Skill、shared-assets デザインシステム、専用 CI (`verify-vendor.yml` / `vendor-upgrade-check.yml`)、両 marketplace 登録を一括撤去した。既存 ADR (`docs/adr/`) はアセットが `docs/adr/system/` に vendored 済みのため影響なし。新規 ADR は既存 HTML をテンプレートとして作成する (`docs/adr/README.md` 参照)。復元は git 履歴から可能。

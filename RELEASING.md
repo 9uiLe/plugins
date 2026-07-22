@@ -128,6 +128,12 @@ scripts/release-publish.sh --version X.Y.Z
 - `bash scripts/verify-versions.sh`
   - 各プラグインの `.claude-plugin/plugin.json.version`、`.codex-plugin/plugin.json.version`、`marketplace.json.plugins[].version` の一致
   - `marketplace.json.metadata.version` が最大プラグイン版以上であること
+  - filesystem ↔ marketplace の双方向完全性 (Issue #64)
+    - `plugins/` 直下の各ディレクトリ（マニフェスト保有）が `.claude-plugin/marketplace.json` に登録されていること
+    - `.codex-plugin/plugin.json` を持つプラグインが `.agents/plugins/marketplace.json` にも登録されていること
+    - 両 marketplace の `source` パスが実在すること（dangling path 検出）
+    - マニフェストを一切持たない `plugins/` 直下のディレクトリ（残骸）がないこと
+- `bash scripts/tests/verify-versions-completeness.test.sh`（上記完全性チェックの受け入れテスト）
 
 ローカルでも手動実行できます:
 
@@ -171,6 +177,8 @@ scripts/
 │   ├── version.sh        # Claude/Codex plugin.json / marketplace.json の version 読み書き
 │   ├── changelog.sh      # CHANGELOG セクション繰り上げ + compare リンク
 │   └── release-notes.sh  # releases/vX.Y.Z.md 雛形生成
+├── tests/
+│   └── verify-versions-completeness.test.sh  # 双方向完全性チェックの受け入れテスト
 ├── release-prepare.sh    # ブランチ → 編集 → コミット → PR
 ├── release-publish.sh    # tag → GH Release
 └── verify-versions.sh    # 整合性ゲート（CI + ローカル）
