@@ -7,7 +7,7 @@ description: "Make and document a consequential decision with evidence-gated, in
 
 Produce a defensible recommendation. Treat advisors as sources of claims and counterarguments, never as authorities whose output can be executed automatically.
 
-Read `../../references/decision-record.md` for the packet, prompts, and final record. Before any advisor dispatch, read and apply `../../references/execution-preflight.md`. When using supervised transports, read and apply `../../references/transport-completion.md` before synthesis. When selecting models, effort, or the chair, also read `../../references/model-routing.md`. Read `../../references/ai-dlc-notes.md` when applying or explaining AI-DLC ideas. Read `../../references/incident-reporting.md` when the skill behaves incorrectly or its safeguards fail.
+Read `../../references/decision-record.md` for the packet, prompts, and final record. Before any advisor dispatch, read and apply `../../references/transport-gate.md` and then `../../references/execution-preflight.md`. When using supervised transports, read and apply `../../references/transport-completion.md` before synthesis. When selecting models, effort, or the chair, also read `../../references/model-routing.md`. Read `../../references/ai-dlc-notes.md` when applying or explaining AI-DLC ideas. Read `../../references/incident-reporting.md` when the skill behaves incorrectly or its safeguards fail.
 
 ## Invariants
 
@@ -50,7 +50,7 @@ Prefer heterogeneous Fable and Codex first-round advisors when both are callable
 
 ### 4. Collect independent positions
 
-First emit and validate the execution-preflight table. Do not send evidence until its status is `PASS` or an explicitly low-stakes `DEGRADED`. Stop on `BLOCKED`; request owner authorization on `AUTHORIZATION_REQUIRED`. Never silently retry or fallback: a fallback is a new participant identity requiring a new preflight. Keep rounds, retries, fallbacks, timeouts, and token/cost ceilings finite and record post-run actual usage when exposed.
+First run the transport gate from `transport-gate.md`: probe higher-priority fallback transports and record failure evidence or owner waivers, derive stakes from the decision category (architecture, security policy, product roadmaps, and plans governing autonomous implementation are always consequential; reversibility never downgrades stakes), and verify that the requested council topology is met by identity-verified participants. Generic same-host subagents never satisfy a requested heterogeneous Fable/Codex council. Then emit and validate the execution-preflight table. Do not send evidence until both report `PASS` or an explicitly authorized `DEGRADED`. Stop on `BLOCKED`; request owner authorization on `AUTHORIZATION_REQUIRED` — the authorization must enumerate the exact degraded participant configuration. Never silently retry or fallback: a fallback is a new participant identity requiring a new preflight. Keep rounds, retries, fallbacks, timeouts, and token/cost ceilings finite and record post-run actual usage when exposed. When Node.js is available, validate the gate record with `scripts/transport-gate.mjs`; without it, apply the same rules textually and disclose that automated validation was unavailable.
 
 Send the same neutral packet independently. Require each advisor to return:
 
@@ -101,6 +101,8 @@ When Node.js and the bundled `scripts/decision-record-guard.mjs` are available, 
 
 Trace the final recommendation through every accepted proposal ID to the aligned outcomes. Record one accepted-trace row per proposal and how and when the owner can observe whether each outcome occurred, plus failure and reconsideration triggers. Do not confuse implementation completion with outcome achievement.
 
+Before executing or publishing any council output, run the execution phase of the transport gate (`transport-gate.md`). Execution requires topology compliance or an owner authorization naming the exact degraded configuration; any output produced after a non-compliant council or a recorded protocol failure must carry a visible `PROVISIONAL` marker until a compliant council re-validates it.
+
 Stop and escalate when a decisive unknown remains for an irreversible/high-stakes choice, disagreement is an unauthorized value judgment, decisive provenance is unavailable, model capability is inadequate, a means-goal guard fires, or the action expands scope or external authority.
 
 For a low-stakes reversible choice, use a compact record, but still include `Outcome ID@version`, approval provenance, `Proposal ID`, type, Outcome links, contribution, evidence, negative effects (or `NONE`), disposition/reason, and verification. Compactness must not weaken the substitution guard.
@@ -116,7 +118,7 @@ Use the first viable path and disclose degradation:
 5. one advisor plus a frozen opposing brief;
 6. isolated self-red-team, then same-context self-critique.
 
-Never silently substitute a failed model under the same identity. Lower decision confidence when evidence coverage or independence degrades; do not calculate confidence by averaging model scores.
+A lower path becomes eligible only after every higher path has a recorded probe failure or an explicit owner waiver (`transport-gate.md`); "probably unavailable" is not a probe. Never silently substitute a failed model under the same identity, and never present generic subagents as a completed heterogeneous council. Lower decision confidence when evidence coverage or independence degrades; do not calculate confidence by averaging model scores.
 
 ## Report protocol failures
 

@@ -1,6 +1,6 @@
 # Execution preflight contract
 
-Run this gate after panel selection and before sending evidence to any advisor. Host adapters collect observations; the host-neutral guard evaluates policy. Never treat a config file as proof of effective runtime identity when runtime metadata is available.
+Run this gate after panel selection, after the transport gate (`transport-gate.md`) has approved the transport and topology, and before sending evidence to any advisor. Host adapters collect observations; the host-neutral guard evaluates policy. Never treat a config file as proof of effective runtime identity when runtime metadata is available.
 
 For each participant record requested and effective provider/model/effort separately; role; alias/snapshot status; host/adapter and config source; callability/authentication; context, reasoning, and output limits; evidence-size estimate; timeout; fallback policy; and field-level verification state, source type (`RUNTIME` or `PROBE` for a verified claim), source, and timestamp. Configuration intent alone remains `UNVERIFIED`.
 

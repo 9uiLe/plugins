@@ -7,6 +7,7 @@
 
 ### Added
 
+- **second-opinion / decision-council**: Issue #62 の transport gate を追加 — consequential な council が fallback 順のプローブを飛ばして generic subagent で `DEGRADED` 続行できた enforcement ギャップを塞ぐ。上位 transport ごとの probe 証拠または owner waiver の必須化、決定カテゴリ (architecture / security policy / product roadmap / 自律実装を統べる計画) による fail-closed な stakes 判定 (可逆性だけでは降格不可)、identity 未検証参加者の consequential `BLOCKED`、heterogeneous council を generic subagent で充足させない topology 検査、正確な参加者構成を列挙した owner 承認、非準拠出力への `PROVISIONAL` マーカー強制を、決定論的 validator `scripts/transport-gate.mjs` + `references/transport-gate.md` として実装し、Issue のインシデント再現を含む 14 テストで検証する。#54 の execution-preflight (参加者単位の identity/effort/limit 検証) を補完する。
 - `scripts/verify-versions.sh` に filesystem ↔ marketplace の双方向完全性チェックを追加 (Issue #64) — `plugins/` 直下の実在ディレクトリが marketplace 未登録のまま「インストール不能なプラグイン」として静かに存続する検証ギャップを塞ぐ。(1) マニフェストを持つ全ディレクトリの `.claude-plugin/marketplace.json` 登録、(2) `.codex-plugin` 保有プラグインの `.agents/plugins/marketplace.json` 登録、(3) 両 marketplace の `source` パス実在 (dangling path 検出)、(4) マニフェストなし残骸ディレクトリの検出を fail として検査する。受け入れテスト `scripts/tests/verify-versions-completeness.test.sh` を追加し CI に組み込んだ。
 
 ### Removed
