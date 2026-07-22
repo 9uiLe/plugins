@@ -1,0 +1,39 @@
+{
+  "name": "ios-build-optimization",
+  "version": "0.1.0",
+  "description": "Diagnose and optimize build times and module architecture for large iOS apps (Swift / SwiftPM / Xcode).",
+  "author": {
+    "name": "9uiLe",
+    "url": "https://github.com/9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins/tree/master/plugins/ios-build-optimization",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": [
+    "ios",
+    "xcode",
+    "build-time",
+    "swiftpm",
+    "modularization",
+    "dependency-graph"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "iOS Build Optimization",
+    "shortDescription": "Evidence-gated iOS build time and module design review",
+    "longDescription": "Diagnose slow Xcode builds from Build Timeline data, evaluate Target/Package/linkage decisions against the measured dependency graph, and emit evidence-labeled proposals (FACT/INFERENCE/HYPOTHESIS/MEASURED) with measurement plans instead of unmeasured assertions.",
+    "developerName": "9uiLe",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/9uiLe/plugins/tree/master/plugins/ios-build-optimization",
+    "defaultPrompt": [
+      "iOS アプリのビルドが遅いので診断して",
+      "モジュール分割をビルド性能の観点で評価して",
+      "Build Timeline を見てボトルネックを分類して"
+    ],
+    "brandColor": "#F05138"
+  }
+}

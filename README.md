@@ -44,6 +44,7 @@ codex plugin add <plugin-name>@9uile-plugins
 | [agent-ops](./plugins/agent-ops) | エージェント開発を「指示書・証拠・反復」で運用する 3 つの Skill (`agent-handoff` / `first-touch-review` / `crystallize`) を提供します。外部エージェント (Claude Code / Codex) への handoff 駆動委譲、懐疑的監査、固定ルーブリックの first-touch UX レビュー、セッション知見の資産化に対応します。 |
 | [compact-plus](./plugins/compact-plus) | Claude Code の `/compact` 前後でセッション状態を保存・復元します。transcript backup、LLM 生成の state file、閾値超過時の `/compact` 推奨通知、圧縮後の復旧誘導を hook で提供します ([u-ichi/compact-plus](https://github.com/u-ichi/compact-plus) (MIT) の移植)。 |
 | [second-opinion](./plugins/second-opinion) | 現在のセッションを機械抽出する独立レビュー Skill (`second-opinion`) と、証拠の十分性・モデル役割・反論・懸念・不足情報を可視化して意思決定を記録する Skill (`decision-council`) を提供します。Orca は任意の transport であり必須ではありません。 |
+| [ios-build-optimization](./plugins/ios-build-optimization) | 大規模 iOS アプリ (Swift / SwiftPM / Xcode) のビルド時間とモジュール構成を評価・改善する Skill (`ios-build-optimization`) を提供します。Build Timeline に基づくボトルネック分類、依存グラフ指標による Target/Package/linkage 判断、根拠ラベル付き提案と計測計画を出力します。一次資料 (WWDC / Swift 公式) のリファレンス付き。 |
 
 ## リポジトリ構成
 

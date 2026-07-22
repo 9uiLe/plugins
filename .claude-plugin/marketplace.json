@@ -94,6 +94,21 @@
         "context-transfer",
         "decision-making"
       ]
+    },
+    {
+      "name": "ios-build-optimization",
+      "source": "./plugins/ios-build-optimization",
+      "description": "Diagnose and optimize build times and module architecture for large iOS apps (Swift / SwiftPM / Xcode): classify bottlenecks from Build Timeline data, evaluate Target/Package/linkage decisions against the measured dependency graph, and emit evidence-labeled proposals with measurement plans.",
+      "version": "0.1.0",
+      "category": "development",
+      "tags": [
+        "ios",
+        "xcode",
+        "build-time",
+        "swiftpm",
+        "modularization",
+        "dependency-graph"
+      ]
     }
   ]
 }

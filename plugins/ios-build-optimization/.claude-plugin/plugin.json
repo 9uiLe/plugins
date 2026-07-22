@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "ios-build-optimization",
+  "version": "0.1.0",
+  "description": "Diagnose and optimize build times and module architecture for large iOS apps (Swift / SwiftPM / Xcode): classify bottlenecks from Build Timeline data, evaluate Target/Package/linkage decisions against the measured dependency graph, and emit evidence-labeled proposals with measurement plans. Backed by a reference library of verified Apple/Swift primary sources.",
+  "author": {
+    "name": "9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": [
+    "ios",
+    "xcode",
+    "build-time",
+    "swiftpm",
+    "modularization",
+    "dependency-graph"
+  ],
+  "skills": "./skills/"
+}
