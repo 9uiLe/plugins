@@ -100,8 +100,6 @@ description: "Design NEW or PROPOSED architecture using the ISO/IEC 25010:2023 p
 - 末尾に 07a §11.2 の設計時結合チェックリストを貼り、各項目の充足を示す。
 - 詳細手順と禁則は `07a §11`（§11.1 ヒューリスティクス / §11.2 チェックリスト / §11.3 §6.5 との混同禁止）に従う。
 
-設計ドキュメントを HTML/ADR として残したい場合は、`tech-docs` プラグインの `create-adr` / `create-spec` の利用を案内してもよい。
-
 ---
 
 ## 3. リファレンス引用のルール（厳守）

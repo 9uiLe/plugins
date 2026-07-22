@@ -37,7 +37,7 @@
 
 | 項目 | ポイント |
 | --- | --- |
-| 対象プラグイン / Skill | `tech-docs` / `quality-architect` / `model-strategy` のどれか、`create-adr` などどの Skill かを明記する。 |
+| 対象プラグイン / Skill | `quality-architect` / `model-strategy` / `second-opinion` などどのプラグインか、`quality-review` などどの Skill かを明記する。 |
 | 再現手順 | 「どのコマンドを実行し、Claude Code / Codex に何を指示したか」を番号付きで。第三者が同じ操作をたどれること。 |
 | 期待 / 実際の挙動 | 「こうなるはず」と「実際はこうなった」を分けて書く。 |
 | 環境情報 | Claude Code のバージョン（`/status` または `claude --version`）または Codex のバージョン、OS、実行環境、インストール方法。 |
@@ -67,16 +67,10 @@
 │   └── plugins/
 │       └── marketplace.json    ← Codex Marketplace マニフェスト
 ├── plugins/
-│   ├── tech-docs/
-│   │   ├── .claude-plugin/plugin.json
-│   │   ├── .codex-plugin/plugin.json
-│   │   ├── skills/<skill>/SKILL.md   ← 各 Skill の本体（プロンプト/手順）
-│   │   ├── shared-assets/            ← デザインシステム + HTML テンプレート
-│   │   └── README.md
 │   └── quality-architect/
 │       ├── .claude-plugin/plugin.json
 │       ├── .codex-plugin/plugin.json
-│       ├── skills/<skill>/SKILL.md
+│       ├── skills/<skill>/SKILL.md   ← 各 Skill の本体（プロンプト/手順）
 │       ├── references/               ← ISO/IEC 25010 各特性のリファレンス
 │       ├── scripts/                  ← 品質ゲート用スクリプト
 │       └── README.md
@@ -88,7 +82,6 @@
 修正時に押さえておくと良いポイント:
 
 - **Skill の挙動を変える** → 対象プラグインの `skills/<skill>/SKILL.md` を編集します。Skill の説明や手順はここに記述されています。
-- **生成物の見た目（tech-docs）** → `plugins/tech-docs/shared-assets/`（`tokens.css` / `components/` / `templates/`）を編集します。
 - **品質モデルの基準（quality-architect）** → `plugins/quality-architect/references/` の各 Markdown を編集します。
 - **新しいプラグインを追加する** → `plugins/<name>/` を作成し、Claude Code 用の `.claude-plugin/plugin.json`、Codex 用の `.codex-plugin/plugin.json`、ルートの `.claude-plugin/marketplace.json` / `.agents/plugins/marketplace.json` にエントリを追加します。`README.md` の収録プラグイン表も更新してください。
 - **バージョンを上げる** → 該当 `.claude-plugin/plugin.json`、`.codex-plugin/plugin.json`、Claude Code 側 `marketplace.json` の `version` を揃えて更新します。**リリース作業全体の手順は [`RELEASING.md`](./RELEASING.md) を参照** してください（`scripts/release-prepare.sh` で自動化されています）。

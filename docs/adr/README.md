@@ -1,8 +1,8 @@
 # Architecture Decision Records (ADRs)
 
 このディレクトリは本リポジトリの **Architecture Decision Records (ADR)** を MADR
-形式 (HTML) で保管する。各 ADR は `tech-docs` プラグインのデザインシステムで
-レンダリングされ、`system/` 配下に共通アセットをまとめて配置する。
+形式 (HTML) で保管する。共通アセット (デザインシステム) は `system/` 配下に
+vendored 済みで、既存 ADR のレンダリングはこのディレクトリだけで自己完結する。
 
 ## 一覧
 
@@ -21,15 +21,13 @@
 
 ## 新規 ADR の作成
 
-```
-/tech-docs:create-adr で「<決定したいこと>」をまとめて
-```
-
-`tech-docs:create-adr` Skill が雛形を展開し、`system/` 配下のアセットを自動配置する。
-生成手順の詳細は `plugins/tech-docs/skills/create-adr/SKILL.md` を参照。
+> **Note:** 生成に使っていた `tech-docs` プラグイン (`create-adr` Skill) は
+> 2026-07 の棚卸しで削除された (未使用のため)。新規 ADR は既存 ADR
+> (`0001-*.html` / `0002-*.html`) をテンプレートとしてコピーし、本文を
+> 書き換えて作成する。`system/` 配下の共通アセットはそのまま参照できる。
+> 過去の生成手順が必要な場合は git 履歴 (`plugins/tech-docs/`) を参照。
 
 ## 関連
 
-- デザインシステム: `plugins/tech-docs/shared-assets/`
-- vendor 配下の third-party 帰属: `plugins/tech-docs/shared-assets/vendor/LICENSES.md`
-- vendor 検証 CI: `.github/workflows/verify-vendor.yml`
+- デザインシステム (vendored): `docs/adr/system/`
+- vendor 配下の third-party 帰属: `docs/adr/system/vendor/LICENSES.md`
