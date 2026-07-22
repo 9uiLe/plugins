@@ -30,8 +30,12 @@ body:
       label: 対象プラグイン
       description: 不具合が発生しているプラグインを選択してください。
       options:
-        - tech-docs
         - quality-architect
+        - model-strategy
+        - agent-ops
+        - compact-plus
+        - second-opinion
+        - ios-build-optimization
         - marketplace 全体 / インストール周り
         - その他・不明
     validations:
