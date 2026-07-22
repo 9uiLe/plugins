@@ -38,7 +38,6 @@ codex plugin add <plugin-name>@9uile-plugins
 
 | Name | Description |
 | --- | --- |
-| [tech-docs](./plugins/tech-docs) | ADR / 技術仕様書 / 汎用ドキュメントを、デザインシステム付きの 1 枚 HTML として生成する 3 つの Skill (`create-adr` / `create-spec` / `create-doc`) を提供します。 |
 | [quality-architect](./plugins/quality-architect) | ISO/IEC 25010:2023 製品品質モデル (9 特性 40 副特性) でアーキテクチャ設計とコードレビューを行う 2 つの Skill (`quality-architecture` / `quality-review`) を提供します。各特性の学術/公式リファレンス・ライブラリ付き。 |
 | [model-strategy](./plugins/model-strategy) | 従量課金前提でモデル (Fable/Opus/Sonnet/Haiku) と effort をコスパよく使い分ける Skill (`model-effort-guide`) と、安価な委譲先サブエージェント (`sonnet-implementer` / `haiku-scout`) を提供します。公式価格リファレンス付き。 |
 | [agent-ops](./plugins/agent-ops) | エージェント開発を「指示書・証拠・反復」で運用する 3 つの Skill (`agent-handoff` / `first-touch-review` / `crystallize`) を提供します。外部エージェント (Claude Code / Codex) への handoff 駆動委譲、懐疑的監査、固定ルーブリックの first-touch UX レビュー、セッション知見の資産化に対応します。 |
@@ -56,14 +55,13 @@ codex plugin add <plugin-name>@9uile-plugins
 │   └── plugins/
 │       └── marketplace.json ← Codex Marketplace マニフェスト
 ├── plugins/
-│   └── tech-docs/
+│   └── quality-architect/
 │       ├── .claude-plugin/plugin.json
 │       ├── .codex-plugin/plugin.json
 │       ├── skills/
-│       │   ├── create-adr/SKILL.md
-│       │   ├── create-spec/SKILL.md
-│       │   └── create-doc/SKILL.md
-│       ├── shared-assets/   ← デザインシステム + テンプレート
+│       │   ├── quality-architecture/SKILL.md
+│       │   └── quality-review/SKILL.md
+│       ├── references/      ← ISO/IEC 25010 各特性のリファレンス
 │       └── README.md
 ├── LICENSE
 └── README.md

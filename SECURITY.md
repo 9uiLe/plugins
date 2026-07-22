@@ -33,7 +33,7 @@ GitHub アカウントをお持ちでないなど、上記が利用できない�
 
 修正対応を迅速に進めるため、可能な範囲で以下を共有してください。
 
-- 影響を受けるプラグイン / Skill（例: `tech-docs/create-adr`）
+- 影響を受けるプラグイン / Skill（例: `quality-architect/quality-review`）
 - 再現手順（コマンド・入力・実行環境）
 - 影響範囲と想定される被害（情報漏洩 / 任意コード実行 / DoS など）
 - 既知の回避策（あれば）
@@ -59,7 +59,7 @@ GitHub アカウントをお持ちでないなど、上記が利用できない�
 - Claude Code 本体の脆弱性 → [Anthropic のセキュリティ報告窓口](https://www.anthropic.com/) へご連絡ください。
 - このリポジトリの依存先（GitHub Actions の third-party action など）→ 該当プロジェクトへ直接ご連絡ください。
 - ソーシャルエンジニアリングや物理攻撃。
-- 同梱している third-party ライブラリ自体の脆弱性 (`plugins/tech-docs/shared-assets/vendor/` 配下の Prism / Mermaid 等) → 上流プロジェクトへ報告してください。**ただし** 本リポジトリが特定バージョンを同梱していることに起因する報告 (例: 既知 CVE 該当バージョンを vendor し続けている等) は本ポリシーの対象です。vendor 管理方針は ADR-0002 (`docs/adr/0002-vendor-prism-mermaid.html`) を参照。
+- 同梱している third-party ライブラリ自体の脆弱性 (`docs/adr/system/vendor/` 配下の Prism / Mermaid 等) → 上流プロジェクトへ報告してください。**ただし** 本リポジトリが特定バージョンを同梱していることに起因する報告 (例: 既知 CVE 該当バージョンを vendor し続けている等) は本ポリシーの対象です。vendor 管理方針は ADR-0002 (`docs/adr/0002-vendor-prism-mermaid.html`) を参照。
 
 ---
 

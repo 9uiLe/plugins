@@ -5,6 +5,14 @@
 
 ## [Unreleased]
 
+### Removed
+
+- プラグイン **tech-docs** (v0.1.1) を削除 — 2026-07 のスキル棚卸し (decision council: Codex + Fable の独立レビュー) でオーナーが未使用と確認したため。`create-adr` / `create-spec` / `create-doc` の 3 Skill、shared-assets デザインシステム、専用 CI (`verify-vendor.yml` / `vendor-upgrade-check.yml`)、両 marketplace 登録を一括撤去した。既存 ADR (`docs/adr/`) はアセットが `docs/adr/system/` に vendored 済みのため影響なし。新規 ADR は既存 HTML をテンプレートとして作成する (`docs/adr/README.md` 参照)。復元は git 履歴から可能。
+
+### Changed
+
+- **quality-architect / quality-architecture**: 削除された `tech-docs` プラグイン (`create-adr` / `create-spec`) への誘導文を SKILL.md から撤去。
+
 ## [0.3.4] - 2026-07-15
 
 ### Added

@@ -7,9 +7,12 @@
 <!-- 例: Closes #12 / Refs #34 -->
 
 ## 対象プラグイン
-- [ ] tech-docs
 - [ ] quality-architect
 - [ ] model-strategy
+- [ ] agent-ops
+- [ ] compact-plus
+- [ ] second-opinion
+- [ ] ios-build-optimization
 - [ ] marketplace / リポジトリ全体
 - [ ] その他:
 
