@@ -10,7 +10,11 @@
 #   - judgment:      ツール未成熟/本質的に主観な領域。AI/人手で評価し「推測」ラベルを付す（考察パート）
 #
 # 新しい言語を使うときは、その言語の profile を末尾に追記するだけ（references は共通のまま）。
-# しきい値はプロジェクト方針に合わせて調整可。下記 Swift の値は SwiftLint 既定値に揃えてある。
+# しきい値はプロジェクト方針に合わせて調整可。出典はしきい値ごとに異なるため、各 threshold 行の
+# コメントに出典種別を明記する（ツール既定 / プラグイン方針 / プロジェクト上書き）。
+#   - ツール既定:      当該ツールが同じ値を既定で持つ（例: SwiftLint の rule 既定値）
+#   - プラグイン方針:  ツール既定が存在せず、本プラグインが選んだ値
+#   - プロジェクト上書き: 採用プロジェクトが自分の方針で調整すべき値
 
 version: 1
 
@@ -45,38 +49,38 @@ swift:
                     -instr-profile .build/debug/codecov/default.profdata
           Linux:  llvm-cov report .build/debug/<Pkg>PackageTests.xctest \
                     -instr-profile .build/debug/codecov/default.profdata
-        threshold: { min: 0.70 }        # プロジェクト方針。下回ったら severity=high
+        threshold: { min: 0.70 }        # 出典: プロジェクト上書き（規格由来ではない）。下回ったら severity=high
     maintainability:
       - id: cyclomatic-complexity
         metric: 関数あたりの循環的複雑度
         ref: "McCabe (1976) IEEE TSE; ISO/IEC 25023"
         run: "swiftlint lint --quiet --reporter json"     # rule: cyclomatic_complexity
         fallback: "lizard --languages swift -w"
-        threshold: { high: 10, critical: 20 }
+        threshold: { high: 10, critical: 20 }             # 出典: ツール既定（SwiftLint cyclomatic_complexity warning/error）
       - id: function-body-length
         ref: "ISO/IEC 25010 解析性/修正性"
         run: "swiftlint lint --quiet --reporter json"     # rule: function_body_length
-        threshold: { high: 50, critical: 100 }            # 行
+        threshold: { high: 50, critical: 100 }            # 行。出典: ツール既定（SwiftLint function_body_length）
       - id: type-body-length
         run: "swiftlint lint --quiet --reporter json"     # rule: type_body_length
-        threshold: { high: 250, critical: 350 }
+        threshold: { high: 250, critical: 350 }           # 出典: ツール既定（SwiftLint type_body_length）
       - id: file-length
         run: "swiftlint lint --quiet --reporter json"     # rule: file_length
-        threshold: { high: 400, critical: 1000 }
+        threshold: { high: 400, critical: 1000 }          # 出典: ツール既定（SwiftLint file_length）
       - id: dead-code
         metric: 未使用宣言（モジュール性/解析性）
         run: "periphery scan --quiet"
-        threshold: { max: 0 }
+        threshold: { max: 0 }                             # 出典: プラグイン方針（Periphery に既定しきい値はない）
       - id: format-conformance
         metric: 整形規約逸脱（一意・完全に決定論的）
         run: "swift-format lint --recursive Sources/ Tests/"   # 代替: swiftformat --lint .
-        threshold: { violations_max: 0 }
+        threshold: { violations_max: 0 }                  # 出典: ツール既定（lint = 逸脱ゼロが規約準拠）
     security:
       - id: dependency-vulnerabilities
         metric: SPM 依存に含まれる既知 CVE
         ref: "OWASP MASTG-TEST-0085"
         run: "trivy fs --scanners vuln --quiet ."          # Package.resolved を走査
-        threshold: { critical: 0, high: 0 }
+        threshold: { critical: 0, high: 0 }               # 出典: プラグイン方針（Trivy 側の既定ではない）
         note: >
           Trivy / OWASP Dependency-Check の SPM 対応は experimental。
           0 件でも見落としがあり得るため judgment 側でも補完する。
