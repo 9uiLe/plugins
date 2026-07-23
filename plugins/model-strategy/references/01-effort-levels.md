@@ -1,14 +1,22 @@
 # effort パラメータの使い分け
 
-> **典拠**: platform.claude.com — Effort Parameter / Model Migration Guide (claude-api skill 経由、2026-06-04 時点キャッシュ)。
+> **典拠**: platform.claude.com — Effort Parameter / Model Migration Guide (claude-api skill 経由、2026-06-04 時点キャッシュ)。§1 のモデル別対応表と既定は code.claude.com/docs/en/model-config で 2026-07-23 に再検証済み。
 
 ## §1 effort とは
 
 `output_config.effort` はモデルの「思考の深さと総トークン消費」を制御するパラメータ。**低い effort = ツール呼び出しが少なく統合され、前置きが減り、確認が簡潔になる** = output 課金が直接減る。
 
-- 対応モデル: Fable 5 / Opus 4.5 以降 / Sonnet 4.6 (Haiku 4.5 は非対応)
-- レベル: `low` / `medium` / `high` / `xhigh` (Opus 4.7+) / `max`
-- API デフォルトは `high`。**Claude Code のデフォルトは xhigh** (Opus 4.7+)
+- 現行 Claude Code CLI が受理する値: `low` / `medium` / `high` / `xhigh` / `max`（`claude --help` で確認、2026-07-23）
+- モデル別対応（典拠: code.claude.com/docs/en/model-config「Adjust effort level」、2026-07-23 確認。**表にないモデルは effort 非対応**）:
+
+| モデル | 対応レベル | Claude Code 既定 |
+| --- | --- | --- |
+| Fable 5 | `low` / `medium` / `high` / `xhigh` / `max` | `high` |
+| Sonnet 5 / Opus 4.8 / Opus 4.7 | `low` / `medium` / `high` / `xhigh` / `max` | `high`（**Opus 4.7 のみ `xhigh`**） |
+| Opus 4.6 / Sonnet 4.6 | `low` / `medium` / `high` / `max`（`xhigh` 非対応） | `high` |
+| Haiku 4.5 / Opus 4.5 以前 | 非対応（表に列挙されていない） | — |
+
+- 非対応レベルを指定した場合、Claude Code は「指定以下で最も高い対応レベル」へフォールバックする（例: Opus 4.6 で `xhigh` → `high` 実行）。組織側でレベル上限が設定されている場合もある
 
 ## §2 レベル別ガイド
 
@@ -30,7 +38,7 @@
 ### Fable 5
 - **`low` でも従来モデルの `xhigh`〜`max` を超える品質が出ることが多い**(公式記載)。Fable 5 を使うときほど effort を下げる余地がある
 - 高 effort ではルーチン作業に対して過剰なコンテキスト収集・熟考をしがち。正しく完了するのに時間がかかりすぎる場合は effort を下げる
-- **thinking は常時オン**(オフにできない)。思考トークンも output 課金されるため、同じタスクでも他モデルよりトークン消費が多くなりやすい。サブスク同梱枠(`00-pricing.md` §4)は週次上限を共有しているので、**枠温存の観点でも既定を `high` ではなく `medium`〜`high` に置き、`xhigh`/`max` は最難関のみに限定**するのが効率的
+- **thinking は常時オン**(オフにできない)。思考トークンも output 課金されるため、同じタスクでも他モデルよりトークン消費が多くなりやすい。サブスクでも Fable 5 は usage credits（API 単価。`00-pricing.md` §4）なので、**コスト温存の観点でも既定を `high` ではなく `medium`〜`high` に置き、`xhigh`/`max` は最難関のみに限定**するのが効率的
 - 単発の難問なら「Fable 5 (low〜medium)」が「Opus 4.8 (xhigh)」より安く良い結果になるケースがある。迷ったら両者を同一タスクで比較して経路を固定する
 
 ### Sonnet 5
