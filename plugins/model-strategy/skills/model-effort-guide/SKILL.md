@@ -17,7 +17,7 @@ description: "Recommend the cost-optimal Claude model (Fable/Opus/Sonnet/Haiku) 
 
 - **Claude Code で実行中**: サブエージェント（`sonnet-implementer` / `haiku-scout` / Explore）への委譲が使える。以降の手順をそのまま適用する。
 - **Codex CLI で実行中**: モデル体系（GPT 系）・価格・reasoning effort・委譲手段が異なるため、判断基準は `references/07-codex.md` を読む。原則（§0）と委譲の鉄則（`02-decision-matrix.md` §3）はそのまま適用し、担当モデルだけ読み替える:
-  1. **委譲**: Codex のマルチエージェント（`spawn_agent` / `agents.<name>`）で安いモデル（gpt-5.4-mini 等）+ 低 effort の役割へ出す。使えない場合は `codex exec -m <model>` の別実行で代替
+  1. **委譲**: Codex のマルチエージェント（`spawn_agent` / `agents.<name>`）で安いモデル（gpt-5.6-luna / gpt-5.4-mini 等）+ 低 effort の役割へ出す。使えない場合は `codex exec -m <model>` の別実行で代替
   2. **モデル/effort 切替**: 対話中は `/model`、プリセットは `--profile`
   3. 本プラグインの `sonnet-implementer` / `haiku-scout` エージェント定義は Claude Code 専用。Codex では同等の役割を `agents.<name>` に定義して使う
 
@@ -44,7 +44,7 @@ description: "Recommend the cost-optimal Claude model (Fable/Opus/Sonnet/Haiku) 
 | 探索・調査・定型作業 | haiku-scout | (委譲) |
 | レビューの個別検証 fan-out | Sonnet サブエージェント並列 | (委譲) |
 
-**Fable 5 の使いどころはサブスク提供フェーズで変わる**: 同梱期間(〜2026-07-07・週次上限の 50% キャップ)は最難関タスクへの集中投下、以降は従量クレジット($10/$50)前提のコスト判断。詳細は `00-pricing.md` §4 と `02-decision-matrix.md` §2。
+**Fable 5 は従量クレジット制**（同梱期間は 2026-07-07 で終了）: credits は API 単価（$10/$50）なので純粋なコスト判断で使う。長時間自律実行や「Opus 4.8 で 2 回失敗したタスク」に限定投入。詳細は `00-pricing.md` §4 と `02-decision-matrix.md` §2。
 
 ## 3. リファレンス
 
