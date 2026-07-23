@@ -12,7 +12,7 @@
 #
 # 設計原則:
 #   - `quality-gates.yml` の swift.planned-deterministic.coupling: 各 id 1:1 対応。
-#   - ツール未導入は skipped（数値捏造禁止）。exit 2 を返す（quality-gate-swift.sh の exit 1 と区別）。
+#   - ツール未導入は skipped（数値捏造禁止）。exit 2 を返す（quality-gate-swift.sh の inconclusive=2 と同じ規約。fail=1 と区別）。
 #   - 観測ウィンドウ依存のシグナル（volatility）は --since=<window> を JSON にも本文にも記録（H5）。
 #   - intrusive_hits > 0 は BALANCE 判定の常時 override 句となるため、特別に flag を立てる。
 #   - aggregate スコアは概観目的のみ。verdict 根拠としては JSON 内の `note` に Khononov の

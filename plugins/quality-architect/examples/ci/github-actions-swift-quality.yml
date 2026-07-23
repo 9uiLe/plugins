@@ -35,7 +35,8 @@ jobs:
 
       - name: Run ISO/IEC 25010 quality gate (deterministic part)
         env:
-          QG_CCN_MAX: "20"
+          QG_CCN_HIGH: "10"
+          QG_CCN_CRITICAL: "20"
           QG_COVERAGE_MIN: "0.70"
           QG_DEPVULN_SEVERITY: "HIGH,CRITICAL"
         # プラグインを取得しているなら ${CLAUDE_PLUGIN_ROOT}/scripts/... を使う。
@@ -49,7 +50,9 @@ jobs:
           name: quality-gate-result
           path: quality-gate-result.json
 
-      # スクリプトは fail があれば exit 1 を返すため、上の step が失敗すればジョブも失敗する。
+      # スクリプトの終了コード: 0 = pass / 1 = fail / 2 = inconclusive（全ゲート skipped）。
+      # fail・inconclusive はいずれも非 0 なので上の step が失敗すればジョブも失敗する
+      # （inconclusive を pass 扱いにしない）。
       # 「計測はするがマージは止めない」運用にしたい場合は run の末尾に `|| true` を付ける。
 
       # --- 結合の深掘り (07a 補論) シグナル — Phase 2 planned-deterministic ---
