@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "agent-ops",
   "version": "0.3.0",
   "description": "Operational discipline for agentic development: handoff-driven delegation to external agents (Claude Code or Codex), skeptical auditing, fixed-rubric first-touch UX review loops, and crystallizing session learnings into lint/scripts/skills.",
@@ -15,5 +16,6 @@
     "ux-review",
     "knowledge-management",
     "agent-workflow"
-  ]
+  ],
+  "skills": "./skills/"
 }
