@@ -8,6 +8,13 @@
 set -uo pipefail
 
 INPUT=$(cat)
+
+if ! command -v jq >/dev/null 2>&1; then
+  # Visible skip log (stderr) instead of a silent no-op, then fail open.
+  echo "[compact-plus] jq not found; PostCompact recovery marker skipped" >&2
+  exit 0
+fi
+
 SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // empty' 2>/dev/null)
 [[ -z "$SESSION_ID" ]] && exit 0
 

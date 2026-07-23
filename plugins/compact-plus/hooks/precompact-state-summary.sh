@@ -32,6 +32,13 @@ DEFAULT_FALLBACK_BACKEND='tmp=$(mktemp "${TMPDIR:-/tmp}/compact-plus-codex.XXXXX
 FALLBACK_CMD="${COMPACT_PLUS_FALLBACK_BACKEND-$DEFAULT_FALLBACK_BACKEND}"
 
 INPUT=$(cat)
+
+if ! command -v jq >/dev/null 2>&1; then
+  # Visible skip log (stderr) instead of a silent no-op, then fail open.
+  echo "[compact-plus] jq not found; PreCompact state summary skipped" >&2
+  exit 0
+fi
+
 SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || true)
 TRANSCRIPT_PATH=$(printf '%s' "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || true)
 TRIGGER=$(printf '%s' "$INPUT" | jq -r '.trigger // "unknown"' 2>/dev/null || printf 'unknown')
@@ -41,7 +48,6 @@ CUSTOM_INSTRUCTIONS=$(printf '%s' "$INPUT" | jq -r '.custom_instructions // empt
 [[ -n "$TRANSCRIPT_PATH" ]] || exit 0
 [[ -f "$TRANSCRIPT_PATH" ]] || exit 0
 [[ -f "$PROMPT_FILE" ]] || exit 0
-command -v jq >/dev/null 2>&1 || exit 0
 
 STATE_FILE="$STATE_DIR/$SESSION_ID.md"
 OFFSET_FILE="$OFFSET_DIR/$SESSION_ID"
@@ -298,12 +304,22 @@ build_user_prompt() {
 }
 
 required_headings_ok() {
-  local text="$1" h
-  for h in "## Active Plan" "## Current Phase" "## TaskList Summary" "## Session Decisions" \
-           "## Constraints and Blockers" "## Worker Topology" "## Skills Invoked" \
-           "## Editing Files" "## Failed Attempts" "## Recovery Notes"; do
-    printf '%s\n' "$text" | grep -qF "$h" || return 1
-  done
+  # prompts/state-summary.md の契約: 10 個の ## 見出しが正確な順序で各ちょうど 1 回。
+  # ## レベルの見出し列全体を期待列と厳密比較することで、欠落・重複・順序違反・
+  # 余分な ## 見出しをすべて拒否する。
+  local text="$1" expected actual
+  expected='## Active Plan
+## Current Phase
+## TaskList Summary
+## Session Decisions
+## Constraints and Blockers
+## Worker Topology
+## Skills Invoked
+## Editing Files
+## Failed Attempts
+## Recovery Notes'
+  actual=$(printf '%s\n' "$text" | grep -E '^## ' || true)
+  [[ "$actual" == "$expected" ]]
 }
 
 run_backend_if_set() {
