@@ -474,9 +474,9 @@ test("codex models outside the verified table defer effort validation to the ser
         }
       );
       assert.equal(result.status, 0, `${model}: ${result.stderr}`);
-      assert.match(
-        result.stderr,
-        new RegExp(`effort not pre-validated: codex model "${model.replace(/\./g, "\\.")}"`)
+      assert.ok(
+        result.stderr.includes(`effort not pre-validated: codex model "${model}"`),
+        `${model}: ${result.stderr}`
       );
     } finally {
       fs.rmSync(tempDir, { recursive: true, force: true });
