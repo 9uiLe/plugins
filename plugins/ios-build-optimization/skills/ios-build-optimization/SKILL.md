@@ -24,7 +24,7 @@ description: "Diagnose and optimize build times and module architecture for larg
 
 ## 1. 入力トリアージ(step 0・必須)
 
-§23 全項目を最初に要求しない。まず次の 4 群を確認する:
+`$PLUGIN_ROOT/references/templates.md` §1 の全入力項目を最初に要求しない。まず次の 4 群を確認する:
 
 1. **症状**: 何が遅いか(クリーン / 増分 / リンク / Preview / テスト / CI)、体感か計測か
 2. **環境**: Xcode version、Swift version / language mode、マシン
@@ -90,7 +90,7 @@ description: "Diagnose and optimize build times and module architecture for larg
 3. **references を読む**(下のルーティング表。必要なものだけ)
 4. **claim 別ゲート評価**(§3)
 5. **提案作成**: すべての提案は `$PLUGIN_ROOT/references/templates.md` の提案テンプレートに従い、根拠ラベル行を必須とする
-6. **優先順位付け**: 意思決定の優先順位(templates.md §意思決定の優先順位)に従う — 特定 → 不要な仕事の除去 → 依存 edge 削減 → critical path 短縮 → 統合/分割 → 設定統一 → コンパイル最適化 → linkage → Binary → 分散ビルド基盤、の順。高コストな基盤導入より先にグラフと不要処理を直す
+6. **優先順位付け**: 意思決定の優先順位(roadmap-and-checklists.md §1「意思決定の優先順位」)に従う — 特定 → 不要な仕事の除去 → 依存 edge 削減 → critical path 短縮 → 統合/分割 → 設定統一 → コンパイル最適化 → linkage → Binary → 分散ビルド基盤、の順。高コストな基盤導入より先にグラフと不要処理を直す
 7. **自己検査**(§7)
 
 ### references ルーティング表

@@ -55,4 +55,4 @@ codex plugin add ios-build-optimization@9uile-plugins
 ## リリース前検証(未了・引き継ぎ事項)
 
 - [ ] Claude Code / Codex 両ランタイムでのローカルインストール実験(CONTRIBUTING 記載手順)
-- [ ] フィクスチャ 3 種(計測なし / 計測あり / greenfield 設計)での forward test: 計測なし入力で計測計画のみが出力されること、全提案にラベル行があること
+- [ ] フィクスチャ 3 種(計測なし / 計測あり / greenfield 設計)での forward test: フィクスチャ入力とアサーションは [`tests/fixtures/`](./tests/) に整備済み。実行(手動またはエージェント)が未了
