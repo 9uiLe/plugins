@@ -312,6 +312,131 @@ test("a genuinely mixed-transport council validates in one record (#77 follow-up
   assert.ok(blocked2.findings.some((f) => f.code === "INVALID_PROBE_EVIDENCE" && f.ref === "DIRECT_CLI"));
 });
 
+test("duplicate probes resolve by probedAt, not array position (#77 follow-up)", () => {
+  // Newer UNAVAILABLE placed BEFORE an older AVAILABLE: array-position
+  // resolution picked the stale AVAILABLE and passed; the authoritative
+  // (newest) probe is the failure, which contradicts active use → BLOCKED.
+  const staleSuccessLast = record({
+    probes: [
+      probe("HOST_NATIVE"),
+      probe("BUNDLED_ADAPTER"),
+      probe("DIRECT_CLI", { status: "UNAVAILABLE", probedAt: "2026-07-24" }),
+      probe("DIRECT_CLI", { status: "AVAILABLE", probedAt: "2026-07-20" })
+    ]
+  });
+  const blocked = evaluateTransportGate(staleSuccessLast);
+  assert.equal(blocked.status, "BLOCKED");
+  assert.ok(blocked.findings.some((f) => f.code === "INVALID_PROBE_EVIDENCE" && f.ref === "DIRECT_CLI"));
+
+  // Older failure placed AFTER a newer success: array-position resolution
+  // picked the stale failure and blocked; the newest probe says AVAILABLE for
+  // a transport in active use → no contradiction, gate passes.
+  const staleFailureLast = record({
+    probes: [
+      probe("HOST_NATIVE"),
+      probe("BUNDLED_ADAPTER"),
+      probe("DIRECT_CLI", { status: "AVAILABLE", probedAt: "2026-07-24" }),
+      probe("DIRECT_CLI", { status: "UNAVAILABLE", probedAt: "2026-07-20" })
+    ]
+  });
+  const passed = evaluateTransportGate(staleFailureLast);
+  assert.equal(passed.status, "PASS");
+
+  // The same probedAt resolution applies to skip evidence for higher tiers:
+  // a newer AVAILABLE hidden behind an older UNAVAILABLE cannot be skipped.
+  const hiddenAvailable = record({
+    probes: [
+      probe("HOST_NATIVE", { status: "AVAILABLE", probedAt: "2026-07-24" }),
+      probe("HOST_NATIVE", { status: "UNAVAILABLE", probedAt: "2026-07-20" }),
+      probe("BUNDLED_ADAPTER")
+    ]
+  });
+  const skipped = evaluateTransportGate(hiddenAvailable);
+  assert.equal(skipped.status, "BLOCKED");
+  assert.ok(skipped.findings.some((f) => f.code === "SKIPPED_AVAILABLE_TRANSPORT" && f.ref === "HOST_NATIVE"));
+});
+
+test("tied probedAt with disagreeing statuses fails closed in either array order (#77 follow-up)", () => {
+  const tied = (first, second, transport) => [
+    probe("HOST_NATIVE"),
+    probe("BUNDLED_ADAPTER"),
+    probe(transport, { status: first, probedAt: "2026-07-24" }),
+    probe(transport, { status: second, probedAt: "2026-07-24" })
+  ];
+  // Active-use path (selected DIRECT_CLI is in use), both orderings.
+  for (const [first, second] of [["AVAILABLE", "UNAVAILABLE"], ["UNAVAILABLE", "AVAILABLE"]]) {
+    const gate = evaluateTransportGate(record({ probes: tied(first, second, "DIRECT_CLI") }));
+    assert.equal(gate.status, "BLOCKED", `${first}/${second}`);
+    assert.ok(gate.findings.some((f) => f.code === "INVALID_PROBE_EVIDENCE" && f.ref === "DIRECT_CLI"));
+  }
+  // Higher-tier skip path, both orderings.
+  for (const [first, second] of [["AVAILABLE", "UNAVAILABLE"], ["UNAVAILABLE", "AVAILABLE"]]) {
+    const gate = evaluateTransportGate(
+      record({
+        probes: [
+          probe("HOST_NATIVE", { status: first, probedAt: "2026-07-24" }),
+          probe("HOST_NATIVE", { status: second, probedAt: "2026-07-24" }),
+          probe("BUNDLED_ADAPTER")
+        ]
+      })
+    );
+    assert.equal(gate.status, "BLOCKED", `${first}/${second}`);
+    assert.ok(gate.findings.some((f) => f.code === "INVALID_PROBE_EVIDENCE" && f.ref === "HOST_NATIVE"));
+  }
+  // Identical tied statuses are not ambiguous.
+  const agreeing = evaluateTransportGate(
+    record({
+      probes: [
+        probe("HOST_NATIVE", { probedAt: "2026-07-24" }),
+        probe("HOST_NATIVE", { probedAt: "2026-07-24" }),
+        probe("BUNDLED_ADAPTER")
+      ]
+    })
+  );
+  assert.equal(agreeing.status, "PASS");
+});
+
+test("tied same-status probes with mixed evidence validity fail closed in either order (#77 follow-up)", () => {
+  // Two UNAVAILABLE probes tied on the newest probedAt, one with valid
+  // evidence and one config-sourced. Validating only the first array entry
+  // would flip PASS↔BLOCKED on reordering; every tied entry must be valid.
+  const pair = (transport) => [
+    probe(transport, { probedAt: "2026-07-24" }),
+    probe(transport, { probedAt: "2026-07-24", sourceType: "CONFIG" })
+  ];
+  for (const ordered of [pair("HOST_NATIVE"), pair("HOST_NATIVE").reverse()]) {
+    const gate = evaluateTransportGate(record({ probes: [...ordered, probe("BUNDLED_ADAPTER")] }));
+    assert.equal(gate.status, "BLOCKED");
+    assert.ok(gate.findings.some((f) => f.code === "INVALID_PROBE_EVIDENCE" && f.ref === "HOST_NATIVE"));
+  }
+  // Active-use path: tied AVAILABLE probes for the selected DIRECT_CLI tier,
+  // one entry missing evidence — both orders block.
+  const usedPair = () => [
+    probe("DIRECT_CLI", { status: "AVAILABLE", probedAt: "2026-07-24" }),
+    probe("DIRECT_CLI", { status: "AVAILABLE", probedAt: "2026-07-24", evidence: "" })
+  ];
+  for (const ordered of [usedPair(), usedPair().reverse()]) {
+    const gate = evaluateTransportGate(
+      record({ probes: [probe("HOST_NATIVE"), probe("BUNDLED_ADAPTER"), ...ordered] })
+    );
+    assert.equal(gate.status, "BLOCKED");
+    assert.ok(gate.findings.some((f) => f.code === "INVALID_PROBE_EVIDENCE" && f.ref === "DIRECT_CLI"));
+  }
+});
+
+test("an undated probe record for a used transport fails evidence validation (#77 follow-up)", () => {
+  const undatedInUse = record({
+    probes: [
+      probe("HOST_NATIVE"),
+      probe("BUNDLED_ADAPTER"),
+      probe("DIRECT_CLI", { status: "AVAILABLE", probedAt: undefined })
+    ]
+  });
+  const gate = evaluateTransportGate(undatedInUse);
+  assert.equal(gate.status, "BLOCKED");
+  assert.ok(gate.findings.some((f) => f.code === "INVALID_PROBE_EVIDENCE" && f.ref === "DIRECT_CLI"));
+});
+
 test("exact-config authorization requires all four fields on both sides (#77 follow-up)", () => {
   const partial = record({ participants: [participant()] });
   // Authorization entries enumerating only the transport never match — even

@@ -22,6 +22,35 @@ const HARD_BLOCKS = ["UNKNOWN_TRANSPORT", "UNPROBED_TRANSPORT", "INVALID_PROBE_E
 
 const present = (value) => value !== undefined && value !== null && (typeof value !== "string" || value.trim() !== "");
 const validDate = (value) => present(value) && !Number.isNaN(Date.parse(value));
+
+// latestProbe — resolve the authoritative probe for a transport by probedAt,
+// NOT by array position: relying on input order lets an older AVAILABLE entry
+// mask a newer failure (or an old failure block a newer success). Fully
+// order-independent: probes tied on the maximum probedAt with disagreeing
+// statuses are a conflict (fail closed — no last-wins tiebreak), and undated
+// entries resolve to the first one, which then fails evidence validation.
+const validProbeEvidence = (probe) =>
+  present(probe?.evidence) && validDate(probe?.probedAt) && ["PROBE", "RUNTIME"].includes(probe?.sourceType);
+
+function latestProbe(probes, transport) {
+  const matching = probes.filter((p) => p?.transport === transport);
+  if (!matching.length) return { probe: null, conflict: false, invalidEvidence: false };
+  const dated = matching.filter((p) => validDate(p?.probedAt));
+  // Only undated entries: nothing can be ordered, and none carries valid
+  // evidence — fail closed regardless of array order.
+  if (!dated.length) return { probe: matching[0], conflict: false, invalidEvidence: true };
+  const maxTs = Math.max(...dated.map((p) => Date.parse(p.probedAt)));
+  const newest = dated.filter((p) => Date.parse(p.probedAt) === maxTs);
+  return {
+    probe: newest[0],
+    // Entries tied on the newest probedAt must agree on status; a
+    // disagreement has no order-independent resolution.
+    conflict: new Set(newest.map((p) => p.status)).size > 1,
+    // EVERY entry tied on the newest probedAt must carry valid evidence —
+    // validating only one of them would reintroduce array-order dependence.
+    invalidEvidence: newest.some((p) => !validProbeEvidence(p))
+  };
+}
 const finding = (code, ref, message) => ({ code, ref: ref ?? null, message });
 const ownerProvenance = (entry) => present(entry?.owner) && validDate(entry?.approvedAt);
 const participantKey = (p) => [p?.transport, p?.family, p?.model, p?.effort].map((v) => v ?? "").join("|");
@@ -108,8 +137,11 @@ export function evaluateTransportGate(record) {
   // covers EVERY used transport, including the selected tier itself.
   for (const used of usedTransports) {
     if (FALLBACK_ORDER.indexOf(used) < 0) continue; // unknown transports are flagged per participant below
-    const probe = probes.filter((p) => p?.transport === used).at(-1);
-    if (probe && PROBE_FAILURES.has(probe.status)) findings.push(finding("INVALID_PROBE_EVIDENCE", used, "A transport recorded as failed/unavailable cannot also be in active use by a participant"));
+    const { probe, conflict, invalidEvidence } = latestProbe(probes, used);
+    if (!probe) continue; // a used transport needs no probe record at all
+    if (conflict) findings.push(finding("INVALID_PROBE_EVIDENCE", used, "Conflicting probes share the newest probedAt; ambiguous evidence fails closed"));
+    else if (invalidEvidence) findings.push(finding("INVALID_PROBE_EVIDENCE", used, "Probe requires evidence, a timestamp, and PROBE/RUNTIME source"));
+    else if (PROBE_FAILURES.has(probe.status)) findings.push(finding("INVALID_PROBE_EVIDENCE", used, "A transport recorded as failed/unavailable cannot also be in active use by a participant"));
   }
 
   // Every fallback path above the selected tier needs recorded probe failure
@@ -117,9 +149,10 @@ export function evaluateTransportGate(record) {
   for (const higher of tier > 0 ? FALLBACK_ORDER.slice(0, tier) : []) {
     if (usedTransports.has(higher)) continue; // in active use — not skipped (contradictions handled above)
     if (waivers.some((w) => w?.transport === higher && ownerProvenance(w))) continue;
-    const probe = probes.filter((p) => p?.transport === higher).at(-1);
+    const { probe, conflict, invalidEvidence } = latestProbe(probes, higher);
     if (!probe) { findings.push(finding("UNPROBED_TRANSPORT", higher, "Higher-priority transport requires a recorded probe failure, owner waiver, or active use")); continue; }
-    if (!present(probe.evidence) || !validDate(probe.probedAt) || !["PROBE", "RUNTIME"].includes(probe.sourceType)) { findings.push(finding("INVALID_PROBE_EVIDENCE", higher, "Probe requires evidence, a timestamp, and PROBE/RUNTIME source")); continue; }
+    if (conflict) { findings.push(finding("INVALID_PROBE_EVIDENCE", higher, "Conflicting probes share the newest probedAt; ambiguous evidence fails closed")); continue; }
+    if (invalidEvidence) { findings.push(finding("INVALID_PROBE_EVIDENCE", higher, "Probe requires evidence, a timestamp, and PROBE/RUNTIME source")); continue; }
     if (probe.status === "AVAILABLE") findings.push(finding("SKIPPED_AVAILABLE_TRANSPORT", higher, "An available higher-priority transport cannot be skipped without an owner waiver"));
     else if (!PROBE_FAILURES.has(probe.status)) findings.push(finding("INVALID_PROBE_EVIDENCE", higher, "Probe status must be FAILED, UNAVAILABLE, or AVAILABLE"));
   }
