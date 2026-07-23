@@ -128,11 +128,15 @@ swift:
         note: >
           observed_change_frequency は Khononov Volatility の proxy であり、BALANCE 判定での
           採用時は 推測 ラベル必須 (07a §5.3 / H5)。観測ウィンドウは本文併記必須。
+          計測はモジュール (module_unit) 単位の pathspec で行う。リポジトリ全体のコミット数を
+          単一モジュールの変更頻度として帰属させない。
       - id: intrusive-hits
         metric: モジュール境界を跨ぐ private/internal シンボル参照件数
         ref: "Khononov 2024, Ch.7 / 07a §3 / 07a §9 H3"
-        run: "semgrep --config p/swift --json"                # experimental rule set 利用
-        fallback: "scripts/coupling-gate-swift.sh --signal intrusive"
+        # 注意: 汎用 semgrep ruleset (p/swift) は lint/security 指摘の集合であり、クロスモジュール
+        #       private/internal アクセス検出ルールを含まないため、その件数を本シグナルに計上しない。
+        #       専用のクロスバウンダリルール (モジュール帰属付き) が整備できた時点で run に昇格させる。
+        run: "scripts/coupling-gate-swift.sh --signal intrusive"   # ripgrep による @testable import 検出
         threshold:
           bands:
             - { max: 0, label: "clean",    severity: info }
@@ -175,6 +179,9 @@ swift:
         formula: "count(STRENGTH XOR DISTANCE OR NOT VOLATILITY) / count(all_module_pairs)"
         post_process: "scripts/coupling-gate-swift.sh --aggregate balance"
         threshold: { min: 0.7 }                              # 概観しきい値、verdict 根拠不可
+        # 実装状況: per-pair の signal 計測が未実装のため、post_process は比率を出力しない。
+        #   現状は 2値化した worst-case 入力で式を評価した `balance-worst-case`
+        #   (indicative-true/false) を出力し、pairs_ratio: not-computed を明示する。
         note: >
           aggregate スコアは Khononov 2024 が名指しで否定する "count-based" 系メトリクスに近い。
           概観目的 (dashboard 表示等) に限定し、指摘の severity 根拠としては引用しない (H2)。

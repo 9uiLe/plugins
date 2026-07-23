@@ -73,7 +73,7 @@
 | **4. (Micro)Services** | 異サービス間（公式表記はカッコ付き） | Order Service → Payment Service |
 | **5. Systems** | 異システム間（多くの場合、組織境界を跨ぐ） | 自社サービス → 外部 SaaS |
 
-**公式表記**: 第 4 段は **"(Micro)Services"**（カッコ付き）であり、"Microservices" と単独表記しない（出典: [coupling.dev/posts/related-topics/distance/](https://coupling.dev/posts/related-topics/distance/)）。
+**公式表記**: 第 4 段は **"(Micro)Services"**（カッコ付き）であり、"Microservices" と単独表記しない（出典: [coupling.dev/posts/dimensions-of-coupling/distance/](https://coupling.dev/posts/dimensions-of-coupling/distance/)。2026-07-23 確認: HTTP 200、"(Micro)Services" 表記を含むことを検証済み）。
 
 **書籍の距離スペクトル（図 8.2 / 8.3 / 8.4, Ch.8, 邦訳 p.148 / p.149 / p.152）**: 書籍は Distance を連続軸として描き、上記 5 段より細かい例示点を置く:
 **文 (statement) → メソッド → オブジェクト → 名前空間・パッケージ → ライブラリ → (マイクロ)サービス → システム**。
@@ -421,7 +421,7 @@ Khononov 2024 は古典理論を Ch.5 と Ch.6 で取り込み直しており、
 
 **二次参考（H7 規律により定義参照のみ可、推奨根拠としては不可）**:
 
-- coupling.dev. *Dimensions of Coupling.* Vlad Khononov's blog. https://coupling.dev/posts/core-concepts/balance/ , https://coupling.dev/posts/dimensions-of-coupling/integration-strength/ , https://coupling.dev/posts/related-topics/distance/ , https://coupling.dev/posts/related-topics/module-coupling/
+- coupling.dev. *Dimensions of Coupling.* Vlad Khononov's blog. https://coupling.dev/posts/core-concepts/balance/ , https://coupling.dev/posts/dimensions-of-coupling/integration-strength/ , https://coupling.dev/posts/dimensions-of-coupling/distance/ , https://coupling.dev/posts/related-topics/module-coupling/
 - connascence.io. Community wiki. https://connascence.io
 
 **書籍原典確認済み（邦訳 島田訳, 2025-10-21 初版第 1 刷, ISBN 978-4-295-02296-1）**:

@@ -26,6 +26,7 @@
 #   ./coupling-gate-swift.sh --signal shared-model
 #   ./coupling-gate-swift.sh --signal cross-boundary-duplicates
 #   ./coupling-gate-swift.sh --aggregate balance
+#   ./coupling-gate-swift.sh --balance-eval S,D,V   # BALANCE 式の単体評価 (0|1 を出力。真理値表テスト用)
 #
 # 環境変数:
 #   CGS_TARGET                対象パス（既定: .）
@@ -46,6 +47,7 @@ MODULE_UNIT="${CGS_MODULE_UNIT:-spm-target}"
 VOLATILITY_WINDOW="${CGS_VOLATILITY_WINDOW:-6.months}"
 SIGNAL=""
 AGGREGATE=""
+BALANCE_EVAL=""
 RESULT_JSON="coupling-gate-result.json"
 
 # --- 引数解析 ---
@@ -58,6 +60,8 @@ while [ $# -gt 0 ]; do
     --since=*) VOLATILITY_WINDOW="${1#*=}"; shift;;
     --target=*) TARGET="${1#*=}"; shift;;
     --module-unit=*) MODULE_UNIT="${1#*=}"; shift;;
+    --balance-eval) BALANCE_EVAL="$2"; shift 2;;
+    --balance-eval=*) BALANCE_EVAL="${1#*=}"; shift;;
     -h|--help)
       sed -n '2,30p' "$0"; exit 0;;
     *) shift;;
@@ -68,6 +72,10 @@ declare -a ROWS=()
 ANY_RAN=0
 ANY_SKIPPED=0
 INTRUSIVE_HITS=0
+DISTANCE_LEVEL=0          # measured 時に 1..5 を保持（BALANCE の D 入力）
+VOLATILITY_MAX=0          # module 単位計測の最大値（BALANCE の V 入力・worst-case）
+DUP_COUNT_MEASURED=-1     # cross-boundary-duplicates の計測値（未計測は -1）
+SHARED_MODEL_MEASURED=-1  # shared-model-surface の計測値（未計測は -1）
 MEASURED_LIST=""          # measured 済み signal id の空白区切りリスト（bash 3.2 互換）
 
 have() { command -v "$1" >/dev/null 2>&1; }
@@ -174,6 +182,7 @@ run_distance() {
           ((.product_dependencies // [])[]? | "\($f)=>\(.)=d4") ) ]
     | (.[0:6] | join(", ")) + (if length > 6 then " …(+\(length-6))" else "" end)' 2>/dev/null || echo "")
   [ -z "$EDGE_BREAKDOWN" ] && EDGE_BREAKDOWN="no inter-target edges (decoupled)"
+  DISTANCE_LEVEL="$MAX_DIST"
   read -r BAND SEV < <(band_classify "$MAX_DIST" "distance-level")
   record "distance-level" "swift package describe" "measured" "$MAX_DIST" "level" "$BAND" "$SEV" \
     "${TARGET_COUNT} targets, intra-edges=${INTRA_EDGES}, cross-edges=${CROSS_EDGES}; worst-case 段 (平均不可 H2); module_unit=$MODULE_UNIT; pairs: ${EDGE_BREAKDOWN}"
@@ -182,6 +191,9 @@ run_distance() {
 # ============================================================
 # SIGNAL 2: volatility-proxy
 # observed_change_frequency。--since=<window> は本文にも JSON にも記録（H5）。
+# モジュール単位（spm-target）の pathspec で計測する。リポジトリ全体のコミット数を
+# 単一モジュールの変更頻度として扱わない（#75 B-P20: 対象モジュールが未変更でも
+# 活発なリポジトリでは volatility が高く見えてしまう）。
 # ============================================================
 run_volatility() {
   if ! have git; then
@@ -192,28 +204,54 @@ run_volatility() {
     record "volatility-proxy" "git log" "skipped" "-" "commits" "-" "-" "git リポジトリではない"
     return
   fi
+
+  # モジュール単位: spm-target が解決できる場合は target ごとの pathspec で計測（1 行/module）
+  if [ "$MODULE_UNIT" = "spm-target" ] && [ -f "$TARGET/Package.swift" ] && have swift && have jq; then
+    local DESC
+    DESC=$(cd "$TARGET" && swift package describe --type json 2>/dev/null || echo '{}')
+    local -a MNAMES=() MPATHS=()
+    while IFS=$'\t' read -r _n _p; do
+      [ -z "$_n" ] && continue
+      [ -z "$_p" ] && _p="Sources/$_n"
+      MNAMES+=("$_n"); MPATHS+=("$_p")
+    done < <(echo "$DESC" | jq -r '.targets[]? | [.name, (.path // "")] | @tsv' 2>/dev/null)
+    if [ "${#MNAMES[@]}" -gt 0 ]; then
+      local mi COUNT
+      for mi in "${!MNAMES[@]}"; do
+        COUNT=$(git -C "$TARGET" log --since="$VOLATILITY_WINDOW" --oneline -- "${MPATHS[$mi]}" 2>/dev/null | wc -l | tr -d ' ')
+        COUNT="${COUNT:-0}"
+        [ "$COUNT" -gt "$VOLATILITY_MAX" ] && VOLATILITY_MAX="$COUNT"
+        read -r BAND SEV < <(band_classify "$COUNT" "volatility-proxy")
+        record "volatility-proxy" "git log (pathspec)" "measured" "$COUNT" "commits" "$BAND" "$SEV" \
+          "module=${MNAMES[$mi]} path=${MPATHS[$mi]}; observation_window=--since=$VOLATILITY_WINDOW (H5 規律により BALANCE 適用時 推測 ラベル必須)"
+      done
+      return
+    fi
+  fi
+
+  # fallback: モジュール境界を解決できない場合も TARGET サブツリーの pathspec に限定する
+  # （リポジトリ全体のコミット数は数えない）。モジュール帰属なしのラベルを併記。
   local COUNT
-  COUNT=$(git -C "$TARGET" log --since="$VOLATILITY_WINDOW" --oneline 2>/dev/null | wc -l | tr -d ' ')
+  COUNT=$(git -C "$TARGET" log --since="$VOLATILITY_WINDOW" --oneline -- . 2>/dev/null | wc -l | tr -d ' ')
   COUNT="${COUNT:-0}"
+  [ "$COUNT" -gt "$VOLATILITY_MAX" ] && VOLATILITY_MAX="$COUNT"
   read -r BAND SEV < <(band_classify "$COUNT" "volatility-proxy")
-  record "volatility-proxy" "git log" "measured" "$COUNT" "commits" "$BAND" "$SEV" \
-    "observation_window=--since=$VOLATILITY_WINDOW (H5 規律により BALANCE 適用時 推測 ラベル必須)"
+  record "volatility-proxy" "git log (subtree)" "measured" "$COUNT" "commits" "$BAND" "$SEV" \
+    "module attribution: none (subtree fallback — TARGET 配下のみ計上); observation_window=--since=$VOLATILITY_WINDOW (H5 規律により BALANCE 適用時 推測 ラベル必須)"
 }
 
 # ============================================================
 # SIGNAL 3: intrusive-hits
-# モジュール境界を越える private/internal シンボル参照。試作: Semgrep があれば利用、なければ
-# パターン検索のみ（Swift access level `private`/`fileprivate`/`internal` 露出パターン）。
+# モジュール境界を越える private/internal シンボル参照。
+# 検出経路は ripgrep による @testable import パターンのみ（モジュール帰属が明確な唯一の経路）。
+# 注意: 汎用 Semgrep ruleset (p/swift) は lint/security 指摘の集合であり、クロスモジュール
+#       private/internal アクセスを検出するルールを含まない。その件数を intrusive_hits に
+#       計上すると偽の結合度 High/Critical を生むため、本シグナルでは使用しない（#75 B-P19）。
+#       専用のクロスバウンダリ検出ルール（モジュール帰属付き）が用意できた時点で再導入する。
 # ============================================================
 run_intrusive() {
   local HITS=0 TOOL="" SHARED_ELEMENTS=""
-  if have semgrep; then
-    TOOL="semgrep"
-    # experimental: 公式 Swift ruleset がない場合は 0 件返す（捏造禁止）
-    HITS=$(semgrep --config p/swift --json "$TARGET" 2>/dev/null | jq '.results | length' 2>/dev/null || echo 0)
-    HITS="${HITS:-0}"
-    SHARED_ELEMENTS="semgrep p/swift (experimental); カスタム ruleset / SWAN (Tiganov 2020) で精密化余地あり"
-  elif have rg; then
+  if have rg; then
     TOOL="ripgrep-pattern"
     # `@testable import` は internal シンボルを境界を越えて露出させる Swift 唯一の静的 intrusive 経路。
     # ただし Tests/ 配下の @testable は正当（テスト目的）。本番ソース側の @testable のみを intrusive と数える。
@@ -231,7 +269,8 @@ run_intrusive() {
     fi
     HITS="${HITS:-0}"
   else
-    record "intrusive-hits" "(semgrep|rg)" "skipped" "-" "hits" "-" "-" "semgrep / ripgrep 未インストール"
+    record "intrusive-hits" "ripgrep-pattern" "skipped" "-" "hits" "-" "-" \
+      "ripgrep 未インストール。汎用 semgrep p/swift は intrusive 検出ルールを含まないため代用しない (B-P19)"
     return
   fi
   HITS="${HITS:-0}"
@@ -258,6 +297,7 @@ run_duplicates() {
   OUT=$(jscpd --reporters json --silent "$TARGET" 2>/dev/null || echo '{}')
   DUP_COUNT=$(echo "$OUT" | jq '.statistics.total.clones // 0' 2>/dev/null || echo 0)
   DUP_COUNT="${DUP_COUNT:-0}"
+  DUP_COUNT_MEASURED="$DUP_COUNT"
   read -r BAND SEV < <(band_classify "$DUP_COUNT" "cross-boundary-duplicates")
   record "cross-boundary-duplicates" "jscpd" "measured" "$DUP_COUNT" "pairs" "$BAND" "$SEV" \
     "Functional Coupling シグナル。hint table 入力（候補）。重複対の path:line 併記必須 (H3)"
@@ -316,6 +356,7 @@ run_shared_model() {
           done
         done
       done
+      SHARED_MODEL_MEASURED="$CROSS_COUNT"
       read -r BAND SEV < <(band_classify "$CROSS_COUNT" "shared-model-surface")
       record "shared-model-surface" "swift package describe + ripgrep" "measured" "$CROSS_COUNT" "types" "$BAND" "$SEV" \
         "境界跨ぎ参照のみ計上 (Model Coupling, 07a §3)。DTO 専用なら model-low、ドメインロジック付きは 1 件でも model-heavy 扱い (07a §6.5 hint table; 候補)。shared elements (H3): ${EXAMPLES:-none}"
@@ -327,43 +368,96 @@ run_shared_model() {
   local PUBLIC_TYPES
   PUBLIC_TYPES=$(rg -c '^(public|open) (struct|class|protocol|enum) ' "$TARGET" --glob '*.swift' 2>/dev/null | awk -F: '{ s += $2 } END { print s+0 }')
   PUBLIC_TYPES="${PUBLIC_TYPES:-0}"
+  SHARED_MODEL_MEASURED="$PUBLIC_TYPES"
   read -r BAND SEV < <(band_classify "$PUBLIC_TYPES" "shared-model-surface")
   record "shared-model-surface" "ripgrep-pattern" "measured" "$PUBLIC_TYPES" "types" "$BAND" "$SEV" \
     "Model Coupling シグナル (境界跨ぎ判定なし fallback: distance basis path-depth)。DTO 専用なら model-low、ドメインロジック付きなら 1 件でも model-heavy (07a §6.5 hint table; 候補)"
 }
 
 # ============================================================
-# AGGREGATE: balance-pairs-ratio
+# AGGREGATE: balance-worst-case
 # 概観目的のみ。verdict 根拠に使わない（H2 / Khononov count-based 否定）。
-# 試作: シグナル単位の band severity を集約して boolean 化。
+# BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY (07a §6.1, 書籍 verbatim) を
+# 2値化した worst-case 入力で忠実に評価する。
+# 注: quality-gates.yml の balance-pairs-ratio (対ごとの BALANCE 比率) は per-pair の
+#     signal 計測が未実装のため計算しない。「比率」を偽装せず not-computed と明示する
+#     （#75 B-P21: 旧実装は式を評価せず intrusive 有無だけで indicative-true を返していた）。
 # ============================================================
+
+# balance_formula <S:0|1> <D:0|1> <V:0|1> — BALANCE = (S XOR D) OR (NOT V) を 0/1 で返す
+balance_formula() {
+  local s="$1" d="$2" v="$3"
+  echo $(( (s ^ d) | (1 - v) ))
+}
+
 run_aggregate_balance() {
-  # BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY (07a §6.1)。
-  # 各次元の core SIGNAL（distance / volatility / intrusive）が measured で揃った時のみ
-  # 概観ラベルを出す。一つでも skipped なら inconclusive（skipped を pass と誤読させない）。
-  local BALANCE_LABEL STATUS NOTE missing=""
+  # 判定順序:
+  #   1. intrusive_hits>0 は他シグナルの計測状態に関わらず常時 override で false
+  #      (07a §6.5 hint table。false 側の確定に他次元は不要)
+  #   2. core SIGNAL (distance / volatility / intrusive) が一つでも未計測なら inconclusive
+  #   3. STRENGTH の 2値化に使う候補シグナル (duplicates / shared-model) が未計測なら
+  #      inconclusive — skipped を「S=低」と誤推定して indicative-true を出さない
+  #      (Strength は intrusive だけでなく functional/model 段でも高くなりうるため)
+  #   4. 全入力が揃った時のみ式を評価する
+  local BALANCE_LABEL STATUS NOTE missing="" missing_strength=""
   is_measured distance-level   || missing="$missing distance-level"
   is_measured volatility-proxy || missing="$missing volatility-proxy"
   is_measured intrusive-hits   || missing="$missing intrusive-hits"
+  [ "$DUP_COUNT_MEASURED" -ge 0 ]    || missing_strength="$missing_strength cross-boundary-duplicates"
+  [ "$SHARED_MODEL_MEASURED" -ge 0 ] || missing_strength="$missing_strength shared-model-surface"
 
-  if [ "$ANY_RAN" -eq 0 ]; then
+  if is_measured intrusive-hits && [ "$INTRUSIVE_HITS" -gt 0 ]; then
+    # intrusive_hits>0 は式の結果・他シグナルの欠落に関わらず常時 override で false
+    STATUS="measured"; BALANCE_LABEL="false (intrusive override)"
+    NOTE="intrusive_hits=${INTRUSIVE_HITS}>0 の常時 override (07a §6.5)。false 側の確定に他次元の計測は不要。pairs_ratio: not-computed (per-pair signal 未実装)。概観目的のみ。verdict 根拠不可 (H2)。試作値"
+  elif [ "$ANY_RAN" -eq 0 ]; then
     STATUS="inconclusive"; BALANCE_LABEL="inconclusive (all signals skipped)"
     NOTE="全 SIGNAL skipped。集計不能。skipped を pass と誤読しない (H2 / 試作値)"
   elif [ -n "$missing" ]; then
     STATUS="inconclusive"; BALANCE_LABEL="inconclusive (missing:${missing})"
     NOTE="BALANCE 各次元の core SIGNAL が未計測 (missing:${missing})。集計不能。skipped を pass と誤読しない (H2 / 試作値)"
-  elif [ "$INTRUSIVE_HITS" -gt 0 ]; then
-    STATUS="measured"; BALANCE_LABEL="false (intrusive override)"
-    NOTE="概観目的のみ。verdict 根拠不可 (H2 / Khononov count-based 否定)。試作値"
+  elif [ -n "$missing_strength" ]; then
+    STATUS="inconclusive"; BALANCE_LABEL="inconclusive (missing strength inputs:${missing_strength})"
+    NOTE="STRENGTH 2値化に必要な候補シグナルが未計測 (missing:${missing_strength})。skipped を S=低 と誤推定して indicative-true を出さない (H2 / 試作値)"
   else
-    STATUS="measured"; BALANCE_LABEL="indicative-true"  # 個別ペア判定ではないことを示す名
-    NOTE="概観目的のみ。verdict 根拠不可 (H2 / Khononov count-based 否定)。試作値"
+    # 2値化 (書籍は 2値スケール前提: 高=1/低=0。H2):
+    #   STRENGTH: intrusive_hits>0 → 1 (上で処理済み)。ここでは strength 候補シグナル
+    #             (duplicates band functional / shared-model band model-heavy) から 推測 (候補ベース)。
+    #   DISTANCE: level >= 4 (cross-service 以遠) → 1
+    #   VOLATILITY: module 単位計測の最大値 > 20 (volatile/hot-spot 帯) → 1
+    local S_HIGH=0 D_HIGH=0 V_HIGH=0 S_BASIS="intrusive=0, duplicates=${DUP_COUNT_MEASURED}, shared-model=${SHARED_MODEL_MEASURED}"
+    if [ "$DUP_COUNT_MEASURED" -gt 3 ]; then
+      S_HIGH=1; S_BASIS="duplicates=${DUP_COUNT_MEASURED} (functional 帯; 候補ベース 推測)"
+    elif [ "$SHARED_MODEL_MEASURED" -gt 10 ]; then
+      S_HIGH=1; S_BASIS="shared-model=${SHARED_MODEL_MEASURED} (model-heavy 帯; 候補ベース 推測)"
+    fi
+    [ "$DISTANCE_LEVEL" -ge 4 ] && D_HIGH=1
+    [ "$VOLATILITY_MAX" -gt 20 ] && V_HIGH=1
+
+    local BAL
+    BAL=$(balance_formula "$S_HIGH" "$D_HIGH" "$V_HIGH")
+    STATUS="measured"
+    if [ "$BAL" -eq 1 ]; then
+      BALANCE_LABEL="indicative-true (worst-case)"   # 対ごとの判定ではないことを示す名
+    else
+      BALANCE_LABEL="indicative-false (worst-case)"
+    fi
+    NOTE="formula=(S XOR D) OR NOT V; inputs: S=${S_HIGH} (${S_BASIS}), D=${D_HIGH} (level=${DISTANCE_LEVEL}), V=${V_HIGH} (max=${VOLATILITY_MAX}); pairs_ratio: not-computed (per-pair signal 未実装)。概観目的のみ。verdict 根拠不可 (H2 / Khononov count-based 否定)。試作値"
   fi
-  ROWS+=("$(printf '{"signal":"balance-pairs-ratio","tool":"aggregate","status":"%s","value":"%s","unit":"label","band":"-","severity":"-","module_unit":"%s","observation_window":"%s","note":"%s"}' \
+  ROWS+=("$(printf '{"signal":"balance-worst-case","tool":"aggregate","status":"%s","value":"%s","unit":"label","band":"-","severity":"-","module_unit":"%s","observation_window":"%s","note":"%s"}' \
     "$STATUS" "$BALANCE_LABEL" "$MODULE_UNIT" "$VOLATILITY_WINDOW" "$NOTE")")
   printf '  [%-9s] %-30s value=%-30s note=概観のみ\n' \
-    "$STATUS" "balance-pairs-ratio" "$BALANCE_LABEL"
+    "$STATUS" "balance-worst-case" "$BALANCE_LABEL"
 }
+
+# --- BALANCE 式の単体評価モード（真理値表テスト用。計測は行わない） ---
+if [ -n "$BALANCE_EVAL" ]; then
+  IFS=',' read -r _S _D _V <<< "$BALANCE_EVAL"
+  case "$_S$_D$_V" in
+    [01][01][01]) balance_formula "$_S" "$_D" "$_V"; exit 0;;
+    *) echo "usage: --balance-eval S,D,V (各 0|1)" >&2; exit 64;;
+  esac
+fi
 
 echo "== 結合の深掘り (07a 補論) SIGNAL 計測 — Swift =="
 echo "target: $TARGET"
