@@ -1,6 +1,6 @@
 # モデル価格とコスト構造
 
-> **典拠**: platform.claude.com — Models Overview / Pricing (claude-api skill 経由、2026-06-24 時点キャッシュ) + Anthropic 公式発表 (2026-07-02 確認)。§1〜§3 の数値は 2026-07-23 に公式 Pricing ページで再照合済み。最新値は `https://platform.claude.com/docs/en/pricing.md` を参照すること。
+> **典拠**: platform.claude.com — Models Overview / Pricing (claude-api skill 経由、2026-06-24 時点キャッシュ) + Anthropic 公式発表 (2026-07-02 確認)。§1〜§3 の数値は 2026-07-23 に公式 Pricing ページで再照合済み。最新値は `https://platform.claude.com/docs/en/about-claude/pricing` を参照すること(2026-07-23 確認: HTTP 200、`claude-fable-5` / `claude-opus-4-8` / `claude-sonnet-5` など表中のモデル ID を含むことを検証済み)。
 >
 > **サブスクリプションとの関係**: Claude Code のサブスク利用でも、Fable 5 は §4 の通り **従量課金クレジット制**(同梱期間は 2026-07-07 で終了)。他モデルは引き続きサブスク枠内。本書の API 価格は「クレジット消費の単価」および「委譲でどれだけ枠消費を減らせるか」の基準として読む。
 

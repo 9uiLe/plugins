@@ -21,17 +21,23 @@ Claude Opus 4.8 ⊙ ctx 78% ▓▓▓▓▓▓▓░░░ 156k/200k  $1.92  ⚠
 ## §2 配線 (ユーザー/プロジェクトの settings.json)
 
 > **注意**: プラグインは statusLine を自動注入できない (Claude Code の仕様)。利用者が自分の `settings.json` に 1 度だけ配線する。
+>
+> さらに、`statusLine` は**プラグイン実行コンテキストの外**で動くため、`${CLAUDE_PLUGIN_ROOT}` は**展開されない**。必ずスクリプトの**絶対パス**を指定すること (`plugins/compact-plus` の statusline 配線と同じ制約)。
 
 ```json
 {
   "statusLine": {
     "type": "command",
-    "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/context-statusline.sh"
+    "command": "/absolute/path/to/model-strategy/scripts/context-statusline.sh"
   }
 }
 ```
 
-`${CLAUDE_PLUGIN_ROOT}` は model-strategy プラグインのルートに展開される。プラグイン外から使う場合はスクリプトの絶対パスを直接指定する。
+絶対パスの決め方:
+
+- **リポジトリ checkout がある場合 (推奨)**: checkout 内の `plugins/model-strategy/scripts/context-statusline.sh` を指す
+- **marketplace インストールのみの場合**: 実体は `~/.claude/plugins/cache/<marketplace名>/model-strategy/<version>/scripts/context-statusline.sh` に展開されるが、**version 付きパスはプラグイン更新のたびに変わる**。更新後に statusline が壊れたらパスを貼り直すこと (この理由から checkout パスの直接指定が確実)
+
 Codex でこのファイルを参照する場合は、この `references/` ディレクトリの 1 階層上をプラグインルートとして読み替える。
 
 ## §3 依存と設定
