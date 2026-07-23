@@ -230,6 +230,185 @@ test("empty or unknown records fail closed", () => {
   assert.equal(unknownTransport.status, "BLOCKED");
 });
 
+test("participant transport must match the selected transport (#77 B-P25)", () => {
+  // Chair reproduction: HOST_NATIVE is the top tier (no probes required), so a
+  // caller could previously smuggle GENERIC_SUBAGENT participants past every
+  // probe obligation just by labelling selectedTransport HOST_NATIVE.
+  const smuggled = record({
+    selectedTransport: "HOST_NATIVE",
+    probes: [],
+    participants: [
+      participant({ transport: "GENERIC_SUBAGENT" }),
+      participant({ id: "advisor-codex", family: "CODEX", model: "gpt-5.6-sol", transport: "GENERIC_SUBAGENT" })
+    ]
+  });
+  const gate = evaluateTransportGate(smuggled);
+  assert.equal(gate.status, "BLOCKED");
+  assert.equal(gate.dispatchAllowed, false);
+  assert.ok(gate.findings.some((f) => f.code === "TRANSPORT_MISMATCH"));
+
+  // A single participant on a LOWER-priority transport than declared also
+  // blocks, even when the rest match.
+  const oneOff = record({
+    participants: [participant(), participant({ id: "advisor-codex", family: "CODEX", transport: "GENERIC_SUBAGENT" })]
+  });
+  const gate2 = evaluateTransportGate(oneOff);
+  assert.equal(gate2.status, "BLOCKED");
+  assert.ok(gate2.findings.some((f) => f.code === "TRANSPORT_MISMATCH" && f.ref === "advisor-codex"));
+
+  // A declared tier that no participant actually uses is dishonest labelling
+  // in the other direction and blocks too.
+  const unusedTier = record({
+    selectedTransport: "GENERIC_SUBAGENT",
+    probes: [probe("HOST_NATIVE"), probe("BUNDLED_ADAPTER"), probe("DIRECT_CLI")],
+    participants: [participant({ transport: "HOST_NATIVE" })]
+  });
+  const gate3 = evaluateTransportGate(unusedTier);
+  assert.ok(gate3.findings.some((f) => f.code === "TRANSPORT_MISMATCH" && f.ref === "GENERIC_SUBAGENT"));
+  assert.equal(gate3.status, "BLOCKED");
+
+  // An unknown participant transport fails closed.
+  const unknown = record({
+    participants: [participant(), participant({ id: "advisor-codex", family: "CODEX", transport: "MYSTERY_BOX" })]
+  });
+  assert.ok(evaluateTransportGate(unknown).findings.some((f) => f.code === "TRANSPORT_MISMATCH" && f.ref === "advisor-codex"));
+});
+
+test("a genuinely mixed-transport council validates in one record (#77 follow-up)", () => {
+  // FABLE over DIRECT_CLI (the declared worst tier) + CODEX over
+  // BUNDLED_ADAPTER (higher priority, in active use → no skip evidence
+  // needed for it; only HOST_NATIVE above needs a probe).
+  const mixed = record({
+    probes: [probe("HOST_NATIVE")],
+    participants: [
+      participant(),
+      participant({ id: "advisor-codex", family: "CODEX", model: "gpt-5.6-sol", transport: "BUNDLED_ADAPTER" })
+    ]
+  });
+  const gate = evaluateTransportGate(mixed);
+  assert.equal(gate.status, "PASS");
+  assert.equal(gate.topologySatisfied, true);
+
+  // A transport recorded as UNAVAILABLE cannot simultaneously be in active
+  // use — the contradiction voids the probe evidence and blocks.
+  const contradiction = record({
+    probes: [probe("HOST_NATIVE"), probe("BUNDLED_ADAPTER")],
+    participants: [
+      participant(),
+      participant({ id: "advisor-codex", family: "CODEX", model: "gpt-5.6-sol", transport: "BUNDLED_ADAPTER" })
+    ]
+  });
+  const blocked = evaluateTransportGate(contradiction);
+  assert.equal(blocked.status, "BLOCKED");
+  assert.ok(blocked.findings.some((f) => f.code === "INVALID_PROBE_EVIDENCE" && f.ref === "BUNDLED_ADAPTER"));
+
+  // The contradiction check covers the SELECTED tier itself too: a
+  // DIRECT_CLI council whose own DIRECT_CLI probe says UNAVAILABLE blocks.
+  const selectedTierContradiction = record({
+    probes: [probe("HOST_NATIVE"), probe("BUNDLED_ADAPTER"), probe("DIRECT_CLI")]
+  });
+  const blocked2 = evaluateTransportGate(selectedTierContradiction);
+  assert.equal(blocked2.status, "BLOCKED");
+  assert.ok(blocked2.findings.some((f) => f.code === "INVALID_PROBE_EVIDENCE" && f.ref === "DIRECT_CLI"));
+});
+
+test("exact-config authorization requires all four fields on both sides (#77 follow-up)", () => {
+  const partial = record({ participants: [participant()] });
+  // Authorization entries enumerating only the transport never match — even
+  // though blank-for-blank key equality would have said otherwise.
+  const transportOnly = evaluateTransportGate({
+    ...partial,
+    degradedAuthorization: { approved: true, ...approval, participants: [{ transport: "DIRECT_CLI" }] }
+  });
+  assert.equal(transportOnly.status, "AUTHORIZATION_REQUIRED");
+  assert.ok(transportOnly.findings.some((f) => f.code === "AUTHORIZATION_CONFIG_MISMATCH"));
+
+  // Blank-for-blank: the actual participant misses `effort` and the
+  // authorization mirrors the same gap — still MISMATCH.
+  const blankForBlank = record({ participants: [participant({ effort: undefined })] });
+  const mirrored = evaluateTransportGate({
+    ...blankForBlank,
+    degradedAuthorization: {
+      approved: true,
+      ...approval,
+      participants: [{ transport: "DIRECT_CLI", family: "FABLE", model: "claude-fable-5" }]
+    }
+  });
+  assert.ok(mirrored.findings.some((f) => f.code === "AUTHORIZATION_CONFIG_MISMATCH"));
+
+  const execution = evaluateExecutionGate({
+    ...partial,
+    phase: "EXECUTION",
+    degradedAuthorization: { approved: true, ...approval, participants: [{ transport: "DIRECT_CLI" }] }
+  });
+  assert.equal(execution.executionAllowed, false);
+});
+
+test("a generic subagent claiming a family never satisfies the topology (#77 B-P26)", () => {
+  // Chair reproduction: GENERIC_SUBAGENT participants self-reporting
+  // family CODEX/FABLE with identityVerified: true previously satisfied a
+  // requested heterogeneous council even at CONSEQUENTIAL stakes.
+  const impostor = record({
+    selectedTransport: "GENERIC_SUBAGENT",
+    probes: [probe("HOST_NATIVE"), probe("BUNDLED_ADAPTER"), probe("DIRECT_CLI")],
+    participants: [
+      { id: "generic-fable", transport: "GENERIC_SUBAGENT", family: "FABLE", model: "claude-fable-5", effort: "high", identityVerified: true, effortVerified: true, accessVerified: true },
+      { id: "generic-codex", transport: "GENERIC_SUBAGENT", family: "CODEX", model: "gpt-5.6-sol", effort: "high", identityVerified: true, effortVerified: true, accessVerified: true }
+    ]
+  });
+  const gate = evaluateTransportGate(impostor);
+  assert.equal(gate.topologySatisfied, false);
+  assert.ok(gate.findings.some((f) => f.code === "TOPOLOGY_UNSATISFIED" && f.ref.includes("FABLE") && f.ref.includes("CODEX")));
+  assert.notEqual(gate.status, "PASS");
+  // Verified direct-CLI participants of the same families DO satisfy it.
+  assert.equal(evaluateTransportGate(record()).topologySatisfied, true);
+});
+
+test("LOW-stakes incomplete-topology execution requires exact-config authorization (#77 B-P27)", () => {
+  // Chair reproduction record from the issue: LOW stakes with owner
+  // provenance, FABLE+CODEX requested, only FABLE present, probes recorded,
+  // no degradedAuthorization.
+  const chairRecord = {
+    phase: "EXECUTION",
+    decision: {
+      stakes: "LOW",
+      stakesBasis: "OWNER_DIRECTIVE",
+      stakesApproval: { owner: "owner", approvedAt: "2026-07-20" },
+      categories: [],
+      requestedFamilies: ["FABLE", "CODEX"]
+    },
+    selectedTransport: "DIRECT_CLI",
+    probes: [
+      probe("HOST_NATIVE", { evidence: "probe failed" }),
+      probe("BUNDLED_ADAPTER", { evidence: "probe failed" })
+    ],
+    waivers: [],
+    participants: [participant({ id: "only-fable" })],
+    protocolFailures: []
+  };
+  const execution = evaluateExecutionGate(chairRecord);
+  assert.equal(execution.executionAllowed, false);
+  assert.equal(execution.provisionalRequired, true);
+
+  // Dispatch may still degrade at LOW stakes...
+  const dispatch = evaluateTransportGate(chairRecord);
+  assert.equal(dispatch.status, "DEGRADED");
+  assert.equal(dispatch.dispatchAllowed, true);
+
+  // ...and execution becomes eligible only with the exact-config authorization.
+  const authorized = evaluateExecutionGate({
+    ...chairRecord,
+    degradedAuthorization: {
+      approved: true,
+      ...approval,
+      participants: [{ transport: "DIRECT_CLI", family: "FABLE", model: "claude-fable-5", effort: "high" }]
+    }
+  });
+  assert.equal(authorized.executionAllowed, true);
+  assert.equal(authorized.provisionalRequired, true);
+  assert.match(authorized.provisionalMarker, /PROVISIONAL/);
+});
+
 test("low-stakes reversible-with-provenance decisions may degrade, not bypass probes", () => {
   const lowStakes = {
     decision: { stakes: "LOW", stakesBasis: "OWNER_JUDGMENT", categories: [], requestedFamilies: [], stakesApproval: approval },
