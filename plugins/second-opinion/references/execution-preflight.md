@@ -4,7 +4,7 @@ Run this gate after panel selection, after the transport gate (`transport-gate.m
 
 For each participant record requested and effective provider/model/effort separately; role; alias/snapshot status; host/adapter and config source; callability/authentication; context, reasoning, and output limits; evidence-size estimate; timeout; fallback policy; and field-level verification state, source type (`RUNTIME` or `PROBE` for a verified claim), source, and timestamp. Configuration intent alone remains `UNVERIFIED`.
 
-Record stakes with owner/date provenance, finite round/retry/fallback ceilings, a mandatory finite token ceiling, optional cost ceiling with versioned pricing provenance, and explicit authorization with owner/date evidence. Defaults are two rounds, zero retries, and zero fallbacks. Compute a conservative maximum over every participant and attempt with overflow-safe arithmetic.
+Record stakes with owner/date provenance, finite round/retry/fallback ceilings, a mandatory finite token ceiling, optional cost ceiling with versioned pricing provenance, and explicit authorization with owner/date evidence. Versioned pricing provenance means a `costProvenance` record with the pricing source, the currency, a valid `retrievedAt`/`pricingVersion` date no older than 30 days, and a price mapping covering every participant's effective model — a bare cost number without it is `UNVERIFIED_COST` (blocked for consequential stakes, degraded for `LOW`). Defaults are two rounds, zero retries, and zero fallbacks. Compute a conservative maximum over every participant and attempt with overflow-safe arithmetic.
 
 Emit this table before dispatch:
 

@@ -245,3 +245,107 @@ test("empty and structurally incomplete records fail closed", () => {
     false
   );
 });
+
+// --- #78 B-P29: confidence drift on the normalized scale --------------------
+
+function confidenceRecord(confidenceHistory, evidenceIds = ["E1"]) {
+  return record({
+    proposals: [proposal({ confidenceHistory, evidenceIds })],
+    acceptedTraces: [acceptedTrace({ evidenceIds })]
+  });
+}
+
+test("omitted confidence history fails closed instead of skipping the drift check", () => {
+  for (const missing of [undefined, []]) {
+    const result = validateDecisionRecord(confidenceRecord(missing));
+    assert.equal(result.valid, false);
+    assert.ok(result.findings.some((finding) => finding.code === "INVALID_CONFIDENCE"));
+  }
+});
+
+test("qualitative LOW→HIGH without new evidence fires; HIGH→LOW never does", () => {
+  // Lexicographically "HIGH" < "LOW", so the old comparison fired on
+  // decreases and missed increases — exactly backwards (#78 B-P29).
+  const increase = validateDecisionRecord(
+    confidenceRecord([
+      { value: "LOW", evidenceIds: ["E1"] },
+      { value: "HIGH", evidenceIds: ["E1"] }
+    ])
+  );
+  assert.ok(increase.findings.some((finding) => finding.code === "MEANS_AS_GOAL"));
+
+  const decrease = validateDecisionRecord(
+    confidenceRecord([
+      { value: "HIGH", evidenceIds: ["E1"] },
+      { value: "LOW", evidenceIds: ["E1"] }
+    ])
+  );
+  assert.ok(!decrease.findings.some((finding) => finding.code === "MEANS_AS_GOAL"));
+  assert.ok(!decrease.findings.some((finding) => finding.code === "INVALID_CONFIDENCE"));
+
+  const midScale = validateDecisionRecord(
+    confidenceRecord([
+      { value: "MEDIUM", evidenceIds: ["E1"] },
+      { value: "MEDIUM-HIGH", evidenceIds: ["E1"] }
+    ])
+  );
+  assert.ok(midScale.findings.some((finding) => finding.code === "MEANS_AS_GOAL"));
+});
+
+test("an increase backed by new causal evidence is legitimate", () => {
+  const result = validateDecisionRecord(
+    confidenceRecord(
+      [
+        { value: "LOW", evidenceIds: ["E1"] },
+        { value: "HIGH", evidenceIds: ["E1", "E2"] }
+      ],
+      ["E1", "E2"]
+    )
+  );
+  assert.ok(!result.findings.some((finding) => finding.code === "MEANS_AS_GOAL"));
+  assert.ok(!result.findings.some((finding) => finding.code === "INVALID_CONFIDENCE"));
+
+  // Numeric scheme still works and requires new evidence for an increase.
+  const numeric = validateDecisionRecord(
+    confidenceRecord([
+      { value: 60, evidenceIds: ["E1"] },
+      { value: 80, evidenceIds: ["E1"] }
+    ])
+  );
+  assert.ok(numeric.findings.some((finding) => finding.code === "MEANS_AS_GOAL"));
+});
+
+test("unknown confidence values and mixed schemes fail closed", () => {
+  for (const invalid of [
+    [{ value: "VERY_HIGH", evidenceIds: ["E1"] }],
+    [
+      { value: 60, evidenceIds: ["E1"] },
+      { value: "HIGH", evidenceIds: ["E1"] }
+    ],
+    [{ value: 150, evidenceIds: ["E1"] }],
+    [{ value: "LOW" }] // missing evidenceIds
+  ]) {
+    const result = validateDecisionRecord(confidenceRecord(invalid));
+    assert.equal(result.valid, false, JSON.stringify(invalid));
+    assert.ok(result.findings.some((finding) => finding.code === "INVALID_CONFIDENCE"), JSON.stringify(invalid));
+  }
+});
+
+test("history evidence must be traceable to the proposal's evidence set", () => {
+  // An increase "justified" by an id outside the authoritative evidence set
+  // (E999) or by a null id is fabricated evidence, not new evidence.
+  for (const untraceable of [
+    [
+      { value: "LOW", evidenceIds: ["E1"] },
+      { value: "HIGH", evidenceIds: ["E1", "E999"] }
+    ],
+    [
+      { value: "LOW", evidenceIds: ["E1"] },
+      { value: "HIGH", evidenceIds: ["E1", null] }
+    ]
+  ]) {
+    const result = validateDecisionRecord(confidenceRecord(untraceable));
+    assert.equal(result.valid, false, JSON.stringify(untraceable));
+    assert.ok(result.findings.some((finding) => finding.code === "INVALID_CONFIDENCE"), JSON.stringify(untraceable));
+  }
+});

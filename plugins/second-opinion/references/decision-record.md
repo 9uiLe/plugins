@@ -106,7 +106,7 @@ Use the Proposal Trace Ledger above as the authoritative recommendation ledger. 
 ## Means-goal guard
 | Finding | Proposal / Outcome IDs | Evidence | Resolution / owner |
 | --- | --- | --- | --- |
-| UNTRACED_PROPOSAL / MEANS_AS_GOAL / UNAUTHORIZED_OUTCOME_CHANGE / HIDDEN_TRADEOFF | ... | ... | ... |
+| UNTRACED_PROPOSAL / MEANS_AS_GOAL / UNAUTHORIZED_OUTCOME_CHANGE / HIDDEN_TRADEOFF / INVALID_CONFIDENCE | ... | ... | ... |
 
 ## Compact low-stakes form
 
