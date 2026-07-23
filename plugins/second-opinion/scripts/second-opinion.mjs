@@ -26,10 +26,31 @@ const FABLE_MODEL = "claude-fable-5";
 // Top-tier Codex model pinned for the advisor, passed explicitly on every codex
 // run so the served model can't silently drop below the top tier via a stale
 // per-cwd app-server default. Env-overridable so a renamed model id needs no
-// code change; runCodex additionally falls back to the codex default if this
-// model fails, so a bad / retired / ungated id can never kill the review.
+// code change; runCodex additionally falls back to the codex default — but ONLY
+// when the failure is classified as model-not-found (renamed / retired /
+// ungated id). Auth failures, timeouts, policy errors and crashes are NOT
+// silently degraded to a different model identity (#76 B-P23). Fallback can be
+// disabled entirely with --no-fallback / SECOND_OPINION_NO_FALLBACK=1 (council
+// rule: a fallback is a new participant identity requiring a new preflight).
 const CODEX_MODEL = process.env.SECOND_OPINION_CODEX_MODEL || "gpt-5.6-sol";
-const VALID_EFFORTS = ["none", "minimal", "low", "medium", "high", "xhigh"];
+// Effort capability tables (#76 A-P2/B-P30). A single shared enum does not
+// exist: the fable CLI enforces its own set, and codex effort acceptance is
+// MODEL-dependent (enforced server-side per model, HTTP 400 on mismatch), so
+// validation happens after backend AND model are decided, BEFORE dispatch.
+//   fable: `claude --help` --effort "(low, medium, high, xhigh, max)" (2026-07-23 実機確認)
+//   codex: エントリは「実機 probe で検証済みの exact モデル ID」のみ。ファミリー正規表現で
+//     未検証モデルへ一般化しない（例: Luna の ultra や 5.4/5.5 の minimal は catalog 上
+//     未確認のため、誤った事前 BLOCK / 誤った受理の両方を避ける）。
+//     表にないモデルは事前検証せず警告付きでサーバー判定（モデル別 HTTP 400）に委ねる。
+const FABLE_EFFORTS = ["low", "medium", "high", "xhigh", "max"];
+const CODEX_EFFORTS_BY_MODEL = new Map([
+  // gpt-5.6-sol: minimal → HTTP 400 / max・ultra → 受理 (2026-07-23 実機 probe。公式 Sol セレクタとも一致)
+  ["gpt-5.6-sol", ["low", "medium", "high", "xhigh", "max", "ultra"]]
+]);
+
+function codexEffortsFor(model) {
+  return CODEX_EFFORTS_BY_MODEL.get(model) ?? null; // null = 未検証モデル、サーバー判定に委譲
+}
 // Assistant-reasoning byte budget in default (non-full) mode. Human messages and
 // tool errors are NEVER trimmed; only the middle of the reasoning chain is.
 const ASSISTANT_CHAR_BUDGET = 120000;
@@ -40,7 +61,7 @@ const ASSISTANT_CHAR_BUDGET = 120000;
 
 function parseArgs(argv) {
   const out = { _: [] };
-  const boolFlags = new Set(["full", "json"]);
+  const boolFlags = new Set(["full", "json", "no-fallback"]);
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a.startsWith("--")) {
@@ -674,11 +695,106 @@ async function runFable(promptText, { effort }, timeoutMs) {
   return { backend: "fable", model: FABLE_MODEL, effort: effort || "(default)", ...r };
 }
 
-async function runCodex(promptText, { model, effort }, timeoutMs) {
+// Narrow classifier: does this failure mean "the pinned model id itself is not
+// served" (renamed / retired / ungated / typo)? Only such failures may fall
+// back to the codex default. Auth, quota, policy, network, timeout and crash
+// failures must surface as failures — silently swapping the model identity on
+// them would bypass the council invariant that a fallback is a new participant
+// identity requiring a new preflight (#76 B-P23).
+// Mixed-log guard: a model-not-found phrase may appear as a non-fatal internal
+// warning (e.g. the WebSocket→HTTPS transport probe logs a model 404,
+// openai/codex#26910) while the RUN actually dies on auth/quota/policy. If any
+// such terminal failure class is present anywhere in the log, the failure is
+// NOT classified as model absence — those classes always win, because an
+// identity-changing fallback must never mask them.
+function hasNonModelTerminalFailure(text) {
+  return (
+    // HTTP auth/permission/rate statuses — matched only in status context
+    // ("status 401", "401 Unauthorized"), never as bare numbers or words,
+    // which can legitimately occur inside model ids (e.g. "gpt-401",
+    // "gpt-forbidden").
+    /(?:\bstatus\s+|\bhttp\s+)(?:40[13]|429)\b/i.test(text) ||
+    /\b40[13]\s+(?:unauthorized|forbidden)\b/i.test(text) ||
+    /\b429\s+too\s+many\s+requests\b/i.test(text) ||
+    // "Unauthorized"/"Forbidden" as the message itself (line start, optional
+    // "ERROR:" prefix) — not as a substring elsewhere.
+    /^(?:\s*(?:error:?\s*)?)(?:unauthorized|forbidden)\b/im.test(text) ||
+    // Definite auth failures (prose forms).
+    /\bnot\s+logged\s+in\b|\blogged\s+out\b/i.test(text) ||
+    /authentication\s+failed|invalid\s+api\s+key/i.test(text) ||
+    /run\s+codex\s+login|please\s+log\s?in/i.test(text) ||
+    // Quota / rate limits — prose forms context-bound (a limit word plus
+    // exceeded/reached) so ids like "quota-preview" or "rate-limit-preview"
+    // don't match.
+    /quota\s+(?:exceeded|reached|exhausted)|insufficient\s+quota/i.test(text) ||
+    /\brate[\s-]?limits?\s+(?:exceeded|reached|hit)\b|\brate\s+limited\b/i.test(text) ||
+    /\busage[\s-]?limits?\s+(?:exceeded|reached)\b/i.test(text) ||
+    // Policy denials (prose forms).
+    /organization\s+policy|request\s+denied/i.test(text) ||
+    // snake_case error codes — ONLY in an error-code field or standing alone
+    // as their own message line, never as substrings of model ids
+    // ("Model not found rate_limit-preview" must not match).
+    SNAKE_CODE_FIELD.test(text) ||
+    SNAKE_CODE_LINE.test(text)
+  );
+}
+
+const SNAKE_TERMINAL_CODES =
+  "(?:rate_limit(?:_exceeded)?|usage_limit(?:_reached)?|invalid_api_key|authentication_failed|not_logged_in|organization_policy|request_denied|insufficient_quota)";
+const SNAKE_CODE_FIELD = new RegExp(
+  `["']?(?:code|type|error)["']?\\s*[:=]\\s*["']${SNAKE_TERMINAL_CODES}["']?`,
+  "i"
+);
+const SNAKE_CODE_LINE = new RegExp(`^(?:\\s*(?:error:?\\s*)?)${SNAKE_TERMINAL_CODES}\\s*$`, "im");
+
+function isModelNotFoundError(r) {
+  const text = `${r.stderr || ""}\n${r.stdout || ""}`;
+  // ONLY the exact model-identity failure forms count. Deliberately narrow:
+  //   - "Model not found <id>"                       (openai/codex core tests)
+  //   - "The <id> model is not supported when using Codex with a ChatGPT
+  //      account"                                    (実機再現 2026-07-23)
+  //   - "model_not_found"                            (structured API error code)
+  // Broad phrases like "unsupported model ..." or "... model is not supported
+  // by <policy>" are NOT matched: they also appear in org-policy denials and
+  // internal parser errors ("unsupported model item type"), where an
+  // identity-changing fallback would be wrong.
+  //
+  // The full ChatGPT-account form is a decisive model-identity failure even
+  // when the server delivers it wrapped in 403 Forbidden. The exemption is
+  // MATCH-SPAN-scoped: only the form itself plus its directly attached 403
+  // wrapper are removed (tolerating line wraps inside the form, since \s+
+  // spans newlines), and the ENTIRE remainder still goes through the
+  // terminal-failure guard — so any other decisive auth/quota/policy error,
+  // even on the same physical line, still wins ("terminal classes always
+  // win"). Truncated lookalikes ("... when using Codex under your
+  // organization policy") do not match.
+  const chatGptForm =
+    /(?:(?:unexpected\s+)?status\s+403\s+forbidden:?\s*|403\s+forbidden:?\s*)?The\s+\S+\s+model\s+is\s+not\s+supported\s+when\s+using\s+Codex\s+with\s+a\s+ChatGPT\s+account\b/gi;
+  if (text.match(chatGptForm)) {
+    const remainder = text.replace(chatGptForm, " ");
+    return !hasNonModelTerminalFailure(remainder);
+  }
+  if (hasNonModelTerminalFailure(text)) return false;
+  return (
+    // "Model not found <id>" at line start (with optional "ERROR:" prefix).
+    // \s+ between the tokens tolerates terminal line-wrapping ("Model not\n
+    // found", openai/codex#18793). Mid-sentence collisions ("config for model
+    // not found in cache") do not match.
+    /^(?:\s*(?:error:?\s*)?)model\s+not\s+found\b/im.test(text) ||
+    // Real CLI HTTP wrapper form: "ERROR: unexpected status 404 Not Found:
+    // Model not found ..." (openai/codex#26892, #29546). Requires the full
+    // "404 Not Found:" wrapper immediately before the phrase.
+    /404\s+not\s+found:\s*model\s+not\s+found\b/i.test(text) ||
+    /\bmodel_not_found\b/i.test(text)
+  );
+}
+
+async function runCodex(promptText, { model, effort, allowFallback = true }, timeoutMs) {
   // Pin the model explicitly so the advisor can't silently drop below the top
-  // tier via a stale host default. But never let a bad / renamed / ungated
-  // model id kill the review: if the pinned run yields no output, retry once
-  // WITHOUT --model (defer to the codex default) and label the degradation.
+  // tier via a stale host default. If the pinned model id is not served
+  // (classified narrowly by isModelNotFoundError), retry once WITHOUT --model
+  // (defer to the codex default) and label the degradation. Every other
+  // failure class is returned as a failure, unmasked.
   const pinnedModel = model || CODEX_MODEL;
   const baseArgs = [
     "exec",
@@ -701,9 +817,20 @@ async function runCodex(promptText, { model, effort }, timeoutMs) {
     timeoutMs
   );
   if (r.code !== 0 || !r.stdout.trim()) {
-    // Pinned model failed — degrade to the codex default rather than dying.
-    r = await runProcess("codex", [...baseArgs, ...effortArgs, "-"], promptText, timeoutMs);
-    usedModel = `(codex default; pinned ${pinnedModel} failed)`;
+    if (allowFallback && isModelNotFoundError(r)) {
+      // Pinned model id is not served — degrade to the codex default, labelled.
+      r = await runProcess("codex", [...baseArgs, ...effortArgs, "-"], promptText, timeoutMs);
+      usedModel = `(codex default; pinned ${pinnedModel} not served)`;
+    } else if (isModelNotFoundError(r)) {
+      r = {
+        ...r,
+        stderr:
+          (r.stderr || "") +
+          `\n[pinned model ${pinnedModel} appears not to be served; automatic fallback is disabled (--no-fallback)]`
+      };
+    }
+    // Any other failure class (auth, timeout, policy, crash, empty output
+    // without a model-not-found marker) surfaces as-is: no identity swap.
   }
   return {
     backend: "codex",
@@ -725,9 +852,33 @@ function renderBackendResult(r) {
 // subcommands
 // ---------------------------------------------------------------------------
 
-function validateEffort(effort) {
-  if (effort && !VALID_EFFORTS.includes(effort)) {
-    fail(`invalid --effort "${effort}". Use one of: ${VALID_EFFORTS.join(", ")}`);
+// Validate --effort against the capability table of every SELECTED backend
+// (and, for codex, the RESOLVED model — codex acceptance is model-dependent),
+// BEFORE any dispatch. With --backend both an effort must be accepted by both
+// sides, otherwise one advisor would die on an argument/HTTP error while the
+// other runs (#76 A-P2/B-P30). No implicit remapping (e.g. minimal -> low):
+// changing the requested effort semantics silently is not this tool's call.
+function validateEffort(effort, backends, codexModel) {
+  if (!effort) return;
+  const rejected = [];
+  if (backends.includes("fable") && !FABLE_EFFORTS.includes(effort)) {
+    rejected.push(`fable (${FABLE_MODEL}) accepts: ${FABLE_EFFORTS.join(", ")}`);
+  }
+  if (backends.includes("codex")) {
+    const efforts = codexEffortsFor(codexModel);
+    if (efforts === null) {
+      process.stderr.write(
+        `[warning] effort not pre-validated: codex model "${codexModel}" is not in the ` +
+          `verified capability table — the server enforces effort per model and may reject "${effort}"\n`
+      );
+    } else if (!efforts.includes(effort)) {
+      rejected.push(`codex (${codexModel}) accepts: ${efforts.join(", ")}`);
+    }
+  }
+  if (rejected.length) {
+    fail(
+      `--effort "${effort}" is not supported by: ${rejected.join("; ")}. Nothing was dispatched.`
+    );
   }
 }
 
@@ -736,7 +887,11 @@ async function cmdReview(args) {
   if (!["codex", "fable", "both"].includes(backend)) {
     fail(`invalid --backend "${backend}". Use codex, fable, or both.`);
   }
-  validateEffort(args.effort);
+  const selectedBackends = backend === "both" ? ["fable", "codex"] : [backend];
+  validateEffort(args.effort, selectedBackends, args.model || CODEX_MODEL);
+  const allowFallback = !(
+    args["no-fallback"] || process.env.SECOND_OPINION_NO_FALLBACK === "1"
+  );
 
   const t = resolveTranscript(args);
   if (!t.path || !fs.existsSync(t.path)) {
@@ -762,7 +917,9 @@ async function cmdReview(args) {
     thunks.push(() => runFable(promptText, { effort: args.effort }, timeoutMs));
   }
   if (backend === "codex" || backend === "both") {
-    thunks.push(() => runCodex(promptText, { model: args.model, effort: args.effort }, timeoutMs));
+    thunks.push(() =>
+      runCodex(promptText, { model: args.model, effort: args.effort, allowFallback }, timeoutMs)
+    );
   }
   const results = [];
   for (const thunk of thunks) results.push(await thunk());
@@ -797,6 +954,83 @@ function cmdResolve(args) {
   if (t.warning) process.stderr.write(`[warning] ${t.warning}\n`);
 }
 
+// Auth probes (#76 B-P24): an executable on PATH is only "installed", not
+// "ready" — a logged-out CLI would fail at review time. Probe cheaply and
+// report three distinguishable states: authenticated / not authenticated /
+// probe failed (e.g. a fake binary that doesn't speak the auth protocol).
+const AUTH_PROBE_TIMEOUT_MS = 15000;
+
+function probeClaudeAuth() {
+  const r = spawnSync("claude", ["auth", "status", "--json"], {
+    encoding: "utf8",
+    timeout: AUTH_PROBE_TIMEOUT_MS
+  });
+  if (r.error) return { authenticated: null, detail: `auth probe failed: ${r.error.message}` };
+  // Only a clean exit counts: a non-zero exit with plausible-looking JSON is a
+  // protocol mismatch (wrapper script / fake binary), not an authenticated CLI.
+  if (r.status === 0) {
+    try {
+      const parsed = JSON.parse(r.stdout);
+      if (typeof parsed.loggedIn === "boolean") {
+        return {
+          authenticated: parsed.loggedIn,
+          detail: parsed.loggedIn ? `logged in (${parsed.authMethod || "?"})` : "not logged in"
+        };
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+  return {
+    authenticated: null,
+    detail: `auth probe failed: unexpected \`claude auth status --json\` output (exit ${r.status})`
+  };
+}
+
+function probeCodexAuth() {
+  const r = spawnSync("codex", ["login", "status"], {
+    encoding: "utf8",
+    timeout: AUTH_PROBE_TIMEOUT_MS
+  });
+  if (r.error) return { authenticated: null, detail: `auth probe failed: ${r.error.message}` };
+  const out = `${r.stdout || ""}${r.stderr || ""}`.trim();
+  // "Not logged in" contains the substring "logged in" — check the negative
+  // forms FIRST so they can never read as ready. The real CLI pairs the
+  // logged-out message with a non-zero exit; a logged-out message WITH exit 0
+  // is a protocol mismatch (impostor/wrapper), distinct from a logged-out CLI.
+  if (/not\s+logged\s+in|logged\s+out|no\s+credentials/i.test(out)) {
+    if (r.status !== 0) {
+      return { authenticated: false, detail: out.split("\n")[0] || "not logged in" };
+    }
+    return {
+      authenticated: null,
+      detail: "auth probe failed: logged-out message with exit 0 (protocol mismatch)"
+    };
+  }
+  if (r.status === 0 && /logged in/i.test(out)) {
+    return { authenticated: true, detail: out.split("\n")[0] };
+  }
+  if (r.status !== 0) {
+    return {
+      authenticated: null,
+      detail: `auth probe failed: \`codex login status\` exit ${r.status}${out ? ` — ${out.split("\n")[0]}` : ""}`
+    };
+  }
+  return { authenticated: null, detail: "auth probe failed: unrecognized `codex login status` output" };
+}
+
+function backendStatus(binPath, probe) {
+  if (!binPath) return { installed: false, authenticated: null, status: "missing", detail: null };
+  const { authenticated, detail } = probe();
+  const status =
+    authenticated === true
+      ? "ready"
+      : authenticated === false
+        ? "installed (not authenticated)"
+        : "installed (auth probe failed)";
+  return { installed: true, authenticated, status, detail };
+}
+
 function cmdSetup(args) {
   const report = {
     claude: which("claude"),
@@ -804,12 +1038,15 @@ function cmdSetup(args) {
     codex: which("codex"),
     transcript: resolveTranscript(args)
   };
-  const codexOk = !!report.codex;
-  const fableOk = !!report.claude;
+  const fable = backendStatus(report.claude, probeClaudeAuth);
+  const codex = backendStatus(report.codex, probeCodexAuth);
   const status = {
-    ok: fableOk || codexOk,
-    fable_backend_ready: fableOk,
-    codex_backend_ready: codexOk,
+    ok: fable.status === "ready" || codex.status === "ready",
+    fable_backend: fable,
+    codex_backend: codex,
+    // Legacy booleans: kept for old consumers, now meaning installed AND authenticated.
+    fable_backend_ready: fable.status === "ready",
+    codex_backend_ready: codex.status === "ready",
     transcript_source: report.transcript.source,
     transcript_path: report.transcript.path,
     transcript_warning: report.transcript.warning,
@@ -819,11 +1056,13 @@ function cmdSetup(args) {
     process.stdout.write(JSON.stringify(status, null, 2) + "\n");
     return;
   }
+  const line = (label, b, missingHint) =>
+    `  ${label}: ${b.installed ? b.status.toUpperCase() : `MISSING — ${missingHint}`}${b.detail ? ` (${b.detail})` : ""}`;
   process.stdout.write(
     [
       `second-opinion setup`,
-      `  Fable backend (claude -p): ${fableOk ? "READY" : "MISSING — `claude` not on PATH"}`,
-      `  Codex backend (codex exec): ${codexOk ? "READY" : "MISSING — \`codex\` not on PATH"}`,
+      line("Fable backend (claude -p)", fable, "`claude` not on PATH"),
+      line("Codex backend (codex exec)", codex, "`codex` not on PATH"),
       `  transcript: ${status.transcript_path || "(unresolved)"} via ${status.transcript_source}`,
       status.transcript_warning ? `  note: ${status.transcript_warning}` : ""
     ]
