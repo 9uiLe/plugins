@@ -4,10 +4,10 @@
 
 ## 1. Build Timeline 診断分岐(入口)
 
-Build Timeline で最大時間の task を特定してから分岐する。**Timeline なしで下の分岐へ進まない。**
+Build Timeline、または支配 task を特定できる同等の計測エビデンス(task 別時間の取れるビルドログ、再現計測)で最大時間の task を特定してから分岐する。**支配 task を特定できる計測なしで下の分岐へ進まない。** これは SKILL.md §3 のゲート表(「Build Timeline またはログ」)と同じ契約であり、ログのみの正当な診断はブロックしない。エビデンス種別(Timeline / ログ / 再現)は出力の根拠ラベルの provenance に明記する。
 
 ```text
-Start: Build Timeline で最大時間の task を特定
+Start: 計測エビデンス(Timeline / task 別時間付きログ / 再現計測)で最大時間の task を特定
  ├─ SwiftCompile
  │    ├─ 特定 file/expression が遅い → §3 型チェック診断
  │    └─ 多数 file が再 build → incremental dependency を調査(不要な広い無効化)
@@ -42,7 +42,7 @@ Start: Build Timeline で最大時間の task を特定
 
 対処: 遅い式に明示的な型を与える / 長い式を中間変数へ分割 / View を意味のある SubView へ分解 / generic abstraction を単純化 / 自動生成コードを分割・Binary 化・事前生成 / macro 展開コストを測る / 変更頻度の低い巨大コードと Feature コードを分離。
 
-**適用条件**: 型チェック最適化は Build Timeline で SwiftCompile や特定ファイルが支配的な場合に行う。Link、Emit Module、Script、Resource が支配的なら別の施策を優先する。
+**適用条件**: 型チェック最適化は、§1 の計測エビデンス(Timeline またはログ/再現)で SwiftCompile や特定ファイルが支配的と特定された場合に行う。Link、Emit Module、Script、Resource が支配的なら別の施策を優先する。
 
 ## 4. Build Script・Code Generation・Plugin
 
