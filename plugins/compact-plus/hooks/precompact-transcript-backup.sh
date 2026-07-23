@@ -6,6 +6,13 @@ set -euo pipefail
 trap 'exit 0' ERR
 
 INPUT=$(cat)
+
+if ! command -v jq >/dev/null 2>&1; then
+  # Visible skip log (stderr) instead of a silent no-op, then fail open.
+  echo "[compact-plus] jq not found; PreCompact transcript backup skipped" >&2
+  exit 0
+fi
+
 SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || true)
 TRANSCRIPT_PATH=$(printf '%s' "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || true)
 

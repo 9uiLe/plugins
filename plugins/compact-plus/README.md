@@ -32,6 +32,7 @@ Codex を超えるセッション継続 (state 保存 + 復旧誘導 + skill 復
 ## 前提
 
 - Claude Code v2.x 以降
+- **`jq`**: 全 hook スクリプトの必須依存。未インストールの場合、state 保存・復旧・リマインダーは無効化される (fail-open 設計のため compaction やプロンプト送信は阻害しない)。無効化はサイレントではなく、セッションごとに 1 回の通知 (UserPromptSubmit 経由) と hook の stderr ログでスキップが可視化される。`brew install jq` 等で導入すること
 - LLM backend として `claude -p` または `codex exec`
 - default 構成では primary に `claude -p --model claude-sonnet-5 --effort medium`、fallback に `codex exec --model gpt-5.3-codex-spark` を使う
 - fallback の Codex Spark は ChatGPT Pro が前提。`gpt-5.4` / `gpt-5.5` などへ切り替え可能
@@ -227,7 +228,7 @@ upstream v1.0.2 からこのリポジトリに移植するにあたり、以下�
 | `${TMPDIR}/claude-compacted/<session_id>` | `compaction-recovery.sh` | `userpromptsubmit-compaction-recovery.sh` | PostCompact marker |
 | `${TMPDIR}/claude-compact-warn/<session_id>` | `scripts/compact-warn-statusline.sh` (`statusLine` に配線した場合のみ) | `userpromptsubmit-compact-plus-reminder.sh` | 閾値超過通知 |
 | `${TMPDIR}/claude-compact-warned/<session_id>` | `userpromptsubmit-compact-plus-reminder.sh` | statusline / recovery hook | 通知 cooldown |
-| `${TMPDIR}/claude-active-plan/<session_id>` | plan-management hook | recovery hook | active plan path |
+| `${TMPDIR}/claude-active-plan/<session_id>` | (外部) plan-management hook | recovery hook | active plan path。compact-plus は producer を同梱しない。外部の plan 管理 hook が書く場合のみ利用される任意マーカーで、無くても動作に影響しない |
 
 ## セキュリティ
 

@@ -15,6 +15,11 @@
 set -uo pipefail
 
 INPUT=$(cat)
+
+# jq missing: fail open silently here; userpromptsubmit-compaction-recovery.sh
+# already emits a visible once-per-session notice for the missing dependency.
+command -v jq >/dev/null 2>&1 || exit 0
+
 SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // empty' 2>/dev/null)
 [[ -z "$SESSION_ID" ]] && exit 0
 
@@ -24,21 +29,25 @@ WARN_MARKER="$WARN_DIR/$SESSION_ID"
 [[ -f "$WARN_MARKER" ]] || exit 0
 
 # Read usage percentage from the marker.
-CTX_PCT=$(cat "$WARN_MARKER" 2>/dev/null)
+if ! CTX_PCT=$(cat "$WARN_MARKER" 2>/dev/null); then
+  # Transient read failure: emit nothing and keep the warn marker so the
+  # reminder fires exactly once on the next prompt.
+  exit 0
+fi
 CTX_PCT=${CTX_PCT:-"?"}
 
-# Create the cooldown marker first so statusline does not write another warn marker
-# in the window between removing the warn marker and creating the cooldown marker.
 WARNED_DIR="${TMPDIR:-/tmp}/claude-compact-warned" # lint:allow-os-tmp
 mkdir -p "$WARNED_DIR" 2>/dev/null || true
 
-# Remove the warn marker (one-shot) only after the cooldown marker is in place.
-# If the cooldown write fails, keep the warn marker so the markers stay consistent.
-if printf '%s\n' "$(date +%s)" > "$WARNED_DIR/$SESSION_ID" 2>/dev/null; then
-  rm -f "$WARN_MARKER" 2>/dev/null || true
-fi
+# NOTE: markers are consumed only after the reminder is emitted successfully
+# (see the end of this script), so a transient jq/output failure does not
+# permanently lose the one-shot warning.
 
 STATE_FILE="${TMPDIR:-/tmp}/claude-compact-state/$SESSION_ID.md" # lint:allow-os-tmp
+if [[ -f "$STATE_FILE" && ! -r "$STATE_FILE" ]]; then
+  # Transient read failure: keep the warn marker and retry on the next prompt.
+  exit 0
+fi
 
 section_first_line() {
   local heading="$1"
@@ -91,10 +100,19 @@ fi
 CTX+=$'\n'"- At a work boundary, tell the user they can run \`/compact\` as-is. The PreCompact hook automatically saves pre-compaction state."
 CTX+=$'\n'"- Address the situation by saving pre-compaction state, not by shrinking scope or moving to another session."
 
-jq -n --arg ctx "$CTX" '{
+if jq -n --arg ctx "$CTX" '{
   hookSpecificOutput: {
     hookEventName: "UserPromptSubmit",
     additionalContext: $ctx
   }
-}'
+}'; then
+  # Consume markers only after the reminder was emitted.
+  # Create the cooldown marker first so statusline does not write another warn
+  # marker in the window between removing the warn marker and creating the
+  # cooldown marker. If the cooldown write fails, keep the warn marker so the
+  # markers stay consistent (the reminder may fire again next turn).
+  if printf '%s\n' "$(date +%s)" > "$WARNED_DIR/$SESSION_ID" 2>/dev/null; then
+    rm -f "$WARN_MARKER" 2>/dev/null || true
+  fi
+fi
 exit 0
