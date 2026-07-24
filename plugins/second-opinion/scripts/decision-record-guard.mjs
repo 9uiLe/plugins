@@ -1,6 +1,25 @@
 const OUTCOME_STATUSES = new Set(["ACTIVE", "REVISED", "RETIRED"]);
 const PROPOSAL_TYPES = new Set(["MEANS", "CONSTRAINT", "TEST", "OUTCOME_CHANGE"]);
 const DISPOSITIONS = new Set(["ACCEPT", "REJECT", "DEFER", "CONDITIONAL"]);
+// Record-contract confidence scale (references/decision-record.md), ordered.
+const CONFIDENCE_LEVELS = ["LOW", "MEDIUM", "MEDIUM-HIGH", "HIGH"];
+
+// confidenceRank — normalized ordering for a confidence value: either the
+// qualitative record-contract scale (LOW < MEDIUM < MEDIUM-HIGH < HIGH) or a
+// numeric 0-100 judgment. Lexicographic string comparison is exactly wrong
+// for the qualitative labels ("HIGH" < "LOW"), which made the drift check
+// fire on decreases and miss increases (#78 B-P29). Returns null for values
+// outside both schemes (fail closed).
+function confidenceRank(value) {
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100) {
+    return { scheme: "numeric", rank: value };
+  }
+  if (typeof value === "string") {
+    const index = CONFIDENCE_LEVELS.indexOf(value.trim().toUpperCase());
+    if (index >= 0) return { scheme: "qualitative", rank: index };
+  }
+  return null;
+}
 
 function outcomeVersionRef(outcome) {
   return `${outcome.id}@${outcome.version}`;
@@ -128,12 +147,37 @@ export function validateDecisionRecord(record) {
       findings.push({ code: "MEANS_AS_GOAL", ref: proposal.id, blocking: true });
     }
 
-    const history = proposal.confidenceHistory ?? [];
-    for (let index = 1; index < history.length; index += 1) {
-      const before = history[index - 1];
-      const after = history[index];
-      if (after.value > before.value && sameValues(before.evidenceIds, after.evidenceIds)) {
-        findings.push({ code: "MEANS_AS_GOAL", ref: proposal.id, blocking: true });
+    // Confidence drift (#78 B-P29). The history is REQUIRED — omitting it must
+    // not silently skip the check. Values are compared on the normalized scale
+    // (one scheme per history: qualitative labels or numeric 0-100); unknown
+    // values or mixed schemes fail closed. Every history evidence id must be a
+    // non-empty string traceable to the proposal's authoritative evidence set
+    // (an increase "justified" by E999 or null is fabricated, not evidenced).
+    // An increase demands NEW causal evidence (at least one evidence id absent
+    // from the previous entry); a decrease is always legitimate.
+    const history = proposal.confidenceHistory;
+    const authoritativeEvidence = new Set(array(proposal.evidenceIds) ? proposal.evidenceIds : []);
+    const traceableId = (id) => present(id) && typeof id === "string" && authoritativeEvidence.has(id);
+    if (!array(history) || history.length === 0) {
+      findings.push({ code: "INVALID_CONFIDENCE", ref: proposal.id, blocking: true });
+    } else {
+      const ranks = history.map((entry) => confidenceRank(entry?.value));
+      const schemes = new Set(ranks.map((rank) => rank?.scheme));
+      if (
+        ranks.some((rank) => rank === null) ||
+        schemes.size > 1 ||
+        history.some((entry) => !array(entry?.evidenceIds) || !entry.evidenceIds.every(traceableId))
+      ) {
+        findings.push({ code: "INVALID_CONFIDENCE", ref: proposal.id, blocking: true });
+      } else {
+        for (let index = 1; index < history.length; index += 1) {
+          const increased = ranks[index].rank > ranks[index - 1].rank;
+          const previousEvidence = history[index - 1].evidenceIds;
+          const newEvidence = history[index].evidenceIds.some((id) => !previousEvidence.includes(id));
+          if (increased && !newEvidence) {
+            findings.push({ code: "MEANS_AS_GOAL", ref: proposal.id, blocking: true });
+          }
+        }
       }
     }
 

@@ -4,6 +4,37 @@ const VERIFIED = "VERIFIED";
 
 const finding = (code, participantId, message) => ({ code, participantId: participantId || null, message });
 const finiteInteger = (value) => Number.isSafeInteger(value) && value >= 0;
+const presentString = (value) => typeof value === "string" && value.trim() !== "";
+const validDate = (value) => presentString(value) && !Number.isNaN(Date.parse(value));
+const finiteNonNegativeNumber = (value) => typeof value === "number" && Number.isFinite(value) && value >= 0;
+// Pricing provenance older than this is stale and must be re-verified
+// (references/model-routing.md: recheck records older than 30 days).
+const PRICING_STALE_DAYS = 30;
+
+// Cost estimates need versioned pricing provenance (#78 B-P28): a bare number
+// with no source, date, currency, or per-model price mapping is a fabricated
+// value, not an estimate. Returns a list of problems (empty = valid).
+function costProvenanceProblems(policy, participants, asOfMs) {
+  const provenance = policy.costProvenance;
+  const problems = [];
+  if (!provenance || typeof provenance !== "object") return ["costProvenance record is missing"];
+  if (!presentString(provenance.source)) problems.push("pricing source missing");
+  if (!presentString(provenance.currency)) problems.push("currency missing");
+  const versionDate = provenance.retrievedAt ?? provenance.pricingVersion;
+  if (!validDate(versionDate)) problems.push("versioned pricing date (retrievedAt/pricingVersion) missing or invalid");
+  else if (Date.parse(versionDate) < asOfMs - PRICING_STALE_DAYS * 24 * 60 * 60 * 1000) {
+    problems.push(`pricing provenance is stale (older than ${PRICING_STALE_DAYS} days)`);
+  } else if (Date.parse(versionDate) > asOfMs) {
+    problems.push("pricing provenance date is in the future");
+  }
+  const mappedModels = Array.isArray(provenance.models) ? provenance.models : [];
+  const unmapped = participants
+    .map((participant) => participant?.effective?.model)
+    .filter((model, index, all) => presentString(model) && all.indexOf(model) === index)
+    .filter((model) => !mappedModels.includes(model));
+  if (unmapped.length) problems.push(`no price mapping for model(s): ${unmapped.join(", ")}`);
+  return problems;
+}
 
 function checkedMultiply(values) {
   let result = 1;
@@ -60,8 +91,16 @@ export function evaluatePreflight(record) {
   if (!finiteInteger(policy.tokenCeiling)) findings.push(finding("MISSING_TOKEN_CEILING", null, "A finite token ceiling is required"));
   else if (maximumTokens > policy.tokenCeiling) findings.push(finding("TOKEN_CEILING_EXCEEDED", null, "Token ceiling exceeded"));
   if (policy.stakes === "LOW" && (!policy.stakesApproval?.owner || !policy.stakesApproval?.approvedAt)) findings.push(finding("UNVERIFIED_STAKES", null, "Low-stakes degradation requires owner provenance"));
-  if (policy.costCeiling != null && policy.estimatedMaximumCost == null) findings.push(finding("UNVERIFIED_COST", null, "Cost estimate and provenance required"));
-  else if (policy.costCeiling != null && policy.estimatedMaximumCost > policy.costCeiling) findings.push(finding("COST_CEILING_EXCEEDED", null, "Cost ceiling exceeded"));
+  if (policy.costCeiling != null) {
+    if (policy.estimatedMaximumCost == null) findings.push(finding("UNVERIFIED_COST", null, "Cost estimate and provenance required"));
+    else if (!finiteNonNegativeNumber(policy.estimatedMaximumCost)) findings.push(finding("UNVERIFIED_COST", null, "Cost estimate must be a finite non-negative number"));
+    else {
+      const asOfMs = validDate(record?.evaluatedAt) ? Date.parse(record.evaluatedAt) : Date.now();
+      const problems = costProvenanceProblems(policy, participants, asOfMs);
+      if (problems.length) findings.push(finding("UNVERIFIED_COST", null, `Pricing provenance invalid: ${problems.join("; ")}`));
+      else if (policy.estimatedMaximumCost > policy.costCeiling) findings.push(finding("COST_CEILING_EXCEEDED", null, "Cost ceiling exceeded"));
+    }
+  }
   const has = (...codes) => findings.some((item) => codes.includes(item.code));
   const mismatch = has("MODEL_MISMATCH", "EFFORT_MISMATCH", "UNSUPPORTED_EFFORT", "SILENT_FALLBACK", "NOT_CALLABLE", "CONTEXT_EXCEEDED", "INVALID_LIMIT", "USAGE_OVERFLOW", "UNBOUNDED_TOKENS", "NO_PARTICIPANTS", "MISSING_TOKEN_CEILING", "UNVERIFIED_STAKES");
   const excess = has("TOKEN_CEILING_EXCEEDED", "COST_CEILING_EXCEEDED");

@@ -94,6 +94,7 @@ Before deciding, run the means-goal substitution guard:
 - `MEANS_AS_GOAL`: success is redefined as adopting or completing the requested means.
 - `UNAUTHORIZED_OUTCOME_CHANGE`: an advisor changes, adds, revises, or retires an outcome without owner approval; preserve the original outcome because an advisor cannot authorize the change.
 - `HIDDEN_TRADEOFF`: a proposal has negative effects on affected outcomes without recorded authorization, authority, and approval evidence.
+- `INVALID_CONFIDENCE`: a proposal's confidence history is missing, uses values outside the record scale (`LOW`/`MEDIUM`/`MEDIUM-HIGH`/`HIGH` or numeric 0-100), or mixes schemes; the history is mandatory so drift can be checked, and an increase without new causal evidence is `MEANS_AS_GOAL`.
 
 Record every guard finding. A safely `REJECT`ed or `DEFER`red untraced proposal may be resolved without interrupting the owner. Stop synthesis only while a material finding is unresolved or a guarded proposal would otherwise be accepted. Preserve the frozen outcome and ask the decision owner the smallest question needed to resolve it. Never revise or retire an outcome merely because a preferred proposal fails to satisfy it.
 

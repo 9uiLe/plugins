@@ -84,3 +84,70 @@ test("post-run usage records missing and material variance", () => {
   assert.equal(reconcileUsage(preflight, { actualTokens: 1300 }).status, "BUDGET_BREACH");
   assert.equal(reconcileUsage(preflight, { actualTokens: 700, expectedTokens: 400 }).status, "MATERIAL_VARIANCE");
 });
+
+// --- #78 B-P28: cost estimates need versioned pricing provenance ------------
+
+const validProvenance = {
+  source: "https://provider.example/pricing",
+  currency: "USD",
+  retrievedAt: "2026-07-20",
+  models: ["model-a"]
+};
+
+function costRecord(provenanceOverrides, policyOverrides = {}) {
+  return {
+    ...record(undefined, {
+      costCeiling: 10,
+      estimatedMaximumCost: 5,
+      costProvenance: provenanceOverrides === null ? undefined : { ...validProvenance, ...provenanceOverrides },
+      ...policyOverrides
+    }),
+    evaluatedAt: "2026-07-23"
+  };
+}
+
+test("valid current pricing provenance passes", () => {
+  const result = evaluatePreflight(costRecord({}));
+  assert.equal(result.status, "PASS");
+  assert.ok(!result.findings.some((f) => f.code === "UNVERIFIED_COST"));
+});
+
+test("a cost estimate without provenance blocks consequential stakes and degrades LOW", () => {
+  const missing = evaluatePreflight(costRecord(null));
+  assert.equal(missing.status, "BLOCKED");
+  assert.ok(missing.findings.some((f) => f.code === "UNVERIFIED_COST"));
+
+  const low = evaluatePreflight(
+    costRecord(null, { stakes: "LOW", stakesApproval: { owner: "owner", approvedAt: "2026-07-15" } })
+  );
+  assert.equal(low.status, "DEGRADED");
+});
+
+test("incomplete, stale, or future-dated provenance is unverified cost", () => {
+  for (const bad of [
+    { source: "" },
+    { currency: undefined },
+    { retrievedAt: "not-a-date" },
+    { retrievedAt: "2026-05-01" }, // > 30 days before evaluatedAt 2026-07-23
+    { retrievedAt: "2026-08-01" }, // in the future relative to evaluatedAt
+    { models: [] } // no price mapping for the effective model
+  ]) {
+    const result = evaluatePreflight(costRecord(bad));
+    assert.equal(result.status, "BLOCKED", JSON.stringify(bad));
+    assert.ok(result.findings.some((f) => f.code === "UNVERIFIED_COST"), JSON.stringify(bad));
+  }
+});
+
+test("a cost estimate must be a finite non-negative number", () => {
+  for (const badEstimate of ["5", -5, Number.NaN, Infinity]) {
+    const result = evaluatePreflight(costRecord({}, { estimatedMaximumCost: badEstimate }));
+    assert.equal(result.status, "BLOCKED", String(badEstimate));
+    assert.ok(result.findings.some((f) => f.code === "UNVERIFIED_COST"), String(badEstimate));
+  }
+});
+
+test("cost ceiling excess with valid provenance still requires authorization", () => {
+  const result = evaluatePreflight(costRecord({}, { estimatedMaximumCost: 50 }));
+  assert.equal(result.status, "AUTHORIZATION_REQUIRED");
+  assert.ok(result.findings.some((f) => f.code === "COST_CEILING_EXCEEDED"));
+});
