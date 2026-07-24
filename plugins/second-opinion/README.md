@@ -56,11 +56,22 @@ node scripts/second-opinion.mjs review --backend codex --source /path/to/session
 ```
 
 - **Model & effort are chosen at call time.** If they are not given, the skill asks through the
-  host's available question UI or normal conversation. Valid effort:
-  `none | minimal | low | medium | high | xhigh`. Codex defaults to the explicitly pinned
-  `gpt-5.6-sol` model (`SECOND_OPINION_CODEX_MODEL` overrides it) and retries once with the Codex
-  CLI default if that model is unavailable. `spark` maps to `gpt-5.3-codex-spark` and is not
-  available on every account. Fable is always `claude-fable-5`.
+  host's available question UI or normal conversation. Valid effort depends on the backend and,
+  for Codex, on the resolved model (validated before dispatch; unsupported values fail without
+  starting anything): Fable accepts `low | medium | high | xhigh | max` (CLI-enforced). For Codex
+  the server enforces effort per model; the only probe-verified entry is `gpt-5.6-sol`, which
+  accepts `low | medium | high | xhigh | max | ultra` and rejects `minimal` (HTTP 400, verified
+  2026-07-23). Any other Codex model is dispatched with a warning and the server's own per-model
+  validation. Codex defaults to the explicitly pinned `gpt-5.6-sol` model
+  (`SECOND_OPINION_CODEX_MODEL` overrides it) and retries once with the Codex CLI default **only
+  when the failure matches the exact model-not-found error forms** (renamed / retired / ungated
+  id); auth, timeout, org-policy, and parser failures surface as failures. `--no-fallback` or
+  `SECOND_OPINION_NO_FALLBACK=1` disables the retry entirely (required in decision-council
+  context). `spark` maps to `gpt-5.3-codex-spark` and is not available on every account. Fable is
+  always `claude-fable-5`.
+- **Both backends must be authenticated, not just installed.** `setup` probes
+  `claude auth status --json` and `codex login status` and reports `ready`,
+  `installed (not authenticated)`, `installed (auth probe failed)`, or `missing` per backend.
 - **Stakes-tied depth:** the default extraction always carries the task, every human message, and
   every tool error, trimming only the middle of a very long assistant chain. Pass `--full` for
   high-stakes calls (ship decisions, when stuck) to send everything verbatim.
@@ -77,8 +88,8 @@ transcript by mtime (pass `--source` if several sessions are open at once).
 
 ## Requirements
 
-- **Fable backend:** the `claude` CLI on `PATH`.
-- **Codex backend:** the authenticated `codex` CLI.
+- **Fable backend:** the authenticated `claude` CLI on `PATH` (`claude auth login`).
+- **Codex backend:** the authenticated `codex` CLI (`codex login`).
 - `node`.
 
 ## Environment variables
@@ -87,6 +98,7 @@ transcript by mtime (pass `--source` if several sessions are open at once).
 | --- | --- |
 | `SECOND_OPINION_TRANSCRIPT_PATH` | Set by the SessionStart hook; the current transcript. |
 | `SECOND_OPINION_CODEX_MODEL` | Override the pinned Codex reviewer model. |
+| `SECOND_OPINION_NO_FALLBACK` | `1` disables the model-not-found fallback (same as `--no-fallback`; required in decision-council context). |
 | `SECOND_OPINION_TIMEOUT_MS` | Per-backend timeout (default 600000). |
 
 ## Codex installation

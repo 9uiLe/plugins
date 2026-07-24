@@ -112,7 +112,7 @@ For a low-stakes reversible choice, use a compact record, but still include `Out
 Use the first viable path and disclose degradation:
 
 1. host-native isolated advisors;
-2. the bundled `second-opinion.mjs` adapters;
+2. the bundled `second-opinion.mjs` adapters — always invoked with `--no-fallback` (or `SECOND_OPINION_NO_FALLBACK=1`) in council context, so the adapter can never swap the pinned model identity on failure; a model swap is a new participant identity requiring a new preflight;
 3. direct authenticated, read-only Fable/Codex CLI calls;
 4. generic isolated subagents;
 5. one advisor plus a frozen opposing brief;

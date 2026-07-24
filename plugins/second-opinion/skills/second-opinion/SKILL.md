@@ -34,8 +34,12 @@ advisor の価値は「盲点を持つ当人が curate していない生のコ�
 
 引数で model / effort が与えられていればそれを使う。**与えられていなければ、利用可能な質問 UI（なければ通常の会話）で質問し、backend に応じた選択肢を出す**:
 
-- **effort**（codex / fable 共通の設問。1問で可）:
-  - `high`（推奨）/ `medium` / `xhigh` / `low`（`none` `minimal` は「その他」で受ける）
+- **effort**（1問で可。ただし**受理される値は backend と、codex ではモデルごとに異なる** — スクリプトが dispatch 前に capability テーブルで検証し、非対応値は何も起動せず失敗する）:
+  - 共通で使える値: `high`（推奨）/ `medium` / `xhigh` / `low`
+  - fable: 上記 + `max`（`claude --help` 2026-07-23 確認: low/medium/high/xhigh/max）
+  - codex `gpt-5.6-sol`（既定モデル。実機 probe 検証済みの唯一のエントリ）: 上記 + `max` / `ultra`。`minimal` はサーバー側で HTTP 400 拒否（2026-07-23 実機 probe 済み）
+  - 検証テーブルにない codex モデル（Terra / Luna / 5.4/5.5 系を含む）は事前検証せず警告付きでサーバー判定に委ねる（effort の受理はサーバーがモデル別に強制する。ファミリー名からの一般化はしない）
+  - `--backend both` では fable と codex 解決モデルの両方が受理する値のみ有効。黙示のリマッピング（例: `minimal`→`low`）は要求セマンティクスを変えるため行わない
 - **model（codex 選択時のみ）**:
   - `gpt-5.6-sol（既定・推奨）` … second-opinion が `--model gpt-5.6-sol` を**明示的に**渡す。上位モデルを保証し、app-server の陳腐化した既定（`config.toml` を起動時にしか読まない常駐プロセス）に左右されない。実体は `scripts/second-opinion.mjs` の `CODEX_MODEL` 定数（環境変数 `SECOND_OPINION_CODEX_MODEL` で上書き可）。
   - `spark（gpt-5.3-codex-spark）` … 注: ChatGPT アカウント連携の Codex では非対応のことがある。失敗したら `gpt-5.6-sol` に戻す
@@ -43,7 +47,7 @@ advisor の価値は「盲点を持つ当人が curate していない生のコ�
 - **model（fable）**: 常に `claude-fable-5` 固定。質問不要。
 
 > 上位モデル（Fable = `claude-fable-5` / Codex = `gpt-5.6-sol`）はアドバイザーの品質要件。codex は既定でも明示ピン留めされるため、未指定でも gpt-5.6-sol を下回らない。
-> **フォールバック**: ピン留めモデルが（改名・廃止・未ゲート等で）失敗した場合、`runCodex` は `--model` なしで一度だけ再試行し、codex 既定へ退避してレビュー自体は落とさない。ヘッダに `model=(codex default; pinned … failed)` と明示される。モデル ID を変えたいときは `CODEX_MODEL` 定数か `SECOND_OPINION_CODEX_MODEL` を更新する。
+> **フォールバック**: ピン留めモデルの失敗が**モデル不在エラー（改名・廃止・未ゲート等）と狭く分類できた場合に限り**、`runCodex` は `--model` なしで一度だけ再試行し、codex 既定へ退避する。ヘッダに `model=(codex default; pinned … not served)` と明示される。認証失敗・タイムアウト・ポリシーエラー・一時クラッシュでは**フォールバックせず失敗をそのまま返す**（モデル identity の黙示的すり替えを防ぐ）。`--no-fallback`（または `SECOND_OPINION_NO_FALLBACK=1`）で自動フォールバックを完全に無効化できる — **decision-council から使う場合は必須**（フォールバックは新しい参加者 identity であり新しい preflight を要するため。council 側 SKILL の "Never silently retry or fallback" 規律）。モデル ID を変えたいときは `CODEX_MODEL` 定数か `SECOND_OPINION_CODEX_MODEL` を更新する。
 
 質問 UI が複数設問に対応する場合は、model / effort を一度に聞いてよい。
 
@@ -68,7 +72,8 @@ SOURCE_ARGS=()
 node "$SO" review \
   --backend <codex|fable|both> \
   [--model <model>] \
-  [--effort <none|minimal|low|medium|high|xhigh>] \
+  [--effort <low|medium|high|xhigh|max | ultra(codex gpt-5.6-sol)>] \
+  [--no-fallback] \
   "${SOURCE_ARGS[@]}" \
   [--full]
 ```
