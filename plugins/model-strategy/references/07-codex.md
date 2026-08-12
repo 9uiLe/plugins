@@ -52,6 +52,19 @@ Codex CLI にもマルチエージェント機構がある（`features.multi_age
 | `codex exec -m <model>` | 非対話の一括処理を安いモデルの別実行に切り出す |
 | `--profile <name>`（`$CODEX_HOME/<name>.config.toml`） | 「深い作業用 （gpt-5.6-sol + high）」「定型用 （gpt-5.6-luna + low）」等のプリセット切替 |
 
+- **Claude Code の hook (`hooks/route-warn.mjs`) は Codex では動作しない**: PreToolUse hook + `hooks/hooks.json` の自動ロードは Claude Code 固有の機構であり、Codex CLI 側に同等の自動介入は無い。R1 相当の直接実行を避ける運用は、`agents.<name>` への委譲を手動で徹底することで代替する
+- `agents.<name>` の役割定義例 (config.toml。探索役 = R1/R2 相当、実装役 = R3 相当。effort は §2 の probe 注記のとおり Terra/Luna の対応レベル未確認のため、実機で `/model` セレクタから確認してから指定する):
+
+  ```toml
+  [agents.scout]
+  config_file = "scout.config.toml"  # model = "gpt-5.6-luna", model_reasoning_effort = "low" (要 probe)
+  description = "R1/R2: 探索・列挙・既知検証手順の実行のみ。判断・実装はしない"
+
+  [agents.implementer]
+  config_file = "implementer.config.toml"  # model = "gpt-5.6-terra", model_reasoning_effort = "medium" (要 probe)
+  description = "R3: 構造化仕様 4 フィールドを受けて実装する。仕様にない判断はしない"
+  ```
+
 ## §4 サブスクリプション制限 (ChatGPT プラン)
 
 - Plus / Pro / Business / Enterprise の Codex 利用はプラン内クレジット制。**モデルが安いほど同じクレジットで多くこなせる**（API 単価比の目安: gpt-5.6-luna は gpt-5.6-sol の 1/5。例示 [2026-07-02 時点]: gpt-5.4-mini は gpt-5.5 の約 4〜5 倍のタスク量）
