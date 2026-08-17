@@ -1,0 +1,17 @@
+{
+  "description": "Opt-in (MODEL_STRATEGY_ROUTE_WARN=1) warning when the main session directly runs a search/read operation that references/02-decision-matrix.md routes to haiku-scout (R1).",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Grep|Glob|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/route-warn.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

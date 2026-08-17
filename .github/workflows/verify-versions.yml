@@ -40,3 +40,6 @@ jobs:
 
       - name: Test second-opinion
         run: node --test plugins/second-opinion/tests/*.test.mjs
+
+      - name: Test model-strategy
+        run: node --test plugins/model-strategy/tests/*.test.mjs

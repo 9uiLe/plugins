@@ -4,22 +4,38 @@ Claude Code を従量課金前提でコスパよく運用するための、Claud
 
 **原則: 高価なモデルは「判断」に、安価なモデルは「作業量」に使う。**
 
+タスクは操作列に分解し、`P0`(対象外ゲート)→`R0`(単発直接実行)→`R1`(取得・列挙・抽出)→`R2`(既知検証手順の実行)→`R3`(構造化契約付き変更)→`R4`(デフォルト) の順に先勝ちでルーティングする。正本は [`scripts/route-policy.mjs`](./scripts/route-policy.mjs)、解説は [`references/02-decision-matrix.md`](./references/02-decision-matrix.md)。
+
 ## 提供するもの
 
 ### Skill
 
 | Skill | 役割 |
 | --- | --- |
-| `model-effort-guide` | タスクを分類し、最適なモデル(Fable/Opus/Sonnet/Haiku)・effort・実行体制(メイン or 委譲)を推奨/実行する |
+| `model-effort-guide` | タスクを操作列に分解し、`route-policy.mjs` のルール (P0〜R4) に従って最適なモデル(Fable/Opus/Sonnet/Haiku)・effort・実行体制(メイン or 委譲)を推奨/実行する |
 
-トリガー例: 「このタスクに最適なモデルは」「コスパよく実行して」「安く済ませて」
+トリガー例: 「このタスクに最適なモデルは」「コスパよく実行して」「安く済ませて」「委譲して」「操作をルーティングして」
+
+### Scripts
+
+| スクリプト | 役割 |
+| --- | --- |
+| [`scripts/route-policy.mjs`](./scripts/route-policy.mjs) | ルーティングルール (P0〜R4) の正本。`route`/`audit` サブコマンドで操作の判定・委譲マニフェストの監査を行う CLI |
+| [`scripts/context-statusline.sh`](./scripts/context-statusline.sh) | メインセッションの常駐コンテキスト使用率を `statusLine` に表示する同梱スクリプト |
+| [`scripts/subagent-statusline.sh`](./scripts/subagent-statusline.sh) | 委譲先タスクの状態を `subagentStatusLine` に表示する同梱スクリプト |
+
+### Hooks (opt-in)
+
+| Hook | 役割 |
+| --- | --- |
+| [`hooks/route-warn.mjs`](./hooks/route-warn.mjs) | `MODEL_STRATEGY_ROUTE_WARN=1` 設定時のみ、メインセッションが R1 相当の操作を直接実行しようとした最初の 1 回に委譲検討の警告を注入する (既定不活性) |
 
 ### Subagents
 
 | Agent | Model | 役割 |
 | --- | --- | --- |
-| `sonnet-implementer` | Sonnet | 仕様が固まった実装タスク (メイン比で output 課金 40% 減) |
-| `haiku-scout` | Haiku | 探索・調査・定型作業 (同 80% 減) |
+| `sonnet-implementer` | Sonnet | R3 (構造化契約付き変更): 仕様が固まった実装タスク (メイン比で output 課金 40% 減) |
+| `haiku-scout` | Haiku | R1/R2 (取得・列挙・抽出、既知検証手順の実行): 探索・調査・定型作業 (同 80% 減) |
 
 ### References
 
@@ -27,11 +43,11 @@ Claude Code を従量課金前提でコスパよく運用するための、Claud
 | --- | --- |
 | [00-pricing.md](./references/00-pricing.md) | モデル価格表・Fable 5 の実効コスト・キャッシュ/バッチ価格 |
 | [01-effort-levels.md](./references/01-effort-levels.md) | effort 5 段階 (low〜max) の使い分けとモデル別知見 |
-| [02-decision-matrix.md](./references/02-decision-matrix.md) | タスク分類 × モデル/effort 決定マトリックス・委譲判定基準 |
+| [02-decision-matrix.md](./references/02-decision-matrix.md) | 操作ルーティング (P0〜R4) の解説・git 割り当て表・R3 の 4 フィールド・Codex 読み替え (ルールの正本は `scripts/route-policy.mjs`) |
 | [03-cost-levers.md](./references/03-cost-levers.md) | プロンプトキャッシュ温存・コンテキスト衛生・アンチパターン |
 | [04-large-codebase.md](./references/04-large-codebase.md) | 大規模コードベースの量制御・常駐コンテキストを平坦に保つ規定 |
 | [05-repo-index.md](./references/05-repo-index.md) | ナビゲーション索引 (pull 優先)・外部 queryable 索引を第一に薄い CLAUDE.md 地図はフォールバック |
-| [06-context-monitor.md](./references/06-context-monitor.md) | コンテキスト量を statusLine で可視化する同梱スクリプトと配線手順 |
+| [06-context-monitor.md](./references/06-context-monitor.md) | コンテキスト量・委譲の可視化を statusLine/subagentStatusLine で行う同梱スクリプトと配線手順、実測手段と限界 |
 | [07-codex.md](./references/07-codex.md) | Codex CLI (GPT 系モデル) の価格・reasoning effort・委譲代替の決定基準 |
 
 ## 戦略の要約

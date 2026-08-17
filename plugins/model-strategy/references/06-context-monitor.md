@@ -63,3 +63,33 @@ Codex でこのファイルを参照する場合は、この `references/` デ�
 - 常駐量を増やさない具体策: `04-large-codebase.md` §3
 - 探索委譲・コンテキスト衛生: `03-cost-levers.md` §2
 - 組み込みの内訳確認: `/context` コマンド (どの要素が常駐量を食っているかの診断)
+
+## §7 委譲の可視化 (subagentStatusLine)
+
+`subagentStatusLine` は `statusLine` とは**別のトップレベルキー**で、委譲先タスク (サブエージェント) ごとの状態を表示できる。同梱スクリプト `scripts/subagent-statusline.sh` は stdin の `tasks[]` を読み、タスクごとに 1 行の NDJSON `{"id":"<task id>","content":"<row body>"}` を出力する。
+
+配線 (ユーザー/プロジェクトの settings.json。`statusLine` とは別キーとして追加):
+
+```json
+{
+  "subagentStatusLine": {
+    "type": "command",
+    "command": "/absolute/path/to/model-strategy/scripts/subagent-statusline.sh"
+  }
+}
+```
+
+絶対パスの制約は §2 と同じ (`statusLine` 同様、プラグイン実行コンテキストの外で動くため `${CLAUDE_PLUGIN_ROOT}` は展開されない。checkout パスの直接指定を推奨)。
+
+バージョン要件: `tasks[].model` (解決済みモデル ID) は **v2.1.205+**、`tasks[].effort` は **v2.1.214+** のみ提供される (それ未満のバージョンではフィールド自体が存在しない)。
+
+限界: プラグインは `agent` / `subagentStatusLine` の 2 キーのみをサポートする同梱 `settings.json` を提供できる (公式仕様上サポートされる) が、その内部で `command` 中の `${CLAUDE_PLUGIN_ROOT}` が展開されるかは未確認のため、確証が取れるまで本バージョンではプラグイン同梱によるデフォルト提供を見送り、ユーザー手動配線をベースラインとする。
+
+## §8 実測手段と限界
+
+- `/cost` は**セッション合算値**であり、委譲したサブエージェント分のコストも含む
+- 通常の `statusLine` (§1〜§2) は**メインセッションの推定値のみ**を示す。サブエージェントの消費は `subagentStatusLine` 側の `tasks[]` でしか見えない
+- モデル別の内訳は **OTel (OpenTelemetry) 連携でのみ**取得できる。ルール別 (R0〜R4) の実施状況を示す面は委譲マニフェストの実効記録のみ
+- タスク構成 (作業量) を揃えないセッション前後比較では、ルーティングの効果と仕事量そのものの差を分離できない
+
+上記は観測手段の**粒度の事実**であり、特定の比較プロトコル (何をいつ・どう比較すべきか) は本書では規定しない。
