@@ -79,3 +79,15 @@ Fable 5 のコストは Opus 4.8 の約 2 倍（トークナイザは同一。`0
 ## §9 Codex ランタイムでの読み替え
 
 担当列の読み替え: `sol` = R4 / `terra` = R3 / `luna`・`mini` = R1・R2。effort は「要求目標値」であり、Terra / Luna の対応レベルは未確認 — `references/07-codex.md` §2 の probe 注記に従う (確定値として書かない)。hook による warn 強制は Claude Code のみ (`references/07-codex.md` に明記)。原則 (ルーティング表・マニフェスト・監査) は環境非依存で両対応。
+
+## §10 R4 のサブタイプ (conductor mode, v0.3.0)
+
+`MODEL_STRATEGY_MODE=conductor` のとき、R4 と判定された操作はさらに **R4-ctx / R4a / R4b** の 3 通りに機械分割される (正本は `route-policy.mjs` の `deriveR4Subtype`)。既定 (`judge-main`、未設定を含む) では発生しない — v0.2.0 の `routeOperation` 出力とは完全後方互換。
+
+| サブタイプ | 定義 | 担当 |
+| --- | --- | --- |
+| **R4-ctx** | `ctxClass` が閉じた許可リスト (会話文脈が本体の操作: commit 作成・ユーザー向け報告文) に所属する | メイン (conductor) 残留 |
+| **R4a** | ctx でなく、判断パケット 6 フィールドが全て非空、かつ他行への `dependsOn` が空 (closed) | `judge` |
+| **R4b** | ctx でなく、パケットが書き切れない、または `dependsOn` が非空 (adaptive) | セッション昇格の提案 |
+
+詳細 (パケット規約・judge/judge-fable・失敗シグナル分類・受け入れの再ルーティング・R3 の contractRef/verificationRef 検査・scope-guard hook・4 つの限界の明記) は `08-conductor-mode.md` を参照。

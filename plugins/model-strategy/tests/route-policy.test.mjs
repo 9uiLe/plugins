@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { RULES, routeOperation, auditManifest } from "../scripts/route-policy.mjs";
+import { RULES, CTX_CLASSES, routeOperation, auditManifest, verifyEvidence } from "../scripts/route-policy.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -195,4 +196,342 @@ test("references/02-decision-matrix.md は RULES の全 id と claude 側 assign
       `02-decision-matrix.md に assignee "${rule.assignee.claude}" (${rule.id}) が見つからない`
     );
   }
+});
+
+// 02 同期テスト (v0.3.0 追加分): R4 サブタイプ (R4-ctx/R4a/R4b) が解説文書に
+// 出現するかを検査する (正本は route-policy.mjs の deriveR4Subtype)。
+test("references/02-decision-matrix.md は R4 サブタイプ (R4-ctx/R4a/R4b) を含む", () => {
+  const doc = fs.readFileSync(path.join(__dirname, "../references/02-decision-matrix.md"), "utf8");
+  for (const subtype of ["R4-ctx", "R4a", "R4b"]) {
+    assert.ok(doc.includes(subtype), `02-decision-matrix.md に ${subtype} が見つからない`);
+  }
+});
+
+// --- v0.3.0: conductor mode (mode パラメータ・R4 サブタイプ機械導出) ---
+
+function conductorOp(overrides = {}) {
+  return op({ producesDiff: true, interpretationRequired: true, kind: "judge", ...overrides });
+}
+
+test("routeOperation: mode 省略時は judge-main で v0.2.0 と同一の出力 (subtype キーなし)", () => {
+  const withoutMode = routeOperation(conductorOp());
+  const withJudgeMain = routeOperation(conductorOp(), { mode: "judge-main" });
+  assert.equal(withoutMode.rule, "R4");
+  assert.deepEqual(withoutMode.assignee, { claude: "main", codex: "sol" });
+  assert.equal("subtype" in withoutMode, false, "judge-main (省略時) の出力に subtype キーがあってはならない");
+  assert.deepEqual(withoutMode, withJudgeMain, "mode 省略と mode:'judge-main' 明示は同一の出力");
+});
+
+test("routeOperation: conductor mode の R4-ctx — ctxClass が CTX_CLASSES に所属すれば ctx 扱い", () => {
+  for (const ctxClass of CTX_CLASSES) {
+    const result = routeOperation(conductorOp({ ctxClass }), { mode: "conductor" });
+    assert.equal(result.rule, "R4");
+    assert.equal(result.subtype, "R4-ctx");
+    assert.equal(result.assignee, "main");
+  }
+});
+
+test("routeOperation: conductor mode の R4a (closed) — packet 6 フィールド完備・dependsOn 空", () => {
+  const packet = {
+    question: "q",
+    options: "a/b",
+    evidencePointers: "file.md:12",
+    constraints: "c",
+    acceptanceCriteria: "ac",
+    impactScope: "scope"
+  };
+  const result = routeOperation(conductorOp({ packet, dependsOn: [] }), { mode: "conductor" });
+  assert.equal(result.rule, "R4");
+  assert.equal(result.subtype, "R4a");
+  assert.equal(result.assignee, "judge");
+});
+
+test("routeOperation: conductor mode の R4b (adaptive) — packet 未完結", () => {
+  const packet = { question: "q", options: "a/b", evidencePointers: "", constraints: "c", acceptanceCriteria: "ac", impactScope: "scope" };
+  const result = routeOperation(conductorOp({ packet, dependsOn: [] }), { mode: "conductor" });
+  assert.equal(result.rule, "R4");
+  assert.equal(result.subtype, "R4b");
+  assert.equal(result.assignee, "session-escalation");
+});
+
+test("routeOperation: conductor mode の R4b (adaptive) — packet 完備でも dependsOn 非空なら R4b", () => {
+  const packet = {
+    question: "q",
+    options: "a/b",
+    evidencePointers: "file.md:12",
+    constraints: "c",
+    acceptanceCriteria: "ac",
+    impactScope: "scope"
+  };
+  const result = routeOperation(conductorOp({ packet, dependsOn: ["row-1"] }), { mode: "conductor" });
+  assert.equal(result.subtype, "R4b");
+  assert.equal(result.assignee, "session-escalation");
+});
+
+test("routeOperation: conductor mode で CTX_CLASSES 外の ctxClass 主張は判断型 (R4a/R4b) として評価される", () => {
+  const packet = {
+    question: "q",
+    options: "a/b",
+    evidencePointers: "file.md:12",
+    constraints: "c",
+    acceptanceCriteria: "ac",
+    impactScope: "scope"
+  };
+  const result = routeOperation(conductorOp({ ctxClass: "not-a-real-class", packet, dependsOn: [] }), { mode: "conductor" });
+  assert.notEqual(result.subtype, "R4-ctx", "enum 外の ctxClass は ctx として扱われない");
+  assert.equal(result.subtype, "R4a");
+});
+
+// --- v0.3.0: auditManifest の新 findings (各 1) ---
+
+function conductorManifest(tasks, overrides = {}) {
+  return { mode: "conductor", modeSource: "env", sessionModel: "claude-sonnet-4-5", tasks, ...overrides };
+}
+
+test("auditManifest: mode=conductor かつ sessionModel が opus/fable を含むと MODE_MODEL_MISMATCH (warn)", () => {
+  const result = auditManifest(conductorManifest([], { sessionModel: "claude-opus-4-8" }));
+  assert.equal(result.status, "FINDINGS");
+  assert.ok(result.findings.some((f) => f.code === "MODE_MODEL_MISMATCH"));
+});
+
+test("auditManifest: mode=judge-main かつ sessionModel が sonnet を含むと MODE_MODEL_MISMATCH (warn)", () => {
+  const result = auditManifest({ mode: "judge-main", modeSource: "default", sessionModel: "claude-sonnet-4-5", tasks: [] });
+  assert.equal(result.status, "FINDINGS");
+  assert.ok(result.findings.some((f) => f.code === "MODE_MODEL_MISMATCH"));
+});
+
+test("auditManifest: conductor mode で判断型 R4 行の actualAssignee が main だと CONDUCTOR_EXECUTED_R4 (deviationNote があっても抑制されない)", () => {
+  const t = task({
+    id: "r4-1",
+    rule: "R4",
+    plannedAssignee: "judge",
+    actualAssignee: "main",
+    r4Reason: "reason",
+    deviationNote: "conductor が判断した",
+    packet: {
+      question: "q",
+      options: "a/b",
+      evidencePointers: "file.md:12",
+      constraints: "c",
+      acceptanceCriteria: "ac",
+      impactScope: "scope"
+    },
+    dependsOn: []
+  });
+  const result = auditManifest(conductorManifest([t]));
+  assert.equal(result.status, "FINDINGS");
+  assert.ok(result.findings.some((f) => f.code === "CONDUCTOR_EXECUTED_R4" && f.ref === "r4-1"));
+  assert.ok(
+    !result.findings.some((f) => f.code === "UNDOCUMENTED_DEVIATION" && f.ref === "r4-1"),
+    "CONDUCTOR_EXECUTED_R4 と同一行の UNDOCUMENTED_DEVIATION は抑制される"
+  );
+});
+
+test("auditManifest: CTX_CLASSES 外の ctxClass 主張は INVALID_CTX_CLASS を発火し、CONDUCTOR_EXECUTED_R4 の判定対象に含まれる (自己分類による回避を許さない)", () => {
+  const t = task({
+    id: "r4-2",
+    rule: "R4",
+    plannedAssignee: "judge",
+    actualAssignee: "main",
+    r4Reason: "reason",
+    ctxClass: "not-a-real-class",
+    packet: {
+      question: "q",
+      options: "a/b",
+      evidencePointers: "file.md:12",
+      constraints: "c",
+      acceptanceCriteria: "ac",
+      impactScope: "scope"
+    },
+    dependsOn: []
+  });
+  const result = auditManifest(conductorManifest([t]));
+  assert.ok(result.findings.some((f) => f.code === "INVALID_CTX_CLASS" && f.ref === "r4-2"));
+  assert.ok(result.findings.some((f) => f.code === "CONDUCTOR_EXECUTED_R4" && f.ref === "r4-2"));
+});
+
+test("auditManifest: R4a 行に judgeRef が欠落していれば MISSING_JUDGE_REF", () => {
+  const t = task({
+    id: "r4a-1",
+    rule: "R4",
+    plannedAssignee: "judge",
+    actualAssignee: "judge",
+    r4Reason: "reason",
+    packet: {
+      question: "q",
+      options: "a/b",
+      evidencePointers: "file.md:12",
+      constraints: "c",
+      acceptanceCriteria: "ac",
+      impactScope: "scope"
+    },
+    dependsOn: []
+  });
+  const result = auditManifest(conductorManifest([t]));
+  assert.equal(result.status, "FINDINGS");
+  assert.ok(result.findings.some((f) => f.code === "MISSING_JUDGE_REF" && f.ref === "r4a-1"));
+});
+
+test("auditManifest: R4a 行に judgeRef が完備していれば MISSING_JUDGE_REF は発火しない", () => {
+  const t = task({
+    id: "r4a-2",
+    rule: "R4",
+    plannedAssignee: "judge",
+    actualAssignee: "judge",
+    r4Reason: "reason",
+    packet: {
+      question: "q",
+      options: "a/b",
+      evidencePointers: "file.md:12",
+      constraints: "c",
+      acceptanceCriteria: "ac",
+      impactScope: "scope"
+    },
+    dependsOn: [],
+    judgeRef: { agent: "judge", requestedModel: "opus", resultSummary: "決定: X" }
+  });
+  const result = auditManifest(conductorManifest([t]));
+  assert.ok(!result.findings.some((f) => f.code === "MISSING_JUDGE_REF"));
+});
+
+test("auditManifest: R3 行に contractRef が欠落していれば DANGLING_SPEC", () => {
+  const t = task({
+    rule: "R3",
+    plannedAssignee: "sonnet-implementer",
+    actualAssignee: "sonnet-implementer",
+    specFields: { target: "t", expectedResult: "e", allowedScope: "a", verification: "v" }
+  });
+  const result = auditManifest(manifest([t]));
+  assert.equal(result.status, "FINDINGS");
+  assert.ok(result.findings.some((f) => f.code === "DANGLING_SPEC"));
+});
+
+test("auditManifest: 完了した R3 行の verificationRef が R2 行を指していなければ UNFALSIFIABLE_VERIFICATION", () => {
+  const t = task({
+    rule: "R3",
+    status: "completed",
+    plannedAssignee: "sonnet-implementer",
+    actualAssignee: "sonnet-implementer",
+    specFields: { target: "t", expectedResult: "e", allowedScope: "a", verification: "v" },
+    contractRef: "accept-criteria-1",
+    verificationRef: "does-not-exist"
+  });
+  const result = auditManifest(manifest([t]));
+  assert.equal(result.status, "FINDINGS");
+  assert.ok(result.findings.some((f) => f.code === "UNFALSIFIABLE_VERIFICATION"));
+});
+
+test("auditManifest: 完了した R3 行の verificationRef が実在する R2 行を指していれば UNFALSIFIABLE_VERIFICATION は発火しない", () => {
+  const r2 = task({ id: "verify-1", rule: "R2", plannedAssignee: "haiku-scout", actualAssignee: "haiku-scout" });
+  const r3 = task({
+    id: "impl-1",
+    rule: "R3",
+    status: "completed",
+    plannedAssignee: "sonnet-implementer",
+    actualAssignee: "sonnet-implementer",
+    specFields: { target: "t", expectedResult: "e", allowedScope: "a", verification: "v" },
+    contractRef: "accept-criteria-1",
+    verificationRef: "verify-1"
+  });
+  const result = auditManifest(manifest([r2, r3]));
+  assert.ok(!result.findings.some((f) => f.code === "UNFALSIFIABLE_VERIFICATION"));
+});
+
+test("auditManifest: 凍結後に追加された R3 行 (addedAfterFreeze) に deviationNote がなければ SCOPE_EXPANSION", () => {
+  const t = task({
+    rule: "R3",
+    plannedAssignee: "sonnet-implementer",
+    actualAssignee: "sonnet-implementer",
+    specFields: { target: "t", expectedResult: "e", allowedScope: "a", verification: "v" },
+    contractRef: "accept-criteria-1",
+    addedAfterFreeze: true
+  });
+  const result = auditManifest(manifest([t]));
+  assert.ok(result.findings.some((f) => f.code === "SCOPE_EXPANSION"));
+});
+
+test("auditManifest: baseline.contractHash と currentContractHash が食い違えば SCOPE_EXPANSION", () => {
+  const result = auditManifest(
+    conductorManifest([], {
+      baseline: { manifestId: "m1", globs: ["plugins/model-strategy/**"], contractHash: "hash-a" },
+      currentContractHash: "hash-b"
+    })
+  );
+  assert.ok(result.findings.some((f) => f.code === "SCOPE_EXPANSION"));
+});
+
+test("auditManifest: mode 未設定 (v0.2.0 マニフェスト) は mode 関連の新 findings を一切評価しない", () => {
+  const result = auditManifest(manifest([task()]));
+  assert.deepEqual(result.findings, []);
+});
+
+test("auditManifest: mode が enum 外の値だと MISSING_MODE_FIELDS", () => {
+  const result = auditManifest({ mode: "not-a-mode", modeSource: "env", sessionModel: "claude-sonnet-4-5", tasks: [] });
+  assert.ok(result.findings.some((f) => f.code === "MISSING_MODE_FIELDS"));
+});
+
+test("auditManifest: modeSource/sessionModel が欠落していると MISSING_MODE_FIELDS", () => {
+  const result = auditManifest({ mode: "judge-main", tasks: [] });
+  assert.ok(result.findings.some((f) => f.code === "MISSING_MODE_FIELDS"));
+});
+
+test("auditManifest: mode=conductor かつ R3 行が存在するが baseline がなければ MISSING_BASELINE (warn)", () => {
+  const t = task({
+    rule: "R3",
+    plannedAssignee: "sonnet-implementer",
+    actualAssignee: "sonnet-implementer",
+    specFields: { target: "t", expectedResult: "e", allowedScope: "a", verification: "v" },
+    contractRef: "accept-criteria-1"
+  });
+  const result = auditManifest(conductorManifest([t]));
+  assert.ok(result.findings.some((f) => f.code === "MISSING_BASELINE"));
+});
+
+test("auditManifest: mode=conductor かつ baseline が記録されていれば MISSING_BASELINE は発火しない", () => {
+  const t = task({
+    rule: "R3",
+    plannedAssignee: "sonnet-implementer",
+    actualAssignee: "sonnet-implementer",
+    specFields: { target: "t", expectedResult: "e", allowedScope: "a", verification: "v" },
+    contractRef: "accept-criteria-1"
+  });
+  const result = auditManifest(
+    conductorManifest([t], { baseline: { manifestId: "m1", globs: ["plugins/model-strategy/**"], contractHash: "h1" } })
+  );
+  assert.ok(!result.findings.some((f) => f.code === "MISSING_BASELINE"));
+});
+
+// --- v0.3.0: verify-evidence サブコマンド (引用実在検査) ---
+
+test("verifyEvidence: 実在する quote は found=true・実際の行番号・行ズレを返す", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "model-strategy-verify-evidence-"));
+  const file = path.join(dir, "sample.md");
+  fs.writeFileSync(file, "line one\nline two\ntarget quote here\nline four\n", "utf8");
+
+  const result = verifyEvidence({ items: [{ file, line: 1, quote: "target quote here" }] });
+  assert.equal(result.status, "PASS");
+  assert.equal(result.items[0].found, true);
+  assert.equal(result.items[0].actualLine, 3);
+  assert.equal(result.items[0].lineDrift, 2, "申告 line=1 と実際の行 3 のズレ");
+});
+
+test("verifyEvidence: 存在しない quote (幻覚引用) は found=false で FAIL", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "model-strategy-verify-evidence-"));
+  const file = path.join(dir, "sample.md");
+  fs.writeFileSync(file, "line one\nline two\n", "utf8");
+
+  const result = verifyEvidence({ items: [{ file, line: 1, quote: "this text does not exist in the file" }] });
+  assert.equal(result.status, "FAIL");
+  assert.equal(result.items[0].found, false);
+  assert.equal(result.items[0].actualLine, null);
+});
+
+test("verifyEvidence: 行ズレなしで一致すれば lineDrift=0", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "model-strategy-verify-evidence-"));
+  const file = path.join(dir, "sample.md");
+  fs.writeFileSync(file, "alpha\nbeta gamma\ndelta\n", "utf8");
+
+  const result = verifyEvidence({ items: [{ file, line: 2, quote: "beta gamma" }] });
+  assert.equal(result.status, "PASS");
+  assert.equal(result.items[0].lineDrift, 0);
 });
