@@ -1,6 +1,6 @@
 {
   "name": "model-strategy",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Cost-effective model and effort selection for Claude Code workflows. Routes operations through a first-match policy (P0 approval-gate / R0 direct / R1 scout / R2 verify / R3 delegate / R4 main) via scripts/route-policy.mjs.",
   "author": {
     "name": "9uiLe",

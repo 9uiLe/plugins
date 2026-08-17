@@ -27,7 +27,7 @@
       "name": "model-strategy",
       "source": "./plugins/model-strategy",
       "description": "Cost-effective model and effort selection for Claude Code: a task-classification skill that recommends the optimal model (Fable/Opus/Sonnet/Haiku) and effort level, plus pre-configured Sonnet/Haiku subagents for cheap delegation, backed by official pricing references.",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "category": "development",
       "tags": [
         "model-selection",

@@ -92,3 +92,12 @@ Codex CLI にもマルチエージェント機構がある（`features.multi_age
 | リアルタイムの高速反復（Pro） | gpt-5.3-codex-spark | — |
 
 > effort 列は「要求する目標値」。モデル別の対応可否・設定経路は §2 の表と probe で確認してから指定する（特に Terra / Luna は対応レベル未確認）。
+
+## §7 conductor mode (v0.3.0) の Codex 読み替え
+
+`MODEL_STRATEGY_MODE=conductor` は Claude Code の `main` / `judge` 分離をそのまま Codex に写像できる。ただし前提が異なる点に注意する:
+
+- Claude Code の conductor mode は「安いメイン (Sonnet 帯) + 高いモデルへの R4a 委譲 (judge = Opus/Fable)」という**単価差**が動機になる。Codex の既定メインは `gpt-5.6-sol` (公式「迷ったら Sol」) であり、日常運用でメインを terra/luna に固定するのは §1 の役割分担 (Sol=判断, Terra=主力, Luna=定型) から外れる
+- 対応させる場合の読み替え: conductor = `gpt-5.6-terra` 起点のメイン、judge = `gpt-5.6-sol` への `spawn_agent`/`agents.<name>` 委譲 (R4a のみ、判断パケットを渡す)。conductor mode を使う利点は Codex では単価差そのものより、**判断をメインの会話コンテキストから隔離できること** (`08-conductor-mode.md` §3 の判断パケット規約と同じ理由) にある
+- `judge`/`judge-fable` (Claude Code のサブエージェント定義) は Codex には存在しない。Codex で同等の役割を持たせる場合は `agents.<name>` に `gpt-5.6-sol` + `description` で判定専任ロールを定義し、Read 系ツールのみ渡す運用で近似する (本プラグインの `.mjs`/hook 資産は Claude Code 専用のため、判定はメイン側の運用規律で代替する)
+- scope-guard 相当の PreToolUse 強制は Codex には存在しない (§3 で述べた `route-warn.mjs` 非対応と同じ理由)。範囲逸脱の検出は `route-policy.mjs auditManifest` の `SCOPE_EXPANSION` (マニフェストの自己申告検査) のみに依存する

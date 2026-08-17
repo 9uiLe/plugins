@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "model-strategy",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Cost-effective model and effort selection for Claude Code. Routes operations through a first-match policy (P0 approval-gate / R0 direct / R1 scout / R2 verify / R3 delegate / R4 main) via scripts/route-policy.mjs, recommends the optimal model (Fable/Opus/Sonnet/Haiku) and effort level per task, and delegates to pre-configured subagents (sonnet-implementer / haiku-scout). Backed by a reference library with official pricing and effort documentation.",
   "author": {
     "name": "9uiLe"

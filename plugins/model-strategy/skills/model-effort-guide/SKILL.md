@@ -20,6 +20,7 @@ description: "Route tasks to the cost-optimal Claude model (Fable/Opus/Sonnet/Ha
   1. **委譲**: Codex のマルチエージェント(`spawn_agent` / `agents.<name>`)で安いモデル(gpt-5.6-luna / gpt-5.4-mini 等)+ 低 effort の役割へ出す。使えない場合は `codex exec -m <model>` の別実行で代替
   2. **モデル/effort 切替**: 対話中は `/model`、プリセットは `--profile`
   3. 本プラグインの `sonnet-implementer` / `haiku-scout` エージェント定義は Claude Code 専用。Codex では同等の役割を `agents.<name>` に定義して使う
+- **conductor mode の opt-in 判定(v0.3.0)**: `MODEL_STRATEGY_MODE` 環境変数を読む。`conductor` | `judge-main` の閉じた enum。未設定は `judge-main` (v0.2.0 と同じ挙動。R4 はメインがそのまま判断する)。セッションモデルが Sonnet 級のときはこのモードを**提案してよいが自動切替はしない**。conductor を使う場合は `references/08-conductor-mode.md` を読んでから進める
 
 ## 1. ルーティング手順
 
@@ -46,6 +47,8 @@ description: "Route tasks to the cost-optimal Claude model (Fable/Opus/Sonnet/Ha
 | R3 | 構造化契約付き変更(仕様 4 フィールド完備) | sonnet-implementer | terra (+ medium) |
 | R4 | デフォルト(設計・曖昧さの解消・デバッグ・レビュー統合) | main | sol |
 
+conductor mode (`MODEL_STRATEGY_MODE=conductor`) では R4 がさらに **R4-ctx(会話文脈が本体 → main 残留)/ R4a(判断パケット完結 → `judge`)/ R4b(パケット未完結または依存あり → セッション昇格提案)** に機械分割される。詳細・判断パケット規約・限界は `references/08-conductor-mode.md`。
+
 ## 3. 委譲マニフェスト(表示規定)
 
 ルーティング確定後・実行開始前に割り当てを表示し、完了時に実効担当を突合して再掲する。表示形式は委譲対象(R1〜R3 に割り当てた操作)の件数で決まる:
@@ -56,6 +59,15 @@ description: "Route tasks to the cost-optimal Claude model (Fable/Opus/Sonnet/Ha
 
 モデル名は固定で書かず、セッションの実モデル名を記入する。
 
+### 3.5 conductor mode: 基準線 (baseline) の生成(v0.3.0)
+
+conductor mode かつ R3 行を含むマニフェストでは、マニフェスト凍結時(実装開始前、R3 行の委譲を始める前)に基準線ファイルを書く。書かないと `scripts/route-policy.mjs audit` が `MISSING_BASELINE` (warn) を報告する。
+
+- パス: `${CLAUDE_PLUGIN_DATA}/scope-baseline-<session_id>.json` (`/tmp` 等の予測可能な共有パスには書かない)
+- 内容: `{"manifestId": "<マニフェストの一意 ID>", "globs": ["<R3 行の変更可能範囲を glob で列挙>"], "contractHash": "<この時点の受け入れ基準のハッシュ等、変化検出に使える値>"}`
+- 併せてマニフェスト自身にも同じ内容を `manifest.baseline` として記録する(`auditManifest` の `MISSING_BASELINE`/`SCOPE_EXPANSION` 判定はこちらを見る)
+- 詳細・束縛規則 (session_id/manifestId) は `references/08-conductor-mode.md` §7
+
 ## 4. 出口検証
 
 タスク完了時、マニフェストを JSON 化して `scripts/route-policy.mjs audit` に通し、findings があれば報告に含める(Node 不能環境では手動突合)。
@@ -64,9 +76,21 @@ description: "Route tasks to the cost-optimal Claude model (Fable/Opus/Sonnet/Ha
 cat manifest.json | node "PLUGIN_ROOT/scripts/route-policy.mjs" audit
 ```
 
-## 5. opt-in 強制(warn hook)
+conductor mode で §3.5 の基準線ファイルを書いた場合、タスク完了時に `${CLAUDE_PLUGIN_DATA}/scope-baseline-<session_id>.json` を削除する(次タスクへの誤流用・肥大化を防ぐ)。
+
+## 5. opt-in 強制(warn hook / scope-guard hook)
 
 `hooks/route-warn.mjs` は既定で不活性(何もしない)。`MODEL_STRATEGY_ROUTE_WARN=1` を環境変数として設定した場合のみ、メインセッションが R1 相当の操作を直接実行しようとした最初の 1 回に 1 行の委譲検討メッセージを注入する。既定不活性である理由: スキルが発動していないセッションにまで常時介入すると、警告が慢性化して読み飛ばされる懸念があるため(warn の慢性化対策)。
+
+`hooks/scope-guard.mjs` (v0.3.0) は `MODEL_STRATEGY_MODE=conductor` かつ §3.5 の基準線ファイルが存在する場合のみ発火する、`Edit`/`Write`/`NotebookEdit` 用の PreToolUse hook。範囲外ファイルへの書き込みに 1 行警告を注入する(warn-only・fail-open)。**Bash 経由の書き込みは検出できない** — 唯一の強制点ではなく部分的な機械照合であることに注意(`references/08-conductor-mode.md` §7 の限界を参照)。
+
+### 使用する環境変数
+
+| 変数 | 既定 | 意味 |
+| --- | --- | --- |
+| `MODEL_STRATEGY_MODE` | 未設定 (`judge-main` 扱い) | `conductor` \| `judge-main` の閉じた enum。conductor mode の opt-in (§0.5) |
+| `MODEL_STRATEGY_ROUTE_WARN` | 未設定 (不活性) | `1` で route-warn hook を有効化 |
+| `CLAUDE_PLUGIN_DATA` | Claude Code が提供 | 基準線ファイル・重複抑制状態など、本プラグインが書き込む唯一の永続化先 (`/tmp` は使わない) |
 
 ## 6. リファレンス
 
@@ -80,6 +104,7 @@ cat manifest.json | node "PLUGIN_ROOT/scripts/route-policy.mjs" audit
 | `references/05-repo-index.md` | ナビゲーション索引 (pull 優先: 外部 queryable 索引を第一に、薄い CLAUDE.md 地図はフォールバック) |
 | `references/06-context-monitor.md` | コンテキスト量・委譲の可視化を statusLine で行う同梱スクリプトと配線手順、実測手段と限界 |
 | `references/07-codex.md` | Codex CLI (GPT 系モデル) の価格・reasoning effort・委譲代替の決定基準 |
+| `references/08-conductor-mode.md` | conductor mode (v0.3.0): R4 サブタイプ (R4-ctx/R4a/R4b)・judge 委譲・失敗シグナル分類・scope-guard・限界の明記 |
 
 ## 7. 出力形式(推奨のみ求められた場合)
 

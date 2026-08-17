@@ -29,6 +29,7 @@ Claude Code を従量課金前提でコスパよく運用するための、Claud
 | Hook | 役割 |
 | --- | --- |
 | [`hooks/route-warn.mjs`](./hooks/route-warn.mjs) | `MODEL_STRATEGY_ROUTE_WARN=1` 設定時のみ、メインセッションが R1 相当の操作を直接実行しようとした最初の 1 回に委譲検討の警告を注入する (既定不活性) |
+| [`hooks/scope-guard.mjs`](./hooks/scope-guard.mjs) | `MODEL_STRATEGY_MODE=conductor` かつ基準線ファイルが存在する場合のみ、`Edit`/`Write`/`NotebookEdit` が基準線の範囲外に書き込もうとした際に警告を注入する (warn-only・fail-open。Bash 経由の書き込みは検出不可。v0.3.0) |
 
 ### Subagents
 
@@ -36,6 +37,8 @@ Claude Code を従量課金前提でコスパよく運用するための、Claud
 | --- | --- | --- |
 | `sonnet-implementer` | Sonnet | R3 (構造化契約付き変更): 仕様が固まった実装タスク (メイン比で output 課金 40% 減) |
 | `haiku-scout` | Haiku | R1/R2 (取得・列挙・抽出、既知検証手順の実行): 探索・調査・定型作業 (同 80% 減) |
+| `judge` | Opus | conductor mode (v0.3.0) の R4a (判断パケット完結型) 判定担当。ファイル証拠は自分で読む。実装・編集は行わない |
+| `judge-fable` | Fable 5 | `judge` と同一プロトコルの Fable 5 版 (静的な別定義)。Opus judge で 2 回失敗した R4a、または最難関判断限定 (v0.3.0) |
 
 ### References
 
@@ -49,6 +52,7 @@ Claude Code を従量課金前提でコスパよく運用するための、Claud
 | [05-repo-index.md](./references/05-repo-index.md) | ナビゲーション索引 (pull 優先)・外部 queryable 索引を第一に薄い CLAUDE.md 地図はフォールバック |
 | [06-context-monitor.md](./references/06-context-monitor.md) | コンテキスト量・委譲の可視化を statusLine/subagentStatusLine で行う同梱スクリプトと配線手順、実測手段と限界 |
 | [07-codex.md](./references/07-codex.md) | Codex CLI (GPT 系モデル) の価格・reasoning effort・委譲代替の決定基準 |
+| [08-conductor-mode.md](./references/08-conductor-mode.md) | conductor mode (v0.3.0): R4 サブタイプ (R4-ctx/R4a/R4b)・judge 委譲・失敗シグナル分類・scope-guard・限界の明記 |
 
 ## 戦略の要約
 
