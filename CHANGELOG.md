@@ -5,6 +5,17 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-17
+
+### Added
+
+- **model-strategy / model-effort-guide** (v0.1.1 → v0.3.0): 「タスク分類 (モデルの自然言語裁量)」を、観測可能な述語のみで決まる先勝ちの**操作ルーティング P0/R0〜R4** に置換 (v0.2.0, PR #91)。ルール正本 `scripts/route-policy.mjs` (routeOperation / auditManifest / CLI、references/02 とのドリフトは同期テストで検知)、委譲マニフェスト表示規定 (着手時の割り当て表示と完了時の実効突合)、opt-in の route-warn hook (`MODEL_STRATEGY_ROUTE_WARN=1`、`agent_id` によるメイン/サブエージェント判別、状態は `CLAUDE_PLUGIN_DATA` のみ)、`subagentStatusLine` 用スクリプトによる委譲先モデルの可視化を追加。
+- **model-strategy: conductor mode** (v0.3.0, PR #92): `MODEL_STRATEGY_MODE=conductor` の明示 opt-in で **Sonnet メイン運用**に対応。R4 を R4-ctx (閉じた enum: commit 作成等 → conductor 残留) / R4a (判断パケット 6 欄完結 → `judge` (Opus) / `judge-fable` 召喚) / R4b (未完結・依存連鎖 → セッション昇格提案) に機械分割し、上方委譲の沈黙故障を「昇格 = 既定方向」で防ぐ。受け入れの独立再ルーティングによる終端 judge ゲート、R3 の contractRef / verificationRef / `verify-evidence` (引用実在検査) — 証明範囲は well-formed and traceable までと references/08 に明記 — scope-guard hook (凍結範囲外編集の警告。Bash 迂回は既知の限界として明記)、失敗シグナル分類 (event → reroute/replan/block) を追加。設計は両バージョンとも Codex gpt-5.6-sol / Claude Fable 5 への 2 ラウンド諮問で収束。
+
+### Changed
+
+- **model-strategy**: `haiku-scout` に R1/R2 語彙、`sonnet-implementer` に R3 語彙と構造化結果ステータス (`completed | blocked_on_decision | failed_verification`) を追加。references 02/03/04/06/07 をルール ID 体系に整合、`08-conductor-mode.md` を新設。CI に model-strategy のテスト実行 (60 テスト) を追加。mode/env 未設定時の挙動は従来と互換 (v0.2.0 既存テスト 17 ケースは無修正で PASS)。
+
 ## [0.4.0] - 2026-07-23
 
 ### Added
@@ -160,6 +171,7 @@
 - MIT License を採用。
 
 [Unreleased]: https://github.com/9uiLe/plugins/compare/v0.4.0...HEAD
+[0.5.0]: https://github.com/9uiLe/plugins/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/9uiLe/plugins/compare/v0.3.4...v0.4.0
 [0.3.4]: https://github.com/9uiLe/plugins/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/9uiLe/plugins/compare/v0.3.2...v0.3.3
