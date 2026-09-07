@@ -1,10 +1,10 @@
 # model-strategy
 
-Claude Code を従量課金前提でコスパよく運用するための、Claude Code / Codex 対応モデル・effort 使い分けプラグインです。
+Claude Code / Codex の総利用量を、モデル選択だけでなく送信コンテキスト量・turn 数・委譲回数まで含めて抑えるプラグインです。
 
-**原則: 高価なモデルは「判断」に、安価なモデルは「作業量」に使う。**
+**原則: まず巨大コンテキストの反復送信を止め、その後で高価なモデルを「判断」に、安価なモデルを量のある定型作業に使う。**
 
-タスクは操作列に分解し、`P0`(対象外ゲート)→`R0`(単発直接実行)→`R1`(取得・列挙・抽出)→`R2`(既知検証手順の実行)→`R3`(構造化契約付き変更)→`R4`(デフォルト) の順に先勝ちでルーティングする。正本は [`scripts/route-policy.mjs`](./scripts/route-policy.mjs)、解説は [`references/02-decision-matrix.md`](./references/02-decision-matrix.md)。
+通常は R0〜R4 の軽量ルーティングだけを使う。監査可能な厳密モードでは、タスクを操作列に分解し、`P0`→`R0`→`R1`→`R2`→`R3`→`R4` の順に先勝ちで判定する。正本は [`scripts/route-policy.mjs`](./scripts/route-policy.mjs)、解説は [`references/02-decision-matrix.md`](./references/02-decision-matrix.md)。
 
 ## 提供するもの
 
@@ -12,9 +12,19 @@ Claude Code を従量課金前提でコスパよく運用するための、Claud
 
 | Skill | 役割 |
 | --- | --- |
-| `model-effort-guide` | タスクを操作列に分解し、`route-policy.mjs` のルール (P0〜R4) に従って最適なモデル(Fable/Opus/Sonnet/Haiku)・effort・実行体制(メイン or 委譲)を推奨/実行する |
+| `model-effort-guide` | セッション単位でモデル・effort・有界な委譲方針を決める。通常は軽量ルーティングを使い、厳密なマニフェスト監査は明示 opt-in に限定する |
 
-トリガー例: 「このタスクに最適なモデルは」「コスパよく実行して」「安く済ませて」「委譲して」「操作をルーティングして」
+トリガー例: 「このタスクに最適なモデルは」「コスパよく実行して」「利用上限を節約して」「委譲方針を決めて」「操作をルーティングして」。通常の coding task では自動起動せず、セッション冒頭または方針変更時に 1 回だけ使います。
+
+毎回の手動起動をなくしたい場合は、プロジェクトの `CLAUDE.md` に次の軽量 capsule だけを置きます。スキル全文や UserPromptSubmit ごとの自動注入は、毎 turn のコンテキストを増やすため推奨しません。
+
+```md
+## 利用量の原則
+- 小さい既知操作はメインが直接実行する。広域探索はモデル固定の cheap scout、仕様確定済みのまとまった実装だけ implementer へ委譲する。
+- 高価な親モデルを継承する Explore/general-purpose/fork をコスト削減目的で使わない。同目的の委譲は 1 回にまとめる。
+- PR/Phase 完了時は /clear、約 150k tokens 超では状態退避後に /compact。sleep ポーリングは禁止。
+- model-effort-guide はモデル方針を変更するとき、または厳密な routing audit が必要なときだけ呼ぶ。
+```
 
 ### Scripts
 
@@ -35,9 +45,9 @@ Claude Code を従量課金前提でコスパよく運用するための、Claud
 
 | Agent | Model | 役割 |
 | --- | --- | --- |
-| `sonnet-implementer` | Sonnet | R3 (構造化契約付き変更): 仕様が固まった実装タスク (メイン比で output 課金 40% 減) |
-| `haiku-scout` | Haiku | R1/R2 (取得・列挙・抽出、既知検証手順の実行): 探索・調査・定型作業 (同 80% 減) |
-| `judge` | Opus | conductor mode (v0.3.0) の R4a (判断パケット完結型) 判定担当。ファイル証拠は自分で読む。実装・編集は行わない |
+| `sonnet-implementer` | Sonnet | R3: 仕様が固まった、起動コストを正当化できるまとまりのある実装 |
+| `haiku-scout` | Haiku | R1/R2: 複数ファイルの探索や独立検証を 1 回の有界な依頼で処理 |
+| `judge` | Opus | 明示 opt-in の高保証 conductor mode で R4a を判定する。通常モードの日常レビューには使わない |
 | `judge-fable` | Fable 5 | `judge` と同一プロトコルの Fable 5 版 (静的な別定義)。Opus judge で 2 回失敗した R4a、または最難関判断限定 (v0.3.0) |
 
 ### References
@@ -56,12 +66,20 @@ Claude Code を従量課金前提でコスパよく運用するための、Claud
 
 ## 戦略の要約
 
+モデル選択前の既定動作:
+
+- PR / Phase の完了時は `/clear`、約 150k tokens 超または途中状態を保つ必要がある場合は状態退避後に `/compact`
+- `sleep` + メッセージのポーリングを避け、runtime / Orca の wait・monitor を使う
+- 単発 Read や 1 コマンドにサブエージェントを起動しない。同目的の探索・検証は 1 回にまとめる
+- Explore / general-purpose / fork のように高価な親モデルを継承する役割を、コスト削減目的で使わない
+- 並列実行は所要時間短縮が必要な場合だけ。通常はキューして同時稼働を抑える
+
 | タスク | 担当 | effort |
 | --- | --- | --- |
-| 設計・技術選定・監査・レビュー | メインセッション (Opus 4.8) | high〜xhigh |
+| 設計・技術選定・監査・レビュー | メインセッション (Opus 級) | medium〜high |
 | 最難関実装・大規模リファクタ | メインセッション | xhigh |
 | 仕様確定済みの実装 | sonnet-implementer | — |
-| 探索・調査・定型作業 | haiku-scout | — |
+| 複数ファイルの探索・独立検証 | haiku-scout | — |
 | 大量の機械的一括処理 | Batches API (API 直叩き、50% off) | — |
 
 Fable 5 は Opus 4.8 比で約 2 倍のコスト（トークナイザは同一）。サブスクでも従量クレジット制（$10/$50。同梱期間は 2026-07-07 で終了）のため、「長時間自律実行」「Opus で失敗を繰り返すタスク」「Fable でしか差が出ない判断タスク」に限定します（詳細: [00-pricing.md §4](./references/00-pricing.md)）。

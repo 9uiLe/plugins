@@ -1,7 +1,7 @@
 {
   "name": "model-strategy",
   "version": "0.3.0",
-  "description": "Cost-effective model and effort selection for Claude Code workflows. Routes operations through a first-match policy (P0 approval-gate / R0 direct / R1 scout / R2 verify / R3 delegate / R4 main) via scripts/route-policy.mjs.",
+  "description": "Reduce total Claude Code and Codex usage by controlling context growth, turns, model effort, and bounded delegation. Strict routing audits are opt-in.",
   "author": {
     "name": "9uiLe",
     "url": "https://github.com/9uiLe"
@@ -20,8 +20,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Model Strategy",
-    "shortDescription": "Choose Claude model and effort levels",
-    "longDescription": "Classify tasks and recommend cost-effective Claude model, effort, and delegation choices using a reference-backed decision matrix.",
+    "shortDescription": "Control context, models, and delegation",
+    "longDescription": "Reduce total usage with session boundaries, context hygiene, cost-effective model effort, and bounded delegation. Use strict routing and judge workflows only when explicitly requested.",
     "developerName": "9uiLe",
     "category": "Developer Tools",
     "capabilities": [

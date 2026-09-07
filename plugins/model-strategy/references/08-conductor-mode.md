@@ -4,6 +4,26 @@
 
 conductor mode は、メインセッション (conductor) が Sonnet 級など判断に不向きなモデルであっても、R4 のうち「判断そのもの」を `judge` (Opus/Fable) へ委譲し、conductor は判断パケットの構成・実行の指揮・R4-ctx (会話文脈が本体の操作) に専念できるようにする運用モードである。既定は `judge-main` (メインが自ら R4 判断も担う。v0.2.0 と同じ) であり、conductor mode は明示 opt-in のみ。tier 推定からの自動切替はしない。
 
+## §0 高保証 opt-in 時のマニフェストと出口監査
+
+本節は、ユーザーが高保証のマニフェスト監査または conductor mode を明示的に指定した場合だけ適用する。通常の監査・レビュー依頼だけでは適用せず、conductor も自動有効化しない。マニフェスト監査だけを指定した場合は `judge-main` のまま本節を使い、§2〜§9 の conductor 固有手順は適用しない。
+
+ルーティング確定後・実行開始前に予定担当を表示し、完了時に実効担当・状態・逸脱注記を突合して再掲する。表示は委譲対象 (R1〜R3) の件数に応じて簡潔にする:
+
+- 0 件: 全て R0/R4 となった条件を添えた 1 行サマリ。
+- 1 件: `割当: [R1] 構成調査 → haiku-scout (Haiku) ｜ [R4] 設計・受入 → メイン (<セッションの実モデル>)` の形式。
+- 2 件以上: 作業 / ルール / 予定担当 / 実効担当 / 状態の表。完了時は差し戻し・逸脱注記も反映する。
+
+モデル名は実際の担当モデルを記録する。マニフェストには操作記述子と予定担当 (`plannedAssignee`)、実効担当 (`actualAssignee`)、状態、逸脱理由 (`deviationNote`) を記録し、形式は `scripts/route-policy.mjs` の `auditManifest` に合わせる。
+
+タスク完了時にマニフェストを JSON 化し、次で監査する (`PLUGIN_ROOT` は本プラグインのルート)。findings は完了報告に含める。Node.js が使えない場合は予定・実効担当と該当規則を手動で突合し、機械監査を実行できなかったことを記録する。
+
+```bash
+rtk proxy node "$PLUGIN_ROOT/scripts/route-policy.mjs" audit < manifest.json
+```
+
+conductor で基準線ファイルを生成した場合は、監査と実効担当の記録後、§7 の手順で当該ファイルを削除する。
+
 ## §1 モード宣言
 
 - `MODEL_STRATEGY_MODE` env: `conductor` | `judge-main` の閉じた enum。未設定は `judge-main` (v0.2.0 と完全後方互換)
@@ -85,9 +105,19 @@ R3 行スキーマを次の 2 フィールドで拡張する:
 
 ### baseline のライフサイクル
 
-- **生成**: conductor がマニフェスト凍結時 (実装開始前) に書く。手順・JSON 形は `skills/model-effort-guide/SKILL.md` §3 に規定する
+- **生成**: conductor かつ R3 行がある場合、実装開始前・R3 委譲前のマニフェスト凍結時に、全 R3 行の変更可能範囲の glob 和集合と、その時点の受け入れ基準を同じ方法でハッシュ化した `contractHash` を確定する。Claude Code が提供する `CLAUDE_PLUGIN_DATA` 配下の `scope-baseline-<session_id>.json` に次の JSON を書き、同じ内容を `manifest.baseline` にも記録する。`session_id` は実際の対象セッション ID、`manifestId` は対象マニフェストの一意 ID を用いる。保存先やセッション ID が取得できない場合は基準線未生成として報告し、共有 `/tmp` 等で代用しない。
+
+  ```json
+  {
+    "manifestId": "<対象マニフェストの一意 ID>",
+    "globs": ["<R3 行の変更可能範囲の glob>"],
+    "contractHash": "<凍結時の受け入れ基準のハッシュ>"
+  }
+  ```
+
+  受け入れ基準が変わった場合は同じ方法で `currentContractHash` を算出し、マニフェストに記録する。監査前に凍結済み baseline を上書きして変化を隠さない。
 - **束縛**: ファイル名の `session_id` (セッションに束縛) + 内容の `manifestId` (どのマニフェストの基準線かを一意化)。並行セッションや前タスクの古い基準線による誤発火・見逃しを避ける
-- **破棄**: タスク完了時に conductor が削除する (`skills/model-effort-guide/SKILL.md` §4 の出口手順に含める)
+- **破棄**: タスク完了時、§0 の監査後に conductor が `${CLAUDE_PLUGIN_DATA}/scope-baseline-<session_id>.json` の `manifestId` と当該タスクの ID の一致を確認し、そのファイルだけを削除する。別セッションや別マニフェストの基準線は削除しない。削除できなかった場合は完了報告に残す
 - **不発検出**: 基準線を書く規約自体が守られなければ hook は永久に不発になる (「沈黙のまま死ぬ」故障)。これを検出するため、`mode=conductor` かつ R3 行が存在するのに `baseline` がマニフェストに記録されていない場合、finding `MISSING_BASELINE` (warn 級) を発火する
 
 ### 既知の迂回
