@@ -9,7 +9,7 @@ body:
         ## 提案ありがとうございます 💡
 
         実装の検討に入れるよう、「**何を解決したいか（課題）**」と「**どう解決したいか（提案）**」を分けて記入してください。
-        投稿前に [既存の Issue](../issues?q=is%3Aissue) を検索し、重複がないか確認してください。
+        投稿前に [既存の Issue](https://github.com/9uiLe/plugins/issues?q=is%3Aissue) を検索し、重複がないか確認してください。
 
   - type: checkboxes
     id: preflight
@@ -49,7 +49,7 @@ body:
       description: |
         どんな場面で困っているか、なぜこの改善が必要かを説明してください。
         「〜のとき、〜できなくて困っている」という形式が書きやすいです。
-      placeholder: "例: ADR を生成する際に既存のテンプレートを差し替えられず、社内フォーマットに合わせられない。"
+      placeholder: "例: 品質レビュー時にプロジェクト固有の非機能要件を評価基準へ反映しにくい。"
     validations:
       required: true
 

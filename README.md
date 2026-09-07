@@ -7,92 +7,105 @@
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Marketplace-8A6FE8)](https://claude.com/claude-code)
 [![Codex](https://img.shields.io/badge/Codex-Plugin-111827)](https://openai.com/codex)
 
-[Claude Code](https://claude.com/claude-code) / Codex 用プラグインを集めた Marketplace リポジトリです。
+Claude Code / Codex で使う、ソフトウェアの設計・レビューと AI エージェントの利用量管理のためのプラグイン集です。Marketplace 名は `9uile-plugins` です。必要なプラグインを個別にインストールできます。
+
+## プラグインを選ぶ
+
+| プラグイン | 用途 | 収録スキル |
+| --- | --- | --- |
+| [quality-architect](./plugins/quality-architect/README.md) | ISO/IEC 25010:2023 の製品品質モデルに基づくアーキテクチャ設計と既存コードのレビュー | `quality-architecture`、`quality-review` |
+| [model-strategy](./plugins/model-strategy/README.md) | 送信コンテキスト量、会話の往復回数、モデルの推論設定（effort）、他エージェントへの委譲を考慮した利用方針の選択 | `model-effort-guide` |
+
+スキルは、AI エージェントが依頼に応じて読み込む手順書です。設計案を作るには `quality-architecture`、既存のコードや設計を評価するには `quality-review` を使います。`model-effort-guide` は、モデル選択・利用量・委譲方針を明示的に相談するときに使います。
 
 ## インストール
 
+`<plugin-name>` を `quality-architect` または `model-strategy` に置き換えてください。
+
 ### Claude Code
 
-Claude Code 上で次を実行してください。
+Claude Code の会話内で Marketplace を登録し、プラグインをインストールします。
 
-```
+```text
 /plugin marketplace add 9uiLe/plugins
-```
-
-その後、利用したいプラグインだけを個別にインストールします:
-
-```
 /plugin install <plugin-name>@9uile-plugins
 ```
 
 ### Codex
 
-Codex では、このリポジトリを Marketplace として登録してからプラグインを追加します。
+ターミナルで Marketplace を登録し、プラグインを追加します。
 
 ```bash
 codex plugin marketplace add 9uiLe/plugins
 codex plugin add <plugin-name>@9uile-plugins
 ```
 
-## 収録プラグイン
+## 使い方
 
-| Name | Description |
+インストールしたプラグインの用途に応じて、対象や目的を添えて依頼します。
+
+| やりたいこと | 依頼例 |
 | --- | --- |
-| [quality-architect](./plugins/quality-architect) | ISO/IEC 25010:2023 製品品質モデル (9 特性 40 副特性) でアーキテクチャ設計とコードレビューを行う 2 つの Skill (`quality-architecture` / `quality-review`) を提供します。各特性の学術/公式リファレンス・ライブラリ付き。 |
-| [model-strategy](./plugins/model-strategy) | 従量課金前提でモデル (Fable/Opus/Sonnet/Haiku) と effort をコスパよく使い分ける Skill (`model-effort-guide`) と、安価な委譲先サブエージェント (`sonnet-implementer` / `haiku-scout`) を提供します。公式価格リファレンス付き。 |
+| 新規設計 | 「可用性と保守性を重視して、このサービスのアーキテクチャを設計して」 |
+| コードレビュー | 「現在の差分を ISO/IEC 25010 の品質特性でレビューして」 |
+| モデル・委譲方針の選択 | 「このタスクの利用量を抑えるモデル・effort・委譲方針を決めて」 |
+
+出力内容、必要なツール、任意機能の設定は各プラグインの README を参照してください。
 
 ## リポジトリ構成
 
-```
+```text
 .
-├── .claude-plugin/
-│   └── marketplace.json     ← Claude Code Marketplace マニフェスト
-├── .agents/
-│   └── plugins/
-│       └── marketplace.json ← Codex Marketplace マニフェスト
+├── .claude-plugin/marketplace.json   ← Claude Code Marketplace
+├── .agents/plugins/marketplace.json ← Codex Marketplace
 ├── plugins/
-│   └── quality-architect/
+│   ├── quality-architect/
+│   │   ├── .claude-plugin/plugin.json
+│   │   ├── .codex-plugin/plugin.json
+│   │   ├── skills/                  ← quality-architecture / quality-review
+│   │   ├── references/              ← 品質特性・静的評価の資料
+│   │   ├── scripts/                 ← Swift 向け品質・結合ゲート
+│   │   ├── examples/ci/             ← GitHub Actions の導入例
+│   │   ├── quality-gates.yml
+│   │   └── README.md
+│   └── model-strategy/
 │       ├── .claude-plugin/plugin.json
 │       ├── .codex-plugin/plugin.json
-│       ├── skills/
-│       │   ├── quality-architecture/SKILL.md
-│       │   └── quality-review/SKILL.md
-│       ├── references/      ← ISO/IEC 25010 各特性のリファレンス
+│       ├── skills/                  ← model-effort-guide
+│       ├── agents/                  ← Claude Code 向け委譲先・judge
+│       ├── hooks/                   ← opt-in の警告・範囲ガード
+│       ├── scripts/                 ← ルーティング・ステータス表示
+│       ├── references/
+│       ├── tests/
 │       └── README.md
+├── docs/                           ← 設計指針・ADR
+├── scripts/                        ← リリース・バージョン検証
+├── releases/                       ← リリースノート
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── RELEASING.md
 ├── LICENSE
 └── README.md
 ```
 
-新規プラグインを追加するときは `plugins/<name>/` を作り、Claude Code 用の `.claude-plugin/plugin.json`、Codex 用の `.codex-plugin/plugin.json`、ルートの `.claude-plugin/marketplace.json` / `.agents/plugins/marketplace.json` を更新します。
+`.claude-plugin/marketplace.json` と `.agents/plugins/marketplace.json` が、それぞれの環境で配布するプラグインを定義します。各プラグインのマニフェストは `plugins/<name>/` 内にあり、スキル本体は `skills/`、必要時に参照する資料は `references/` に置きます。
 
-## 開発
+## 開発に参加する
 
-Skill / Plugin を設計・レビューするときは、[コンテキスト効率を考慮した Skill / Plugin 設計](./docs/context-efficient-skill-design.md) を参照してください。常駐instruction、遅延ロードするSkill/reference、subagent、hook/monitorの配置基準と一次資料をまとめています。
+変更対象の選び方、ローカルでの導入・検証、Pull Request の手順は [CONTRIBUTING.md](./CONTRIBUTING.md) を参照してください。
 
-ローカルで動作確認するときは、リポジトリをローカルパスとして Marketplace に登録できます。
+スキルやプラグインの設計には [コンテキスト効率を考慮した設計指針](./docs/context-efficient-skill-design.md)、バージョン管理と公開には [RELEASING.md](./RELEASING.md) を使います。
 
-```
-/plugin marketplace add /path/to/this/repo
-```
+## 問い合わせ
 
-```bash
-codex plugin marketplace add /path/to/this/repo
-```
+- 不具合・改善提案: [GitHub Issues](https://github.com/9uiLe/plugins/issues)。新規 Issue 作成時にバグ報告または機能要望のテンプレートを選んでください。
+- 使い方の相談: [GitHub Discussions](https://github.com/9uiLe/plugins/discussions)。
+- 脆弱性の非公開報告: [SECURITY.md](./SECURITY.md) の手順に従ってください。
 
-## 不具合報告・改善提案
+## リリース情報
 
-バグや改善のアイデアは GitHub Issue で受け付けています。リポジトリの **Issues → New issue** から、目的に合ったテンプレート（🐞 バグ報告 / ✨ 改善・機能要望）を選んで起票してください。
-
-起票や Pull Request の手順、修正時に押さえておくべきリポジトリ構成は [CONTRIBUTING.md](./CONTRIBUTING.md) にまとめています。
-
-## セキュリティ
-
-脆弱性の報告手順は [SECURITY.md](./SECURITY.md) を参照してください。**公開 Issue ではなく** GitHub の Private Vulnerability Reporting からご連絡ください。
-
-## 変更履歴
-
-リリースごとの変更点は [CHANGELOG.md](./CHANGELOG.md) にまとめています。
+バージョンごとの変更内容と更新時の注意点は [CHANGELOG.md](./CHANGELOG.md) と [GitHub Releases](https://github.com/9uiLe/plugins/releases) に記載しています。
 
 ## ライセンス
 
-MIT — 詳細は [LICENSE](./LICENSE) を参照してください。
+[MIT](./LICENSE)
