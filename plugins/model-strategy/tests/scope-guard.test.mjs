@@ -44,9 +44,9 @@ test("decideScopeGuard: 範囲外の編集は SCOPE_EXPANSION 警告を返す", 
   const dataDir = tmpDataDir();
   writeBaseline(dataDir, "s1", { manifestId: "m1", globs: ["plugins/model-strategy/**"], contractHash: "h1" });
   const env = { ...CONDUCTOR_ENV_BASE, CLAUDE_PLUGIN_DATA: dataDir };
-  const decision = decideScopeGuard(editInput("plugins/second-opinion/scripts/second-opinion.mjs"), env);
+  const decision = decideScopeGuard(editInput("plugins/other/scripts/review.mjs"), env);
   assert.ok(decision, "範囲外編集は警告を返す必要がある");
-  assert.equal(decision.filePath, "plugins/second-opinion/scripts/second-opinion.mjs");
+  assert.equal(decision.filePath, "plugins/other/scripts/review.mjs");
   assert.match(decision.message, /SCOPE_EXPANSION/);
 });
 
@@ -54,7 +54,7 @@ test("decideScopeGuard: agent_id があってもスキップしない (route-war
   const dataDir = tmpDataDir();
   writeBaseline(dataDir, "s1", { manifestId: "m1", globs: ["plugins/model-strategy/**"], contractHash: "h1" });
   const env = { ...CONDUCTOR_ENV_BASE, CLAUDE_PLUGIN_DATA: dataDir };
-  const decision = decideScopeGuard(editInput("plugins/second-opinion/scripts/second-opinion.mjs", { agent_id: "sonnet-implementer-1" }), env);
+  const decision = decideScopeGuard(editInput("plugins/other/scripts/review.mjs", { agent_id: "sonnet-implementer-1" }), env);
   assert.ok(decision, "agent_id があっても範囲外編集は検出対象");
 });
 
@@ -76,7 +76,7 @@ test("decideScopeGuard: 重複抑制 — 同一 (session, file_path) の 2 回�
   const dataDir = tmpDataDir();
   writeBaseline(dataDir, "s1", { manifestId: "m1", globs: ["plugins/model-strategy/**"], contractHash: "h1" });
   const env = { ...CONDUCTOR_ENV_BASE, CLAUDE_PLUGIN_DATA: dataDir };
-  const input = editInput("plugins/second-opinion/scripts/second-opinion.mjs");
+  const input = editInput("plugins/other/scripts/review.mjs");
   assert.ok(decideScopeGuard(input, env), "1 回目は warn する");
   assert.equal(decideScopeGuard(input, env), null, "2 回目 (同一 session, file_path) は warn しない");
 });
@@ -85,8 +85,8 @@ test("decideScopeGuard: 同一セッションでも別ファイルなら再度 w
   const dataDir = tmpDataDir();
   writeBaseline(dataDir, "s1", { manifestId: "m1", globs: ["plugins/model-strategy/**"], contractHash: "h1" });
   const env = { ...CONDUCTOR_ENV_BASE, CLAUDE_PLUGIN_DATA: dataDir };
-  assert.ok(decideScopeGuard(editInput("plugins/second-opinion/scripts/a.mjs"), env));
-  assert.ok(decideScopeGuard(editInput("plugins/second-opinion/scripts/b.mjs"), env), "別ファイルは重複抑制の対象外");
+  assert.ok(decideScopeGuard(editInput("plugins/other/scripts/a.mjs"), env));
+  assert.ok(decideScopeGuard(editInput("plugins/other/scripts/b.mjs"), env), "別ファイルは重複抑制の対象外");
 });
 
 test("decideScopeGuard: NotebookEdit は notebook_path で判定する", () => {

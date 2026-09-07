@@ -18,7 +18,7 @@ description: "Choose a cost-effective main model, effort, and bounded delegation
 モデル選択より先に次を適用する。
 
 - このスキルは**セッション冒頭または方針変更時に 1 回**使う。同じ方針のままタスクごとに再実行しない
-- PR 1 本、Phase 1 つなど作業単位が終わったら `/clear`。継続情報が必要なら `compact-plus` 等で状態を退避してから `/compact`
+- PR 1 本、Phase 1 つなど作業単位が終わったら `/clear`。継続情報が必要なら作業状態をファイルに保存してから `/compact`
 - コンテキストが約 150k tokens を超えた、または探索結果やログが累積したら、新しい探索・委譲を増やす前に `/compact` を優先する
 - 待機は runtime の wait / monitor / wakeup、または Orca の wait 系機能を使う。`sleep` とメッセージ送信を繰り返すポーリングは禁止
 - 同じ権限拒否・存在しない tool・壊れた wrapper を再試行しない。原因となる設定か呼び出し方を直してから 1 回だけ再試行する

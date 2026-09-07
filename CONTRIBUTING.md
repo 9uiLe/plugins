@@ -37,7 +37,7 @@
 
 | 項目 | ポイント |
 | --- | --- |
-| 対象プラグイン / Skill | `quality-architect` / `model-strategy` / `second-opinion` などどのプラグインか、`quality-review` などどの Skill かを明記する。 |
+| 対象プラグイン / Skill | `quality-architect` / `model-strategy` などどのプラグインか、`quality-review` などどの Skill かを明記する。 |
 | 再現手順 | 「どのコマンドを実行し、Claude Code / Codex に何を指示したか」を番号付きで。第三者が同じ操作をたどれること。 |
 | 期待 / 実際の挙動 | 「こうなるはず」と「実際はこうなった」を分けて書く。 |
 | 環境情報 | Claude Code のバージョン（`/status` または `claude --version`）または Codex のバージョン、OS、実行環境、インストール方法。 |
