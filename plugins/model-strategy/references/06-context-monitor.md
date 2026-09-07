@@ -22,7 +22,7 @@ Claude Opus 4.8 ⊙ ctx 78% ▓▓▓▓▓▓▓░░░ 156k/200k  $1.92  ⚠
 
 > **注意**: プラグインは statusLine を自動注入できない (Claude Code の仕様)。利用者が自分の `settings.json` に 1 度だけ配線する。
 >
-> さらに、`statusLine` は**プラグイン実行コンテキストの外**で動くため、`${CLAUDE_PLUGIN_ROOT}` は**展開されない**。必ずスクリプトの**絶対パス**を指定すること (`plugins/compact-plus` の statusline 配線と同じ制約)。
+> さらに、`statusLine` は**プラグイン実行コンテキストの外**で動くため、`${CLAUDE_PLUGIN_ROOT}` は**展開されない**。必ずスクリプトの**絶対パス**を指定すること。
 
 ```json
 {

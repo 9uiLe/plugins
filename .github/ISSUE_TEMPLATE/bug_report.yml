@@ -32,10 +32,6 @@ body:
       options:
         - quality-architect
         - model-strategy
-        - agent-ops
-        - compact-plus
-        - second-opinion
-        - ios-build-optimization
         - marketplace 全体 / インストール周り
         - その他・不明
     validations:

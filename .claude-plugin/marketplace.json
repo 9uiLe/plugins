@@ -36,65 +36,6 @@
         "subagents",
         "token-economy"
       ]
-    },
-    {
-      "name": "agent-ops",
-      "source": "./plugins/agent-ops",
-      "description": "Operational discipline for agentic development: handoff-driven delegation to external agents (Claude Code or Codex), skeptical auditing, fixed-rubric first-touch UX review loops, and crystallizing session learnings into lint/scripts/skills.",
-      "version": "0.3.0",
-      "category": "development",
-      "tags": [
-        "delegation",
-        "handoff",
-        "audit",
-        "ux-review",
-        "knowledge-management",
-        "agent-workflow"
-      ]
-    },
-    {
-      "name": "compact-plus",
-      "source": "./plugins/compact-plus",
-      "description": "Preserve Claude Code session state before and after context compaction: transcript backup, LLM-generated state files, warn-threshold reminders, and post-compact recovery guidance. Ported from u-ichi/compact-plus (MIT).",
-      "version": "0.1.0",
-      "category": "productivity",
-      "tags": [
-        "compaction",
-        "session-recovery",
-        "hooks",
-        "context-management"
-      ]
-    },
-    {
-      "name": "second-opinion",
-      "source": "./plugins/second-opinion",
-      "description": "Get an independent Fable/Codex review, or run an evidence-gated decision council with explicit dissent, model-role selection, missing-information checks, and accountable synthesis.",
-      "version": "0.4.0",
-      "category": "development",
-      "tags": [
-        "advisor",
-        "second-opinion",
-        "code-review",
-        "codex",
-        "fable",
-        "context-transfer",
-        "decision-making"
-      ]
-    },
-    {
-      "name": "ios-build-optimization",
-      "source": "./plugins/ios-build-optimization",
-      "description": "Diagnose and optimize build times and module architecture for large iOS apps (Swift / SwiftPM / Xcode): classify bottlenecks from Build Timeline data, evaluate Target/Package/linkage decisions against the measured dependency graph, and emit evidence-labeled proposals with measurement plans.",
-      "version": "0.1.0",
-      "category": "development",
-      "tags": [
-        "ios",
-        "xcode",
-        "build-time",
-        "swiftpm",
-        "modularization",
-        "dependency-graph"
-      ]
     }
   ]
 }

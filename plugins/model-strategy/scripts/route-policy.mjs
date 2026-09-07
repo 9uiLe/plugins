@@ -3,8 +3,7 @@
 //
 // 先勝ちの順序付きルール列で、単一の操作記述子を担当ルールに割り当てる
 // (routeOperation) のと、委譲マニフェストの整合性を監査する (auditManifest)
-// の 2 役を 1 ファイルに持つ。plugins/second-opinion/scripts/challenge-guard.mjs
-// と同じ流儀 (export 関数 + stdin JSON CLI + node:test) を踏襲する。
+// の 2 役を 1 ファイルに持つ。export 関数 + stdin JSON CLI + node:test で構成する。
 //
 // ルール表そのものがルーティングの正本。references/02-decision-matrix.md は
 // 解説であり、tests/route-policy.test.mjs の 02 同期テストでドリフトを検知する。
@@ -399,8 +398,7 @@ async function main() {
     const result = routeOperation(input, { mode });
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     // findings/R4 は情報提供であり実行ブロックではないため、パースに成功した
-    // 限り常に exit 0 (route-warn.mjs や second-opinion のゲート系スクリプトと
-    // 異なり、route-policy は許可判定ではなくルーターであるため)。
+    // 限り常に exit 0 (route-policy は許可判定ではなくルーターであるため)。
     process.exitCode = 0;
     return;
   }

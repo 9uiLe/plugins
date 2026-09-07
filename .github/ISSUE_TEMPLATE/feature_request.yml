@@ -27,10 +27,6 @@ body:
       options:
         - quality-architect
         - model-strategy
-        - agent-ops
-        - compact-plus
-        - second-opinion
-        - ios-build-optimization
         - marketplace 全体 / リポジトリ運用
         - 新規プラグインの提案
         - その他・横断的
