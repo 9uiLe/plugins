@@ -41,7 +41,7 @@
 | 再現手順 | 「どのコマンドを実行し、Claude Code / Codex に何を指示したか」を番号付きで。第三者が同じ操作をたどれること。 |
 | 期待 / 実際の挙動 | 「こうなるはず」と「実際はこうなった」を分けて書く。 |
 | 環境情報 | Claude Code のバージョン（`/status` または `claude --version`）または Codex のバージョン、OS、実行環境、インストール方法。 |
-| ログ・成果物 | エラーメッセージや、生成された HTML / レビュー結果の該当箇所を貼る。スクリーンショットも有効。 |
+| ログ・成果物 | エラーメッセージや、モデル選択の提案 / レビュー結果の該当箇所を貼る。スクリーンショットも有効。 |
 
 機能要望の場合は、**「解決したい課題」と「提案する解決策」を分けて**書くと、議論や設計判断がしやすくなります。
 
@@ -50,7 +50,7 @@
 軽微な修正（誤字・ドキュメント）は Issue なしの PR でも構いませんが、
 仕様に影響する変更は先に Issue で方針を相談することを推奨します。
 
-1. リポジトリを Fork し、作業ブランチを作成します（例: `fix/chart-rendering`、`feat/custom-adr-template`）。
+1. リポジトリを Fork し、作業ブランチを作成します（例: `fix/review-guidance`、`docs/model-strategy-usage`）。
 2. 変更を加え、[動作確認](#リポジトリ構成と修正のヒント)を行います。
 3. PR を作成すると [Pull Request テンプレート](./.github/PULL_REQUEST_TEMPLATE.md) が表示されるので、各項目を埋めます。
 4. 関連 Issue を `Closes #123` のように紐付けます。
@@ -59,29 +59,12 @@
 
 ## リポジトリ構成と修正のヒント
 
-```
-.
-├── .claude-plugin/
-│   └── marketplace.json        ← Claude Code Marketplace マニフェスト
-├── .agents/
-│   └── plugins/
-│       └── marketplace.json    ← Codex Marketplace マニフェスト
-├── plugins/
-│   └── quality-architect/
-│       ├── .claude-plugin/plugin.json
-│       ├── .codex-plugin/plugin.json
-│       ├── skills/<skill>/SKILL.md   ← 各 Skill の本体（プロンプト/手順）
-│       ├── references/               ← ISO/IEC 25010 各特性のリファレンス
-│       ├── scripts/                  ← 品質ゲート用スクリプト
-│       └── README.md
-├── CONTRIBUTING.md
-├── LICENSE
-└── README.md
-```
+配布中のプラグインとディレクトリ構成は [README のリポジトリ構成](./README.md#リポジトリ構成) を参照してください。
 
 修正時に押さえておくと良いポイント:
 
 - **Skill の挙動を変える** → 対象プラグインの `skills/<skill>/SKILL.md` を編集します。Skill の説明や手順はここに記述されています。
+- **モデル選択・委譲方針（model-strategy）** → `plugins/model-strategy/skills/model-effort-guide/SKILL.md` と、変更内容に対応する `references/`、`scripts/`、`hooks/`、`agents/` を確認します。
 - **品質モデルの基準（quality-architect）** → `plugins/quality-architect/references/` の各 Markdown を編集します。
 - **新しいプラグインを追加する** → `plugins/<name>/` を作成し、Claude Code 用の `.claude-plugin/plugin.json`、Codex 用の `.codex-plugin/plugin.json`、ルートの `.claude-plugin/marketplace.json` / `.agents/plugins/marketplace.json` にエントリを追加します。`README.md` の収録プラグイン表も更新してください。
 - **バージョンを上げる** → 該当 `.claude-plugin/plugin.json`、`.codex-plugin/plugin.json`、Claude Code 側 `marketplace.json` の `version` を揃えて更新します。**リリース作業全体の手順は [`RELEASING.md`](./RELEASING.md) を参照** してください（`scripts/release-prepare.sh` で自動化されています）。

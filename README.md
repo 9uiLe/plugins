@@ -39,26 +39,42 @@ codex plugin add <plugin-name>@9uile-plugins
 | Name | Description |
 | --- | --- |
 | [quality-architect](./plugins/quality-architect) | ISO/IEC 25010:2023 製品品質モデル (9 特性 40 副特性) でアーキテクチャ設計とコードレビューを行う 2 つの Skill (`quality-architecture` / `quality-review`) を提供します。各特性の学術/公式リファレンス・ライブラリ付き。 |
-| [model-strategy](./plugins/model-strategy) | 従量課金前提でモデル (Fable/Opus/Sonnet/Haiku) と effort をコスパよく使い分ける Skill (`model-effort-guide`) と、安価な委譲先サブエージェント (`sonnet-implementer` / `haiku-scout`) を提供します。公式価格リファレンス付き。 |
+| [model-strategy](./plugins/model-strategy) | 総コンテキスト量・turn 数、モデル / effort、委譲方針を扱う Skill (`model-effort-guide`) を提供します。通常は軽量に運用し、詳細なルーティング監査や conductor mode は明示 opt-in です。 |
+
+モデル選択・利用量・委譲方針を相談する際は `model-effort-guide`、新規設計には `quality-architecture`、既存コードや設計のレビューには `quality-review` を使います。具体例と環境ごとの利用方法は各プラグインの README を参照してください。
 
 ## リポジトリ構成
 
-```
+```text
 .
-├── .claude-plugin/
-│   └── marketplace.json     ← Claude Code Marketplace マニフェスト
-├── .agents/
-│   └── plugins/
-│       └── marketplace.json ← Codex Marketplace マニフェスト
+├── .claude-plugin/marketplace.json   ← Claude Code Marketplace
+├── .agents/plugins/marketplace.json ← Codex Marketplace
 ├── plugins/
-│   └── quality-architect/
+│   ├── quality-architect/
+│   │   ├── .claude-plugin/plugin.json
+│   │   ├── .codex-plugin/plugin.json
+│   │   ├── skills/                  ← quality-architecture / quality-review
+│   │   ├── references/              ← 品質特性・静的評価の資料
+│   │   ├── scripts/                 ← Swift 向け品質・結合ゲート
+│   │   ├── examples/ci/             ← GitHub Actions の導入例
+│   │   ├── quality-gates.yml
+│   │   └── README.md
+│   └── model-strategy/
 │       ├── .claude-plugin/plugin.json
 │       ├── .codex-plugin/plugin.json
-│       ├── skills/
-│       │   ├── quality-architecture/SKILL.md
-│       │   └── quality-review/SKILL.md
-│       ├── references/      ← ISO/IEC 25010 各特性のリファレンス
+│       ├── skills/                  ← model-effort-guide
+│       ├── agents/                  ← Claude Code 向け委譲先・judge
+│       ├── hooks/                   ← opt-in の警告・範囲ガード
+│       ├── scripts/                 ← ルーティング・ステータス表示
+│       ├── references/
+│       ├── tests/
 │       └── README.md
+├── docs/                           ← 設計指針・ADR
+├── scripts/                        ← リリース・バージョン検証
+├── releases/                       ← リリースノート
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── RELEASING.md
 ├── LICENSE
 └── README.md
 ```
@@ -91,7 +107,9 @@ codex plugin marketplace add /path/to/this/repo
 
 ## 変更履歴
 
-リリースごとの変更点は [CHANGELOG.md](./CHANGELOG.md) にまとめています。
+リリースごとの変更点は [CHANGELOG.md](./CHANGELOG.md) と [GitHub Releases](https://github.com/9uiLe/plugins/releases) にまとめています。
+
+v0.6.0 で `agent-ops`、`compact-plus`、`second-opinion`、`ios-build-optimization` を配布対象から削除しました。更新時の注意点は [v0.6.0 リリースノート](./releases/v0.6.0.md) を参照してください。
 
 ## ライセンス
 

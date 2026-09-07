@@ -21,7 +21,7 @@ body:
       options:
         - label: 既存の Issue を検索し、重複がないことを確認した。
           required: true
-        - label: 最新版のプラグイン / Claude Code で再現することを確認した。
+        - label: 最新版のプラグインと利用環境（Claude Code / Codex）で再現することを確認した。
           required: false
 
   - type: dropdown
@@ -43,8 +43,8 @@ body:
       label: 対象の Skill / コマンド
       description: |
         どの Skill・スラッシュコマンドで発生しましたか。
-        例: `create-adr`, `create-spec`, `create-doc`, `quality-architecture`, `quality-review`
-      placeholder: "例: create-spec"
+        例: `quality-architecture`, `quality-review`, `model-effort-guide`
+      placeholder: "例: quality-review"
     validations:
       required: false
 
@@ -53,7 +53,7 @@ body:
     attributes:
       label: 不具合の概要
       description: 何が起きているかを 1〜3 文で簡潔に説明してください。
-      placeholder: "例: create-spec で生成した HTML のチャートが表示されない。"
+      placeholder: "例: quality-review が対象コードの静的計測結果を出力しない。"
     validations:
       required: true
 
@@ -63,7 +63,7 @@ body:
       label: 再現手順
       description: 開発者が同じ状態を再現できるよう、番号付きで具体的に記載してください。
       value: |
-        1. `/plugin install ...` で導入
+        1. 利用環境とインストール時のコマンドを記載
         2. `...` を実行
         3. `...` を指示
         4. エラー / 不正な出力が発生
@@ -74,7 +74,7 @@ body:
     id: expected
     attributes:
       label: 期待した挙動
-      placeholder: "例: チャートが正しくレンダリングされた HTML が生成される。"
+      placeholder: "例: 静的計測結果と根拠を含むレビューが出力される。"
     validations:
       required: true
 
@@ -83,7 +83,7 @@ body:
     attributes:
       label: 実際の挙動
       description: 実際に起きたことを記載してください。
-      placeholder: "例: チャート領域が空白のまま表示される。"
+      placeholder: "例: 計測結果や未計測の理由が記載されない。"
     validations:
       required: true
 
@@ -105,7 +105,8 @@ body:
       description: |
         以下を埋めてください。Claude Code のバージョンは `/status` または `claude --version` で確認できます。
       value: |
-        - Claude Code バージョン:
+        - 利用環境: (Claude Code / Codex)
+        - バージョン:
         - 実行環境: (CLI / VS Code 拡張 / JetBrains / Web など)
         - OS / バージョン:
         - プラグインのバージョン:

@@ -4,7 +4,7 @@ Claude Code / Codex の総利用量を、モデル選択だけでなく送信コ
 
 **原則: まず巨大コンテキストの反復送信を止め、その後で高価なモデルを「判断」に、安価なモデルを量のある定型作業に使う。**
 
-通常は R0〜R4 の軽量ルーティングだけを使う。監査可能な厳密モードでは、タスクを操作列に分解し、`P0`→`R0`→`R1`→`R2`→`R3`→`R4` の順に先勝ちで判定する。正本は [`scripts/route-policy.mjs`](./scripts/route-policy.mjs)、解説は [`references/02-decision-matrix.md`](./references/02-decision-matrix.md)。
+通常は P0・R0〜R4 の軽量ルーティングを使う。監査可能な厳密モードでは、タスクを操作列に分解し、`P0`→`R0`→`R1`→`R2`→`R3`→`R4` の順に先勝ちで判定する。正本は [`scripts/route-policy.mjs`](./scripts/route-policy.mjs)、解説は [`references/02-decision-matrix.md`](./references/02-decision-matrix.md)。
 
 ## 提供するもの
 
@@ -38,7 +38,7 @@ Claude Code / Codex の総利用量を、モデル選択だけでなく送信コ
 
 | Hook | 役割 |
 | --- | --- |
-| [`hooks/route-warn.mjs`](./hooks/route-warn.mjs) | `MODEL_STRATEGY_ROUTE_WARN=1` 設定時のみ、メインセッションが R1 相当の操作を直接実行しようとした最初の 1 回に委譲検討の警告を注入する (既定不活性) |
+| [`hooks/route-warn.mjs`](./hooks/route-warn.mjs) | `MODEL_STRATEGY_ROUTE_WARN=1` 設定時のみ、メインセッションが R1 相当の操作を直接実行しようとした際に委譲検討の警告を注入する。状態を保存できる場合はセッション・ツール名ごとに最初の 1 回に抑える (既定不活性) |
 | [`hooks/scope-guard.mjs`](./hooks/scope-guard.mjs) | `MODEL_STRATEGY_MODE=conductor` かつ基準線ファイルが存在する場合のみ、`Edit`/`Write`/`NotebookEdit` が基準線の範囲外に書き込もうとした際に警告を注入する (warn-only・fail-open。Bash 経由の書き込みは検出不可。v0.3.0) |
 
 ### Subagents

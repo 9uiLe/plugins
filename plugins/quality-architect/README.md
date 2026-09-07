@@ -11,7 +11,7 @@
 | Skill | 用途 |
 | --- | --- |
 | `quality-architecture` | 要件から品質特性を優先付けし、各特性のタクティクスでアーキテクチャを設計・評価（ATAM 的トレードオフ分析、根拠リファレンス付き）。**まだコードが無い設計**が対象。 |
-| `quality-review` | コード/差分を 9 特性 40 副特性で網羅レビュー。重大度付き指摘とスコアカードを出力し、各指摘に学術/公式リファレンスを引用。**既存コードの設計が妥当かの「設計レビュー」もこちら**（§1 step 2 設計妥当性）。 |
+| `quality-review` | 既存コード/差分/PR/リポジトリを 9 特性でトリアージし、必要な特性・副特性を精査。静的解析の測定結果、重大度・設計/実装層・差分帰属付き指摘、スコアカードと根拠リファレンスを出力。**既存コードの設計が妥当かの「設計レビュー」もこちら**（§1 step 2 設計妥当性）。 |
 
 > **使い分けの軸は「対象が既に在るか」。**「設計の妥当性を見る＝architecture」ではありません。既存コードの設計評価は `quality-review` の step 2 が担い、欠陥チェックの前にトップダウンで設計判断の妥当性を評価します。review が「設計を作り直すべき」と結論し、置換アーキの新規設計に進む場合のみ `quality-architecture` へ前方ハンドオフします。
 
@@ -23,6 +23,8 @@
 ```
 
 スキルは要求に応じて自動的に起動します。
+
+`quality-review` は対象未指定なら現在の差分を既定にします。実行に影響しない文書・typo などの軽微な差分には軽量フォーマットを使えます。
 
 ## インストール
 
@@ -51,6 +53,7 @@ references/
 ├── 06-security.md                  セキュリティ
 ├── 07-maintainability.md           保守性
 ├── 07a-coupling-deep-dive.md       結合の深掘り補論（Khononov 2024 — Integration Strength × Distance × Volatility / BALANCE / §6.3.1 削減アクション・カタログ）
+├── 07a-review-integration.md       結合シグナルをレビューへ統合する条件と規律（必要時のみ）
 ├── 08-flexibility.md               柔軟性（旧: 移植性）
 ├── 09-safety.md                    安全性（2023 で新設）
 └── static-evaluation.md            静的評価レイヤーの方法論
@@ -68,15 +71,17 @@ LLM の判断は数値化できない残余に閉じ込めます。設計は 3 �
 - **③ 判定**= スキルが数値としきい値を機械的に突き合わせ
 
 言語差は ② のプロファイルに閉じ込めるため、**スキルもリファレンスも言語ごとに分けません**。
-新言語は `quality-gates.yml` に profile を 1 つ追記するだけ。現在は **Swift** プロファイルを同梱
-（SwiftLint / lizard / Periphery / swift-format / Trivy）。方法論は [`references/static-evaluation.md`](./references/static-evaluation.md)。
+新言語の指標・ツール・しきい値は `quality-gates.yml` の profile に追加します。現在は **Swift** プロファイルを同梱
+（SwiftLint / lizard / Periphery / swift-format / Swift のテストカバレッジ / Trivy）。対象プロジェクトの設定にしきい値があれば同梱の既定値より優先します。プロファイルが無い言語では、利用可能な言語横断ツールの実測値を `measured-only` として報告し、未定義のしきい値で PASS/FAIL を作りません。方法論は [`references/static-evaluation.md`](./references/static-evaluation.md)。
 
 完全に決定論化したい場合は、ツール実行〜しきい値判定〜JSON 出力を行うラッパースクリプトを使う:
 
 - [`scripts/quality-gate-swift.sh`](./scripts/quality-gate-swift.sh) — `quality-gate-result.json` を出力。スキルは数値を読むだけ。
 - [`examples/ci/github-actions-swift-quality.yml`](./examples/ci/github-actions-swift-quality.yml) — CI でツールを走らせ結果を artifact 化（ローカルにツールが無くても揺らぎを排除）。
 
-`quality-review` は CI 結果 JSON があれば最優先で採用し、無ければスクリプト、それも無ければ個別コマンドの順にフォールバックします。
+`quality-review` は既存の `quality-gate-result.json` の鮮度・commit・対象範囲を確認して最優先で採用し、不一致または未検出ならスクリプト、個別コマンドの順にフォールバックします。全指標が未実行なら総合判定は `inconclusive` です。差分/PR レビューでは、リポジトリ全体の FAIL に差分起因・既存・不明の帰属を付けます。
+
+結合シグナル用の [`scripts/coupling-gate-swift.sh`](./scripts/coupling-gate-swift.sh) も同梱しています（EXPERIMENTAL・既定オフ）。`coupling-gate-result.json` を採用するか、明示的に wrapper を実行した場合だけ [`references/07a-review-integration.md`](./references/07a-review-integration.md) を適用し、考察の補足に使います。既存の PASS/FAIL を反転したり、重大度を上げたりはしません。
 
 ### ツール導入とサプライチェーン
 
