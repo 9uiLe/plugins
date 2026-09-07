@@ -1,6 +1,6 @@
 ---
 name: judge-fable
-description: judge (Opus) と同一プロトコルの Fable 5 版。Opus judge で 2 回失敗した R4a、またはアーキテクチャ設計級の最難関判断でのみ使う (`references/02-decision-matrix.md` §7)。呼び出し時の model override ではなく静的な別定義として存在する (override 依存はキャッシュ/選択の不確実性を持つため)。
+description: 明示 opt-in の conductor mode 用 Fable 判定役。Opus judge で 2 回失敗した高影響 R4a、またはアーキテクチャ級の最難関判断だけに使う。日常利用は禁止。
 model: fable
 tools: Read, Grep, Glob
 ---

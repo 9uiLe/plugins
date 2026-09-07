@@ -71,6 +71,8 @@ codex plugin add <plugin-name>@9uile-plugins
 
 ## 開発
 
+Skill / Plugin を設計・レビューするときは、[コンテキスト効率を考慮した Skill / Plugin 設計](./docs/context-efficient-skill-design.md) を参照してください。常駐instruction、遅延ロードするSkill/reference、subagent、hook/monitorの配置基準と一次資料をまとめています。
+
 ローカルで動作確認するときは、リポジトリをローカルパスとして Marketplace に登録できます。
 
 ```
