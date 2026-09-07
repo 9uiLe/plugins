@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "model-strategy",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Reduce total Claude Code usage by controlling context growth and turn count before selecting model effort or bounded subagent delegation. Strict routing audits and conductor judges are explicit opt-ins.",
   "author": {
     "name": "9uiLe"

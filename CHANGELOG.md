@@ -5,6 +5,18 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-08
+
+### Changed
+
+- **model-strategy** (v0.3.0 → v0.4.0): モデル単価より総コンテキスト量・turn 数を優先する軽量な運用へ変更。スキルの起動条件を明示的なモデル・利用量・委譲方針の相談に限定し、委譲範囲と戻り値を制限。割当マニフェスト・完了監査・judge は明示 opt-in に変更。
+- **docs**: コンテキスト効率を考慮した Skill / Plugin 設計指針とリポジトリ共通指示を整備。
+
+### Removed
+
+- **破壊的変更**: 未使用の `agent-ops`、`compact-plus`、`second-opinion`、`ios-build-optimization` を Claude Code / Codex の marketplace と配布内容から削除。対象スキルは `agent-handoff`、`first-touch-review`、`crystallize`、`compact-plus`、`second-opinion`、`decision-council`、`ios-build-optimization` の7件。
+- 削除したプラグイン専用のテスト・CI 実行・Issue テンプレートと、残存プラグインからの関連参照を整理。
+
 ## [0.5.0] - 2026-08-17
 
 ### Added
@@ -170,7 +182,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/9uiLe/plugins/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/9uiLe/plugins/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/9uiLe/plugins/compare/v0.3.4...v0.4.0
 [0.3.4]: https://github.com/9uiLe/plugins/compare/v0.3.3...v0.3.4
