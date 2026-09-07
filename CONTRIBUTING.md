@@ -1,96 +1,92 @@
 # コントリビューションガイド
 
-`9uiLe/plugins` をご利用いただきありがとうございます。
-このリポジトリは [Claude Code](https://claude.com/claude-code) / Codex 用プラグインの Marketplace です。
-不具合の報告・改善提案・Pull Request はいつでも歓迎します。
+このリポジトリでは、Claude Code / Codex 用の `quality-architect` と `model-strategy` を配布しています。プラグインの用途と構成は [README](./README.md) を参照してください。
 
-- [不具合 / 改善を報告する（Issue の起票）](#不具合--改善を報告するissue-の起票)
-- [報告前のチェックリスト](#報告前のチェックリスト)
-- [良い報告の書き方](#良い報告の書き方)
-- [Pull Request を送る](#pull-request-を送る)
-- [リポジトリ構成と修正のヒント](#リポジトリ構成と修正のヒント)
-- [セキュリティ上の問題の報告](#セキュリティ上の問題の報告)
+## 不具合・改善提案・質問
 
----
+[GitHub Issues](https://github.com/9uiLe/plugins/issues) で既存の報告を検索し、該当する報告がなければ「New issue」からバグ報告または機能要望のテンプレートを選びます。使い方の相談は [Discussions](https://github.com/9uiLe/plugins/discussions) で受け付けています。
 
-## 不具合 / 改善を報告する（Issue の起票）
+バグ報告には、次の情報を記載してください。ログや成果物に API キー、個人情報、非公開コードが含まれていないことも確認してください。
 
-1. リポジトリの **Issues** タブを開き、**「New issue」** をクリックします。
-2. 目的に合ったテンプレートを選びます。
-   - **🐞 バグ報告 / Bug report** … プラグインが期待どおり動かない場合。
-   - **✨ 改善・機能要望 / Feature request** … 新機能の提案や既存機能の改善。
-   - 使い方の質問は Issue ではなく **Discussions**（または README）をご利用ください。
-3. フォームの各項目を埋めて送信します。**項目を空のままにせず**、分かる範囲で具体的に記入してください。
-
-> テンプレートの実体は [`.github/ISSUE_TEMPLATE/`](./.github/ISSUE_TEMPLATE/) にあります。
-
-## 報告前のチェックリスト
-
-- [ ] [既存の Issue](https://github.com/9uiLe/plugins/issues?q=is%3Aissue) を検索し、重複がないか確認した。
-- [ ] プラグイン / Claude Code / Codex を最新版に更新しても再現するか確認した。
-- [ ] 機微な情報（APIキー・社内コード・個人情報など）がログやスクリーンショットに含まれていないか確認した。
-
-## 良い報告の書き方
-
-修正担当者が**追加の質問なしに着手できる**よう、以下を意識してください。
-これらはバグ報告フォームの項目に対応しています。
-
-| 項目 | ポイント |
+| 情報 | 記載内容 |
 | --- | --- |
-| 対象プラグイン / Skill | `quality-architect` / `model-strategy` などどのプラグインか、`quality-review` などどの Skill かを明記する。 |
-| 再現手順 | 「どのコマンドを実行し、Claude Code / Codex に何を指示したか」を番号付きで。第三者が同じ操作をたどれること。 |
-| 期待 / 実際の挙動 | 「こうなるはず」と「実際はこうなった」を分けて書く。 |
-| 環境情報 | Claude Code のバージョン（`/status` または `claude --version`）または Codex のバージョン、OS、実行環境、インストール方法。 |
-| ログ・成果物 | エラーメッセージや、モデル選択の提案 / レビュー結果の該当箇所を貼る。スクリーンショットも有効。 |
+| 対象 | プラグイン名、スキル名、プラグインのバージョン |
+| 環境 | Claude Code / Codex の種別とバージョン、OS、CLI・エディタ拡張などの実行環境 |
+| 導入方法 | Marketplace の登録先、インストールに使ったコマンド |
+| 再現手順 | 対象ファイルや設定、実行したコマンド、エージェントに渡した依頼 |
+| 期待と結果 | 期待する出力、実際の出力、エラーや成果物の該当箇所 |
+| 再現状況 | 最新版で確認したか、毎回起きるか、発生条件が分かっているか |
 
-機能要望の場合は、**「解決したい課題」と「提案する解決策」を分けて**書くと、議論や設計判断がしやすくなります。
+機能要望には、利用場面、解決したい課題、期待する挙動を記載してください。具体的な実装案や代替案があれば添えてください。
 
-## Pull Request を送る
+脆弱性や機微な情報を含む報告は、[SECURITY.md](./SECURITY.md) の非公開窓口を利用してください。
 
-軽微な修正（誤字・ドキュメント）は Issue なしの PR でも構いませんが、
-仕様に影響する変更は先に Issue で方針を相談することを推奨します。
+## 変更対象を選ぶ
 
-1. リポジトリを Fork し、作業ブランチを作成します（例: `fix/review-guidance`、`docs/model-strategy-usage`）。
-2. 変更を加え、[動作確認](#リポジトリ構成と修正のヒント)を行います。
-3. PR を作成すると [Pull Request テンプレート](./.github/PULL_REQUEST_TEMPLATE.md) が表示されるので、各項目を埋めます。
-4. 関連 Issue を `Closes #123` のように紐付けます。
+スキルは依頼に応じて読み込まれる手順書、リファレンスは手順の実行中に必要な資料です。各ファイルの配置は [リポジトリ構成](./README.md#リポジトリ構成) を参照してください。
 
-コミットメッセージは `fix:` / `feat:` / `docs:` などの prefix を付けると変更種別が伝わりやすくなります。
+| 変更内容 | 対象 |
+| --- | --- |
+| スキルの起動条件・手順・出力 | `plugins/<name>/skills/<skill>/SKILL.md` |
+| 品質特性の定義・設計やレビューの観点 | `plugins/quality-architect/references/` |
+| 品質指標・測定ツール・しきい値 | `plugins/quality-architect/quality-gates.yml` と `scripts/` |
+| モデル・委譲の判断資料 | `plugins/model-strategy/references/` |
+| 操作の振り分け・警告・委譲先の動作 | `plugins/model-strategy/scripts/`、`hooks/`、`agents/` |
+| GitHub の報告・PR フォーム | `.github/ISSUE_TEMPLATE/`、`.github/PULL_REQUEST_TEMPLATE.md` |
+| リリース手順 | `RELEASING.md`、`scripts/`、`.github/workflows/verify-versions.yml` |
 
-## リポジトリ構成と修正のヒント
+スキルやプラグインを設計する際は、[コンテキスト効率を考慮した設計指針](./docs/context-efficient-skill-design.md) を参照してください。リリース手順を変更する場合は、手順書・スクリプト・CI の仕様を同じ PR で揃えます。
 
-配布中のプラグインとディレクトリ構成は [README のリポジトリ構成](./README.md#リポジトリ構成) を参照してください。
+## プラグインの登録とバージョン
 
-修正時に押さえておくと良いポイント:
+新規プラグインは `plugins/<name>/` に作成し、次を用意します。
 
-- **Skill の挙動を変える** → 対象プラグインの `skills/<skill>/SKILL.md` を編集します。Skill の説明や手順はここに記述されています。
-- **モデル選択・委譲方針（model-strategy）** → `plugins/model-strategy/skills/model-effort-guide/SKILL.md` と、変更内容に対応する `references/`、`scripts/`、`hooks/`、`agents/` を確認します。
-- **品質モデルの基準（quality-architect）** → `plugins/quality-architect/references/` の各 Markdown を編集します。
-- **新しいプラグインを追加する** → `plugins/<name>/` を作成し、Claude Code 用の `.claude-plugin/plugin.json`、Codex 用の `.codex-plugin/plugin.json`、ルートの `.claude-plugin/marketplace.json` / `.agents/plugins/marketplace.json` にエントリを追加します。`README.md` の収録プラグイン表も更新してください。
-- **バージョンを上げる** → 該当 `.claude-plugin/plugin.json`、`.codex-plugin/plugin.json`、Claude Code 側 `marketplace.json` の `version` を揃えて更新します。**リリース作業全体の手順は [`RELEASING.md`](./RELEASING.md) を参照** してください（`scripts/release-prepare.sh` で自動化されています）。
-- **リリース手順を変える** → `RELEASING.md` / `scripts/**` / `.github/workflows/verify-versions.yml` は同一 PR で更新します（仕様ドリフト防止）。
+- Claude Code 用マニフェスト: `.claude-plugin/plugin.json`
+- Codex 用マニフェスト: `.codex-plugin/plugin.json`
+- スキル本体: `skills/<skill>/SKILL.md`
+- 利用案内: `README.md`
 
-### ローカルでの動作確認
+ルートの `.claude-plugin/marketplace.json` と `.agents/plugins/marketplace.json` に配布エントリを追加し、ルート README のプラグイン一覧にも掲載します。
 
-リポジトリをローカルパスとして Marketplace に登録し、実際に Skill を実行して確認できます。
+個別プラグインのバージョンは、両環境の `plugin.json` と Claude Code 用 Marketplace の該当エントリで揃えます。リポジトリ全体のリリース版とは別に管理します。更新・公開の手順は [RELEASING.md](./RELEASING.md) に記載しています。
 
-```
+## ローカルで検証する
+
+スキルや導入設定の変更は、リポジトリをローカルパスで登録して確認できます。`/path/to/this/repo` は作業コピーの絶対パス、`<plugin-name>` は対象プラグイン名に置き換えてください。
+
+Claude Code の会話内:
+
+```text
 /plugin marketplace add /path/to/this/repo
 /plugin install <plugin-name>@9uile-plugins
 ```
+
+Codex 用のターミナルコマンド:
 
 ```bash
 codex plugin marketplace add /path/to/this/repo
 codex plugin add <plugin-name>@9uile-plugins
 ```
 
-JSON（`plugin.json` / `marketplace.json`）を編集した場合は、構文エラーがないことと `scripts/verify-versions.sh` が通ることを確認してください。
+対象のスキルに再現手順や利用例を渡し、期待する出力を確認します。文書だけの変更は、説明と実装の一致、リンク先、コマンド例を確認します。
 
-## セキュリティ上の問題の報告
+CI の検証コマンドはリポジトリのルートで実行できます。必要なツールは Bash、Git、jq、Node.js、ShellCheck です。
 
-脆弱性や機微な情報を含む不具合は、**公開 Issue を作成せず**、[SECURITY.md](./SECURITY.md) に記載の手順（GitHub Private Vulnerability Reporting）でご連絡ください。
-公開リポジトリに詳細を投稿すると、修正前に悪用されるおそれがあります。
+```bash
+bash scripts/verify-versions.sh
+bash scripts/tests/verify-versions-completeness.test.sh
+node --test plugins/model-strategy/tests/*.test.mjs
+shellcheck -S warning -x scripts/*.sh scripts/lib/*.sh scripts/tests/*.sh
+```
 
----
+マニフェストや配布対象の変更には `verify-versions.sh`、検証スクリプトの変更にはそのテスト、model-strategy の処理変更には Node.js のテストを実行してください。CI の定義は [verify-versions.yml](./.github/workflows/verify-versions.yml) にあります。
 
-ご協力ありがとうございます！🎉
+## Pull Request を送る
+
+1. Fork または書き込み権限のある作業コピーで、変更用ブランチを作成します。
+2. 対象ファイルを変更し、変更内容に対応する検証を実行します。
+3. 変更の目的をコミットメッセージに記載します。`fix:`、`feat:`、`docs:` などの接頭辞で種別を示します。
+4. ブランチを push し、`master` 向けの Pull Request を作成します。
+5. [PR テンプレート](./.github/PULL_REQUEST_TEMPLATE.md) に、成果と検証手順・結果を記載します。関連 Issue があれば `Closes #123` などで紐付けます。
+
+誤字や文書の修正は Issue なしでも提出できます。仕様に影響する変更は、Issue で方針を相談してから進めることを推奨します。マージはリポジトリのブランチ保護ルールに従い、承認レビューを受けて行います。

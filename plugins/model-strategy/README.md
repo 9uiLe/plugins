@@ -1,101 +1,107 @@
 # model-strategy
 
-Claude Code / Codex の総利用量を、モデル選択だけでなく送信コンテキスト量・turn 数・委譲回数まで含めて抑えるプラグインです。
+Claude Code / Codex で、タスク完了までの総利用量を抑えるためのプラグインです。モデル選択に加え、会話のコンテキスト量、やり取りの回数、サブエージェントへの委譲コストを考慮して実行方針を決めます。
 
-**原則: まず巨大コンテキストの反復送信を止め、その後で高価なモデルを「判断」に、安価なモデルを量のある定型作業に使う。**
+次のような場合に使います。
 
-通常は P0・R0〜R4 の軽量ルーティングを使う。監査可能な厳密モードでは、タスクを操作列に分解し、`P0`→`R0`→`R1`→`R2`→`R3`→`R4` の順に先勝ちで判定する。正本は [`scripts/route-policy.mjs`](./scripts/route-policy.mjs)、解説は [`references/02-decision-matrix.md`](./references/02-decision-matrix.md)。
-
-## 提供するもの
-
-### Skill
-
-| Skill | 役割 |
-| --- | --- |
-| `model-effort-guide` | セッション単位でモデル・effort・有界な委譲方針を決める。通常は軽量ルーティングを使い、厳密なマニフェスト監査は明示 opt-in に限定する |
-
-トリガー例: 「このタスクに最適なモデルは」「コスパよく実行して」「利用上限を節約して」「委譲方針を決めて」「操作をルーティングして」。通常の coding task では自動起動せず、セッション冒頭または方針変更時に 1 回だけ使います。
-
-毎回の手動起動をなくしたい場合は、プロジェクトの `CLAUDE.md` に次の軽量 capsule だけを置きます。スキル全文や UserPromptSubmit ごとの自動注入は、毎 turn のコンテキストを増やすため推奨しません。
-
-```md
-## 利用量の原則
-- 小さい既知操作はメインが直接実行する。広域探索はモデル固定の cheap scout、仕様確定済みのまとまった実装だけ implementer へ委譲する。
-- 高価な親モデルを継承する Explore/general-purpose/fork をコスト削減目的で使わない。同目的の委譲は 1 回にまとめる。
-- PR/Phase 完了時は /clear、約 150k tokens 超では状態退避後に /compact。sleep ポーリングは禁止。
-- model-effort-guide はモデル方針を変更するとき、または厳密な routing audit が必要なときだけ呼ぶ。
-```
-
-### Scripts
-
-| スクリプト | 役割 |
-| --- | --- |
-| [`scripts/route-policy.mjs`](./scripts/route-policy.mjs) | ルーティングルール (P0〜R4) の正本。`route`/`audit` サブコマンドで操作の判定・委譲マニフェストの監査を行う CLI |
-| [`scripts/context-statusline.sh`](./scripts/context-statusline.sh) | メインセッションの常駐コンテキスト使用率を `statusLine` に表示する同梱スクリプト |
-| [`scripts/subagent-statusline.sh`](./scripts/subagent-statusline.sh) | 委譲先タスクの状態を `subagentStatusLine` に表示する同梱スクリプト |
-
-### Hooks (opt-in)
-
-| Hook | 役割 |
-| --- | --- |
-| [`hooks/route-warn.mjs`](./hooks/route-warn.mjs) | `MODEL_STRATEGY_ROUTE_WARN=1` 設定時のみ、メインセッションが R1 相当の操作を直接実行しようとした際に委譲検討の警告を注入する。状態を保存できる場合はセッション・ツール名ごとに最初の 1 回に抑える (既定不活性) |
-| [`hooks/scope-guard.mjs`](./hooks/scope-guard.mjs) | `MODEL_STRATEGY_MODE=conductor` かつ基準線ファイルが存在する場合のみ、`Edit`/`Write`/`NotebookEdit` が基準線の範囲外に書き込もうとした際に警告を注入する (warn-only・fail-open。Bash 経由の書き込みは検出不可。v0.3.0) |
-
-### Subagents
-
-| Agent | Model | 役割 |
-| --- | --- | --- |
-| `sonnet-implementer` | Sonnet | R3: 仕様が固まった、起動コストを正当化できるまとまりのある実装 |
-| `haiku-scout` | Haiku | R1/R2: 複数ファイルの探索や独立検証を 1 回の有界な依頼で処理 |
-| `judge` | Opus | 明示 opt-in の高保証 conductor mode で R4a を判定する。通常モードの日常レビューには使わない |
-| `judge-fable` | Fable 5 | `judge` と同一プロトコルの Fable 5 版 (静的な別定義)。Opus judge で 2 回失敗した R4a、または最難関判断限定 (v0.3.0) |
-
-### References
-
-| ファイル | 内容 |
-| --- | --- |
-| [00-pricing.md](./references/00-pricing.md) | モデル価格表・Fable 5 の実効コスト・キャッシュ/バッチ価格 |
-| [01-effort-levels.md](./references/01-effort-levels.md) | effort 5 段階 (low〜max) の使い分けとモデル別知見 |
-| [02-decision-matrix.md](./references/02-decision-matrix.md) | 操作ルーティング (P0〜R4) の解説・git 割り当て表・R3 の 4 フィールド・Codex 読み替え (ルールの正本は `scripts/route-policy.mjs`) |
-| [03-cost-levers.md](./references/03-cost-levers.md) | プロンプトキャッシュ温存・コンテキスト衛生・アンチパターン |
-| [04-large-codebase.md](./references/04-large-codebase.md) | 大規模コードベースの量制御・常駐コンテキストを平坦に保つ規定 |
-| [05-repo-index.md](./references/05-repo-index.md) | ナビゲーション索引 (pull 優先)・外部 queryable 索引を第一に薄い CLAUDE.md 地図はフォールバック |
-| [06-context-monitor.md](./references/06-context-monitor.md) | コンテキスト量・委譲の可視化を statusLine/subagentStatusLine で行う同梱スクリプトと配線手順、実測手段と限界 |
-| [07-codex.md](./references/07-codex.md) | Codex CLI (GPT 系モデル) の価格・reasoning effort・委譲代替の決定基準 |
-| [08-conductor-mode.md](./references/08-conductor-mode.md) | conductor mode (v0.3.0): R4 サブタイプ (R4-ctx/R4a/R4b)・judge 委譲・失敗シグナル分類・scope-guard・限界の明記 |
-
-## 戦略の要約
-
-モデル選択前の既定動作:
-
-- PR / Phase の完了時は `/clear`、約 150k tokens 超または途中状態を保つ必要がある場合は状態退避後に `/compact`
-- `sleep` + メッセージのポーリングを避け、runtime / Orca の wait・monitor を使う
-- 単発 Read や 1 コマンドにサブエージェントを起動しない。同目的の探索・検証は 1 回にまとめる
-- Explore / general-purpose / fork のように高価な親モデルを継承する役割を、コスト削減目的で使わない
-- 並列実行は所要時間短縮が必要な場合だけ。通常はキューして同時稼働を抑える
-
-| タスク | 担当 | effort |
-| --- | --- | --- |
-| 設計・技術選定・監査・レビュー | メインセッション (Opus 級) | medium〜high |
-| 最難関実装・大規模リファクタ | メインセッション | xhigh |
-| 仕様確定済みの実装 | sonnet-implementer | — |
-| 複数ファイルの探索・独立検証 | haiku-scout | — |
-| 大量の機械的一括処理 | Batches API (API 直叩き、50% off) | — |
-
-Fable 5 は Opus 4.8 比で約 2 倍のコスト（トークナイザは同一）。サブスクでも従量クレジット制（$10/$50。同梱期間は 2026-07-07 で終了）のため、「長時間自律実行」「Opus で失敗を繰り返すタスク」「Fable でしか差が出ない判断タスク」に限定します（詳細: [00-pricing.md §4](./references/00-pricing.md)）。
+- タスクに合うモデルと effort（推論に割く労力）を選びたい
+- 長い会話や繰り返しの探索による利用量を抑えたい
+- メインで実行する作業と、サブエージェントに任せる作業を決めたい
+- 操作ごとの担当を記録し、監査可能な形で実行したい
 
 ## インストール
 
-```bash
-# Claude Code
+Claude Code の会話内:
+
+```text
 /plugin marketplace add 9uiLe/plugins
 /plugin install model-strategy@9uile-plugins
 
-# Codex
+```
+
+Codex 用のターミナルコマンド:
+
+```bash
 codex plugin marketplace add 9uiLe/plugins
 codex plugin add model-strategy@9uile-plugins
 ```
 
-## 典拠
+## 使い方
 
-価格・effort の仕様は platform.claude.com / developers.openai.com の公式ドキュメントに基づきます（価格表と Codex モデル表は 2026-07-23 に公式ページで再照合、effort 仕様の基礎は 2026-06-04 時点キャッシュ + 2026-07-23 の CLI 実機確認)。最新値は各リファレンス冒頭のリンクから確認してください。
+モデル選択や利用量、委譲方針を明示的に相談すると、`model-effort-guide` スキルが起動します。
+
+```text
+このタスクに最適なモデルと effort を選んで
+利用上限を節約して、この機能を実装して
+委譲方針を決めて
+```
+
+推奨を求めた場合は、モデル・effort・必要な委譲先、選択理由、会話を区切るタイミングを返します。実行も依頼した場合は、最初に方針を共有してから作業を進めます。
+
+通常のコーディング依頼だけでは自動起動しません。同じ方針が続く間は繰り返し呼び出さず、セッション冒頭や方針変更時に使います。
+
+## 実行方針
+
+モデルを選ぶ前に、不要なコンテキストの蓄積と反復送信を抑えます。作業の区切りでは `/clear`、継続情報を残したい場合は状態を保存して `/compact` を使います。探索・検証は同じ目的の依頼にまとめ、待機には実行環境の wait / monitor 機能を使います。
+
+日常の作業は、次の区分で担当を決めます。
+
+| 区分 | 作業 | 担当方針 |
+| --- | --- | --- |
+| P0 | 外部への書き込み、破壊的操作、履歴改変 | 実行権限を確認する |
+| R0 | 既知ファイルの短い読み取り、単発の状態確認 | メインで直接実行する |
+| R1 / R2 | 複数ファイルの探索、広域抽出、独立した検証 | 範囲を定めた探索・検証担当にまとめて依頼する |
+| R3 | 対象、期待結果、変更範囲、検証方法が確定した実装 | 実装担当に委譲する |
+| R4 | 設計、曖昧さの解消、デバッグ、レビューの統合 | メインで判断する |
+
+委譲は、作業が独立し、最初の依頼だけで完結でき、起動や結果統合を含めても利用量が減る場合に行います。小さな既知操作は直接実行します。
+
+### 同梱サブエージェント
+
+Claude Code 向けに、モデルを固定した次のエージェント定義を同梱しています。Codex では、利用可能なモデルと委譲機能に応じて担当を読み替えます。
+
+| Agent | モデル | 用途 |
+| --- | --- | --- |
+| `haiku-scout` | Haiku | 探索・独立検証 |
+| `sonnet-implementer` | Sonnet | 仕様が確定した、まとまりのある実装 |
+| `judge` | Opus | 高保証モードでの独立判定 |
+| `judge-fable` | Fable 5 | 高保証モードで、難しい判断や Opus judge の失敗後に使う独立判定 |
+
+モデル価格、effort の対応、選択条件は[価格資料](./references/00-pricing.md)、[effort 資料](./references/01-effort-levels.md)、[Codex 向け資料](./references/07-codex.md)にまとめています。各資料の確認日と公式リンクを参照してください。
+
+## 任意機能
+
+### 監査と独立判定
+
+監査可能なルーティングや独立判定を明示的に求めた場合は、高保証モード（conductor mode）を使います。操作ごとの割当をマニフェストに記録し、変更可能な範囲を基準線として保存し、必要に応じて judge に判定を委譲します。
+
+[`scripts/route-policy.mjs`](./scripts/route-policy.mjs) が詳細な振り分けルールの正本です。`route` サブコマンドで操作を判定し、`audit` で割当マニフェストを監査します。詳細は[ルーティング規則](./references/02-decision-matrix.md)と[高保証モードの手順](./references/08-conductor-mode.md)を参照してください。
+
+### 警告 hook
+
+Claude Code 向けの hook は、対応する環境変数を設定した場合に有効になります。
+
+| Hook | 有効化条件と動作 |
+| --- | --- |
+| [`route-warn.mjs`](./hooks/route-warn.mjs) | `MODEL_STRATEGY_ROUTE_WARN=1` で、メインが探索担当に相当する操作を直接実行すると委譲検討を促します。状態を保存できる場合、セッション・ツール名ごとに最初の 1 回に抑えます。 |
+| [`scope-guard.mjs`](./hooks/scope-guard.mjs) | `MODEL_STRATEGY_MODE=conductor` と基準線ファイルがある場合に、`Edit` / `Write` / `NotebookEdit` の書き込み先が範囲外なら警告します。 |
+
+警告は操作をブロックしません。`scope-guard` は Bash 経由の書き込みを検出できません。
+
+### 使用状況の表示
+
+[`context-statusline.sh`](./scripts/context-statusline.sh) はメインセッションのコンテキスト使用率を、[`subagent-statusline.sh`](./scripts/subagent-statusline.sh) は委譲先タスクの状態を表示するスクリプトです。設定方法と測定上の限界は[コンテキスト監視の資料](./references/06-context-monitor.md)を参照してください。
+
+## 参照資料
+
+| 資料 | 内容 |
+| --- | --- |
+| [価格](./references/00-pricing.md) | モデル価格、キャッシュ・バッチ価格、確認日と公式リンク |
+| [effort](./references/01-effort-levels.md) | 推論労力の選び方とモデル別の対応 |
+| [ルーティング規則](./references/02-decision-matrix.md) | 操作の分類、git 操作、委譲時に渡す情報 |
+| [利用量を抑える方法](./references/03-cost-levers.md) | キャッシュ、コンテキスト管理、避けたい運用 |
+| [大規模コードベース](./references/04-large-codebase.md) | 探索とコンテキスト量の制御 |
+| [リポジトリ索引](./references/05-repo-index.md) | 必要な情報を引き出す索引の設計 |
+| [コンテキスト監視](./references/06-context-monitor.md) | 状態表示の設定と測定方法 |
+| [Codex](./references/07-codex.md) | モデル、reasoning effort、委譲の読み替え |
+| [高保証モード](./references/08-conductor-mode.md) | マニフェスト、独立判定、範囲警告、運用上の限界 |

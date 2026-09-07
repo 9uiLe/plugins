@@ -9,7 +9,7 @@ body:
         ## 提案ありがとうございます 💡
 
         実装の検討に入れるよう、「**何を解決したいか（課題）**」と「**どう解決したいか（提案）**」を分けて記入してください。
-        投稿前に [既存の Issue](../issues?q=is%3Aissue) を検索し、重複がないか確認してください。
+        投稿前に [既存の Issue](https://github.com/9uiLe/plugins/issues?q=is%3Aissue) を検索し、重複がないか確認してください。
 
   - type: checkboxes
     id: preflight
