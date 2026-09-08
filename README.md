@@ -74,7 +74,7 @@ codex plugin add <plugin-name>@9uile-plugins
 │   │   ├── .claude-plugin/plugin.json
 │   │   ├── .codex-plugin/plugin.json
 │   │   ├── skills/                  ← speakerdeck-knowledge と取得補助・図解用 CSS
-│   │   ├── examples/ui-design/      ← 指定スライドでの検証資料
+│   │   ├── examples/                ← 本文付き・画像のみの資料による生成サンプル
 │   │   ├── tests/
 │   │   └── README.md
 │   └── model-strategy/

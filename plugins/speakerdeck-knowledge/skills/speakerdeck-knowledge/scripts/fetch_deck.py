@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Collect page-ordered SpeakerDeck text and images for knowledge extraction.
 
-Writes source.html, deck.json, transcript.md and requested slide images.
+The --out directory holds source.html, deck.json, transcript.md and requested
+images as reading evidence. The calling skill chooses the separate directory
+for knowledge.md and guide.html, interprets the evidence and writes those files.
 Exit codes: 0 complete, 1 input/source error, 2 partial image acquisition.
-Reading, interpretation and publication are performed by the calling agent.
 """
 import argparse
 from datetime import datetime, timezone
@@ -53,7 +54,7 @@ class DeckParser(HTMLParser):
                 self.depth += 1
             elif "slide-transcript" in a.get("class", "").split():
                 self.depth = 1
-                self.current = {"chunks": [], "image_url": None}
+                self.current = {"chunks": [], "image_url": None, "placeholder_link": False}
         if tag == "a" and self.current is not None:
             href = a.get("href", "")
             if urlsplit(href).netloc == "files.speakerdeck.com":
@@ -77,12 +78,15 @@ class DeckParser(HTMLParser):
         if tag == "div" and self.current is not None:
             self.depth -= 1
             if self.depth == 0:
-                self.current["text"] = " ".join(" ".join(self.current.pop("chunks")).split())
-                placeholder = self.current.pop("placeholder_link", False)
-                if placeholder and self.current["text"] == "None":
-                    self.current["text"] = ""
-                self.slides.append(self.current)
-                self.current = None
+                self.finish_transcript()
+
+    def finish_transcript(self):
+        """Keep image-only pages; only the site's missing-text link is a sentinel."""
+        text = " ".join(" ".join(self.current["chunks"]).split())
+        if self.current["placeholder_link"] and text == "None":
+            text = ""
+        self.slides.append({"text": text, "image_url": self.current["image_url"]})
+        self.current = None
 
 
 def objects(value):
@@ -94,43 +98,57 @@ def objects(value):
         yield from objects(value.get("@graph", []))
 
 
-def parse_deck(html, url):
-    """Reconcile structured page positions with transcript text and image links."""
-    p = DeckParser()
-    p.feed(html)
-    canonical = p.meta.get("og:url")
-    if canonical and deck_url(canonical) != deck_url(url):
-        raise ValueError("Saved HTML belongs to a different deck")
-    metadata = next((x for x in objects(p.blocks) if "hasPart" in x), {})
-    parts = metadata.get("hasPart", [])
+def index_structured_pages(parts):
+    """Validate one-based structured page positions before joining image links."""
     indexed = {}
     for item in parts:
-        n = item.get("position")
-        if isinstance(n, int) and not isinstance(n, bool) and n > 0:
-            if n in indexed:
+        position = item.get("position")
+        if isinstance(position, int) and not isinstance(position, bool) and position > 0:
+            if position in indexed:
                 raise ValueError("Duplicate page positions in source")
-            indexed[n] = item.get("text", "")
+            indexed[position] = item.get("text", "")
     if indexed and sorted(indexed) != list(range(1, max(indexed) + 1)):
         raise ValueError("Source page positions are incomplete")
-    if indexed and p.slides and len(indexed) != len(p.slides):
+    return indexed
+
+
+def parse_deck(html, url):
+    """Join source metadata, page text and image links without interpreting slides."""
+    parser = DeckParser()
+    parser.feed(html)
+    canonical = parser.meta.get("og:url")
+    if canonical and deck_url(canonical) != deck_url(url):
+        raise ValueError("Saved HTML belongs to a different deck")
+
+    metadata = next((item for item in objects(parser.blocks) if "hasPart" in item), {})
+    indexed = index_structured_pages(metadata.get("hasPart", []))
+    if indexed and parser.slides and len(indexed) != len(parser.slides):
         raise ValueError("Transcript and structured page counts disagree")
-    count = len(indexed) or len(p.slides)
+    count = len(indexed) or len(parser.slides)
     if not count:
         raise ValueError("No slide evidence found; use public images/PDF or request source files")
     pages = []
-    for n in range(1, count + 1):
-        slide = p.slides[n - 1] if p.slides else {}
-        pages.append({"page": n, "url": page_url(url, n),
-                      "text": indexed.get(n, slide.get("text", "")).strip(),
-                      "image_url": slide.get("image_url"), "image_status": "not_requested"})
-    author = metadata.get("author") or p.meta.get("og:author", "")
-    return {"url": url, "title": metadata.get("name") or p.meta.get("og:title", ""),
-            "author": author.get("name", "") if isinstance(author, dict) else author,
-            "published": metadata.get("datePublished", ""),
-            "retrieved_at": datetime.now(timezone.utc).isoformat(),
-            "page_count": count, "count_basis": "hasPart" if indexed else "transcript_blocks",
-            "pdf_url": metadata.get("associatedMedia", {}).get("contentUrl"),
-            "pages": pages}
+    for number in range(1, count + 1):
+        transcript = parser.slides[number - 1] if parser.slides else {}
+        pages.append({
+            "page": number,
+            "url": page_url(url, number),
+            "text": indexed.get(number, transcript.get("text", "")).strip(),
+            "image_url": transcript.get("image_url"),
+            "image_status": "not_requested",
+        })
+    author = metadata.get("author") or parser.meta.get("og:author", "")
+    return {
+        "url": url,
+        "title": metadata.get("name") or parser.meta.get("og:title", ""),
+        "author": author.get("name", "") if isinstance(author, dict) else author,
+        "published": metadata.get("datePublished", ""),
+        "retrieved_at": datetime.now(timezone.utc).isoformat(),
+        "page_count": count,
+        "count_basis": "hasPart" if indexed else "transcript_blocks",
+        "pdf_url": metadata.get("associatedMedia", {}).get("contentUrl"),
+        "pages": pages,
+    }
 
 
 def selection(spec, count):
@@ -165,7 +183,7 @@ def fetch(url):
     return body
 
 
-def prepare_output(directory, url):
+def prepare_evidence_directory(directory, url):
     """Keep evidence from different decks in separate directories."""
     directory.mkdir(parents=True, exist_ok=True)
     metadata = directory / "deck.json"
@@ -218,7 +236,8 @@ def write_evidence(deck, directory):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("url", help="Public https://speakerdeck.com/author/deck URL")
-    parser.add_argument("--out", required=True, type=Path, help="Evidence directory for one deck")
+    parser.add_argument("--out", required=True, type=Path,
+                        help="Temporary evidence directory; separate from final knowledge output")
     parser.add_argument("--html-file", type=Path, help="Parse HTML saved from the same deck")
     parser.add_argument("--images", default="", help="all or page ranges such as 5-12,19")
     args = parser.parse_args()
@@ -227,7 +246,7 @@ def main():
         raw = args.html_file.read_bytes() if args.html_file else fetch(url)
         deck = parse_deck(raw.decode("utf-8"), url)
         chosen = selection(args.images, deck["page_count"])
-        prepare_output(args.out, url)
+        prepare_evidence_directory(args.out, url)
         (args.out / "source.html").write_bytes(raw)
         failed = download_images(deck["pages"], chosen, args.out)
         write_evidence(deck, args.out)
