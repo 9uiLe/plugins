@@ -52,6 +52,12 @@ HTML は単体で開ける形式を基本とします。左側に追従する目
 - [PC 向け共有 HTML](examples/ui-design/guide.html)
 - [検証条件と結果](examples/ui-design/validation.md)
 
+文字起こしのない資料には、こぎそ氏の『デザインハーネス』を使用しています。
+
+- [実務向け Markdown](examples/design-harness/knowledge.md)
+- [PC 向け共有 HTML](examples/design-harness/guide.html)
+- [画像からの読解と検証結果](examples/design-harness/validation.md)
+
 リポジトリルートから実行します。
 
 ```bash

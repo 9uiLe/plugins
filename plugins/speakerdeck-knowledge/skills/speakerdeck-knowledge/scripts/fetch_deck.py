@@ -58,6 +58,8 @@ class DeckParser(HTMLParser):
             href = a.get("href", "")
             if urlsplit(href).netloc == "files.speakerdeck.com":
                 self.current["image_url"] = href
+                if {"text-muted", "font-italic"} <= set(a.get("class", "").split()):
+                    self.current["placeholder_link"] = True
 
     def handle_data(self, data):
         if self.script is not None:
@@ -76,6 +78,9 @@ class DeckParser(HTMLParser):
             self.depth -= 1
             if self.depth == 0:
                 self.current["text"] = " ".join(" ".join(self.current.pop("chunks")).split())
+                placeholder = self.current.pop("placeholder_link", False)
+                if placeholder and self.current["text"] == "None":
+                    self.current["text"] = ""
                 self.slides.append(self.current)
                 self.current = None
 
@@ -118,7 +123,7 @@ def parse_deck(html, url):
         pages.append({"page": n, "url": page_url(url, n),
                       "text": indexed.get(n, slide.get("text", "")).strip(),
                       "image_url": slide.get("image_url"), "image_status": "not_requested"})
-    author = metadata.get("author", {})
+    author = metadata.get("author") or p.meta.get("og:author", "")
     return {"url": url, "title": metadata.get("name") or p.meta.get("og:title", ""),
             "author": author.get("name", "") if isinstance(author, dict) else author,
             "published": metadata.get("datePublished", ""),

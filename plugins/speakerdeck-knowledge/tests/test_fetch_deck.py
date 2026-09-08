@@ -39,6 +39,21 @@ class FetchDeckTests(unittest.TestCase):
         html = '<div class="slide-transcript"><h3>Hello</h3> world<div>again</div></div>'
         self.assertEqual(fetch.parse_deck(html, URL)['pages'][0]['text'], 'Hello world again')
 
+    def test_image_only_placeholder_is_missing_text_and_keeps_author(self):
+        html = ('<meta property="og:author" content="Slide author">'
+                '<div class="slide-transcript"><a class="text-muted font-italic" '
+                'href="https://files.speakerdeck.com/a.jpg">None</a></div>')
+        deck = fetch.parse_deck(html, URL)
+        self.assertEqual(deck['page_count'], 1)
+        self.assertEqual(deck['pages'][0]['text'], '')
+        self.assertEqual(deck['pages'][0]['image_url'], 'https://files.speakerdeck.com/a.jpg')
+        self.assertEqual(deck['author'], 'Slide author')
+
+    def test_literal_none_in_transcript_is_preserved(self):
+        html = ('<div class="slide-transcript"><a '
+                'href="https://files.speakerdeck.com/a.jpg">None</a></div>')
+        self.assertEqual(fetch.parse_deck(html, URL)['pages'][0]['text'], 'None')
+
     def test_incomplete_or_disagreeing_evidence_rejected(self):
         for parts in [[{'position': 2}], [{'position': 1}], [{'position': 1}, {'position': 1}]]:
             with self.subTest(parts=parts), self.assertRaises(ValueError):
