@@ -1,0 +1,19 @@
+{
+  "name": "speakerdeck-knowledge",
+  "version": "0.1.0",
+  "description": "Extract actionable knowledge from SpeakerDeck into AI-ready Markdown and visual HTML for readers without prior context.",
+  "author": {
+    "name": "9uiLe",
+    "url": "https://github.com/9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins/tree/master/plugins/speakerdeck-knowledge",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": [
+    "speakerdeck",
+    "knowledge-extraction",
+    "markdown",
+    "html",
+    "visualization"
+  ]
+}

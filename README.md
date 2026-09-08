@@ -7,7 +7,7 @@
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Marketplace-8A6FE8)](https://claude.com/claude-code)
 [![Codex](https://img.shields.io/badge/Codex-Plugin-111827)](https://openai.com/codex)
 
-Claude Code / Codex で使う、ソフトウェアの設計・レビューと AI エージェントの利用量管理のためのプラグイン集です。Marketplace 名は `9uile-plugins` です。必要なプラグインを個別にインストールできます。
+Claude Code / Codex で使う、ソフトウェアの設計・レビュー、AI エージェントの利用量管理、スライドからの実務知識抽出のためのプラグイン集です。Marketplace 名は `9uile-plugins` です。必要なプラグインを個別にインストールできます。
 
 ## プラグインを選ぶ
 
@@ -15,12 +15,13 @@ Claude Code / Codex で使う、ソフトウェアの設計・レビューと AI
 | --- | --- | --- |
 | [quality-architect](./plugins/quality-architect/README.md) | ISO/IEC 25010:2023 の製品品質モデルに基づくアーキテクチャ設計と既存コードのレビュー | `quality-architecture`、`quality-review` |
 | [model-strategy](./plugins/model-strategy/README.md) | 送信コンテキスト量、会話の往復回数、モデルの推論設定（effort）、他エージェントへの委譲を考慮した利用方針の選択 | `model-effort-guide` |
+| [speakerdeck-knowledge](./plugins/speakerdeck-knowledge/README.md) | SpeakerDeck から実務知識を抽出し、AI 向け Markdown とチーム共有用の図解 HTML を作成 | `speakerdeck-knowledge` |
 
 スキルは、AI エージェントが依頼に応じて読み込む手順書です。設計案を作るには `quality-architecture`、既存のコードや設計を評価するには `quality-review` を使います。`model-effort-guide` は、モデル選択・利用量・委譲方針を明示的に相談するときに使います。
 
 ## インストール
 
-`<plugin-name>` を `quality-architect` または `model-strategy` に置き換えてください。
+`<plugin-name>` を `quality-architect`、`model-strategy`、`speakerdeck-knowledge` のいずれかに置き換えてください。
 
 ### Claude Code
 
@@ -49,6 +50,7 @@ codex plugin add <plugin-name>@9uile-plugins
 | 新規設計 | 「可用性と保守性を重視して、このサービスのアーキテクチャを設計して」 |
 | コードレビュー | 「現在の差分を ISO/IEC 25010 の品質特性でレビューして」 |
 | モデル・委譲方針の選択 | 「このタスクの利用量を抑えるモデル・effort・委譲方針を決めて」 |
+| スライドから知識を抽出 | 「この SpeakerDeck URL から実装に使える知識と、共有用の図解 HTML を作成して」 |
 
 出力内容、必要なツール、任意機能の設定は各プラグインの README を参照してください。
 
@@ -67,6 +69,12 @@ codex plugin add <plugin-name>@9uile-plugins
 │   │   ├── scripts/                 ← Swift 向け品質・結合ゲート
 │   │   ├── examples/ci/             ← GitHub Actions の導入例
 │   │   ├── quality-gates.yml
+│   │   └── README.md
+│   ├── speakerdeck-knowledge/
+│   │   ├── .claude-plugin/plugin.json
+│   │   ├── .codex-plugin/plugin.json
+│   │   ├── skills/                  ← speakerdeck-knowledge と取得補助・図解用 CSS
+│   │   ├── tests/
 │   │   └── README.md
 │   └── model-strategy/
 │       ├── .claude-plugin/plugin.json
