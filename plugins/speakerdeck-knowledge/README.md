@@ -64,14 +64,11 @@ HTML は PC 向けの単体ファイルを基本とします。左側の追従�
 
 取得スクリプトの `--out` は中間資料の保存先です。最終成果物の保存先決定と執筆は、スキルを実行する AI が担当します。
 
-## サンプルと検証
+## 検証
 
-`examples/` は、通常利用時の `ai-knowledge/` と同じく資料ごとに成果物をまとめたサンプル置き場です。サンプル名は説明用に付けています。
+`examples/` はローカルの検証資料用ディレクトリで、Git 管理・配布の対象外です。通常利用時の `ai-knowledge/` と同じく、資料ごとに成果物をまとめます。
 
-| 資料 | 取得形式 | 成果物と検証範囲 |
-| --- | --- | --- |
-| 原 佑一『いいUIとは？』 | 本文と画像・30ページ | [Markdown](examples/ui-design/knowledge.md) / [HTML](examples/ui-design/guide.html) / [検証結果](examples/ui-design/validation.md) |
-| こぎそ『デザインハーネス』 | 画像のみ・33ページ | [Markdown](examples/design-harness/knowledge.md) / [HTML](examples/design-harness/guide.html) / [検証結果](examples/design-harness/validation.md) |
+本文付きの資料と画像のみの資料で、ページ順序、欠損本文の扱い、読解範囲、Markdown と HTML の内容一致を確認します。HTML は PC の表示、目次、拡大、キーボード操作、印刷を確認します。
 
 リポジトリルートから取得処理と配布登録を検証します。
 
