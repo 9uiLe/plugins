@@ -1,0 +1,4 @@
+interface:
+  display_name: "SpeakerDeck Knowledge"
+  short_description: "スライドの知識を実務用 Markdown と図解 HTML に変換"
+  default_prompt: "$speakerdeck-knowledge で、この SpeakerDeck URL から実装・作業に使える知識を抽出し、AI 向け Markdown とチーム共有用の図解 HTML を作成してください。"

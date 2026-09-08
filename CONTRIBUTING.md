@@ -1,6 +1,6 @@
 # コントリビューションガイド
 
-このリポジトリでは、Claude Code / Codex 用の `quality-architect` と `model-strategy` を配布しています。プラグインの用途と構成は [README](./README.md) を参照してください。
+このリポジトリでは、Claude Code / Codex 用の `quality-architect`、`model-strategy`、`speakerdeck-knowledge` を配布しています。プラグインの用途と構成は [README](./README.md) を参照してください。
 
 ## 不具合・改善提案・質問
 
