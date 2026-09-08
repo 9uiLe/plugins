@@ -5,6 +5,18 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-08
+
+### Added
+
+- **speakerdeck-knowledge** (v0.1.0): SpeakerDeck の公開スライドから、判断基準・適用条件・作業手順・検証方法を抽出するプラグインを Claude Code / Codex の両 marketplace に追加。AI 作業指示を含む `knowledge.md` と、目次・凡例・原図の拡大表示を備えた共有用 `guide.html` を作成する。
+- 本文・画像・書誌情報を取得する Python スクリプトを同梱。画像のみのスライド、ページ順序と欠損本文、画像の部分取得失敗を扱い、取得・読解範囲と出典を記録する。
+
+### Changed
+
+- **docs**: README、コントリビューションガイド、Issue / PR テンプレートを現行プラグインと利用・貢献フローに合わせて整理。
+- **speakerdeck-knowledge**: 既定の成果物保存先を作業ディレクトリの `ai-knowledge/<資料の URL 識別子>/` とし、資料ごとに分離。ローカル検証用の `examples/` は Git 管理・配布対象から除外。
+
 ## [0.6.0] - 2026-09-08
 
 ### Changed
@@ -182,7 +194,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/9uiLe/plugins/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/9uiLe/plugins/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/9uiLe/plugins/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/9uiLe/plugins/compare/v0.3.4...v0.4.0
