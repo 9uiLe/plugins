@@ -1,6 +1,6 @@
 {
   "name": "model-strategy",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Reduce total Claude Code and Codex usage by controlling context growth, turns, model effort, and bounded delegation. Strict routing audits are opt-in.",
   "author": {
     "name": "9uiLe",
