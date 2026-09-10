@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins by 9uiLe.",
-    "version": "0.7.0"
+    "version": "0.7.1"
   },
   "plugins": [
     {
@@ -27,7 +27,7 @@
       "name": "model-strategy",
       "source": "./plugins/model-strategy",
       "description": "Reduce total Claude Code usage by controlling context growth and turn count before choosing model effort or bounded Sonnet/Haiku delegation; strict routing audits are opt-in.",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "category": "development",
       "tags": [
         "model-selection",

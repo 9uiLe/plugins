@@ -5,11 +5,12 @@
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-09-10
+
 ### Changed
 
 - **model-strategy**: モデル・コンテキスト・委譲の実行方針を整備。担当の責任、根拠に基づく相談と受け入れ、完了通知による待機、会話の区切りと利用量計測を定義。README に導入方法、Orca アドバイザーの利用条件と依頼例、任意の監査・警告・表示機能を掲載。
 - **model-strategy**: コンテキスト表示の警告をウィンドウ使用率に基づく内訳確認とし、大規模探索・状態表示の資料を同じ判断基準で整備。
-
 ## [0.7.0] - 2026-09-08
 
 ### Added
@@ -199,7 +200,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/9uiLe/plugins/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/9uiLe/plugins/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/9uiLe/plugins/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/9uiLe/plugins/compare/v0.4.0...v0.5.0
