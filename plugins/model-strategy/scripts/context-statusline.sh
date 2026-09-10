@@ -2,14 +2,14 @@
 #
 # model-strategy: コンテキスト量ステータスライン
 #
-# セッションの常駐コンテキスト使用率を可視化し、二次曲線に入る前に
-# /clear を促す。詳細は references/06-context-monitor.md を参照。
+# 現在のコンテキスト使用率を表示し、内訳を確認する判断材料にする。
+# 詳細は references/06-context-monitor.md を参照。
 #
 # 配線 (ユーザー/プロジェクトの settings.json):
 #   {
 #     "statusLine": {
 #       "type": "command",
-#       "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/context-statusline.sh"
+#       "command": "/absolute/path/to/model-strategy/scripts/context-statusline.sh"
 #     }
 #   }
 #
@@ -26,13 +26,12 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 # タブ区切りで値を取り出す (model 表示名に空白が含まれうるため IFS=tab)
-IFS=$'\t' read -r pct used size cost over model < <(
+IFS=$'\t' read -r pct used size cost model < <(
   printf '%s' "$input" | jq -r '
     [ (.context_window.used_percentage   // 0)
     , (.context_window.total_input_tokens // 0)
     , (.context_window.context_window_size // 200000)
     , (.cost.total_cost_usd              // 0)
-    , (.exceeds_200k_tokens              // false)
     , (.model.display_name               // "model")
     ] | @tsv'
 )
@@ -48,10 +47,10 @@ bar=""
 for ((i=0; i<filled; i++)); do bar+="▓"; done
 for ((i=0; i<empty;  i++)); do bar+="░"; done
 
-# 色: 緑 <50% / 黄 50-warn% / 赤 >=warn% または 200k 超過
+# 色: 緑 <50% / 黄 50-warn% / 赤 >=warn%。モデルごとのウィンドウに対する使用率。
 reset=$'\033[0m'
-if [[ "$over" == "true" ]] || (( pct_int >= warn_at )); then
-  color=$'\033[31m'; nudge="  ⚠ /clear 推奨"
+if (( pct_int >= warn_at )); then
+  color=$'\033[31m'; nudge="  ⚠ コンテキスト内訳を確認"
 elif (( pct_int >= 50 )); then
   color=$'\033[33m'; nudge=""
 else
