@@ -151,7 +151,7 @@ def parse_deck(html, url):
     }
 
 
-def selection(spec, count):
+def selection(spec, count, option="--images"):
     if spec == "all":
         return set(range(1, count + 1))
     if not spec:
@@ -159,7 +159,7 @@ def selection(spec, count):
     result = set()
     for part in spec.split(","):
         if not re.fullmatch(r"\d+(?:-\d+)?", part):
-            raise ValueError("--images expects all or page ranges such as 5-12,19")
+            raise ValueError(f"{option} expects page ranges such as 5-12,19")
         bounds = [int(x) for x in part.split("-")]
         lo, hi = bounds[0], bounds[-1]
         if not 1 <= lo <= hi <= count:
@@ -191,6 +191,24 @@ def prepare_evidence_directory(directory, url):
         previous = json.loads(metadata.read_text(encoding="utf-8"))
         if previous.get("url") != url:
             raise ValueError("Output directory contains a different deck; choose a new directory")
+        return previous
+    return {}
+
+def reuse_images(pages, previous, directory):
+    """Preserve matching acquisition state across text-first, incremental reads."""
+    indexed = {page["page"]: page for page in previous.get("pages", [])}
+    for page in pages:
+        old = indexed.get(page["page"], {})
+        if not page["image_url"] or old.get("image_url") != page["image_url"]:
+            continue
+        filename = old.get("image_file", "")
+        if (old.get("image_status") == "downloaded"
+                and re.fullmatch(rf"slide-{page['page']:03d}\.(jpg|png)", filename)
+                and (directory / filename).is_file()
+                and (directory / filename).stat().st_size > 0):
+            page.update(image_status="downloaded", image_file=filename)
+        elif old.get("image_status") == "failed":
+            page.update(image_status="failed", image_error=old.get("image_error", ""))
 
 
 def download_images(pages, chosen, directory):
@@ -198,6 +216,8 @@ def download_images(pages, chosen, directory):
     failed = []
     for page in pages:
         if page["page"] not in chosen:
+            continue
+        if page["image_status"] == "downloaded":
             continue
         try:
             if not page["image_url"]:
@@ -212,6 +232,7 @@ def download_images(pages, chosen, directory):
             filename = f"slide-{page['page']:03d}.{suffix}"
             (directory / filename).write_bytes(data)
             page.update(image_status="downloaded", image_file=filename)
+            page.pop("image_error", None)
         except (ValueError, OSError) as exc:
             page.update(image_status="failed", image_error=str(exc))
             failed.append(page["page"])
@@ -246,7 +267,8 @@ def main():
         raw = args.html_file.read_bytes() if args.html_file else fetch(url)
         deck = parse_deck(raw.decode("utf-8"), url)
         chosen = selection(args.images, deck["page_count"])
-        prepare_evidence_directory(args.out, url)
+        previous = prepare_evidence_directory(args.out, url)
+        reuse_images(deck["pages"], previous, args.out)
         (args.out / "source.html").write_bytes(raw)
         failed = download_images(deck["pages"], chosen, args.out)
         write_evidence(deck, args.out)
