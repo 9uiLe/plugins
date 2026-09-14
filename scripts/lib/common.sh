@@ -81,7 +81,7 @@ require_branch() {
 
 # ---------- version helpers ----------
 
-# SemVer X.Y.Z (no pre-release / metadata for now — see ADR-0001 Q3)
+# Release automation accepts numeric X.Y.Z only; pre-release and build metadata are unsupported.
 SEMVER_REGEX='^[0-9]+\.[0-9]+\.[0-9]+$'
 
 is_semver() {

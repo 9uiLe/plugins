@@ -4,7 +4,9 @@
 The --out directory holds source.html, deck.json, transcript.md and requested
 images as reading evidence. The calling skill chooses the separate directory
 for knowledge.md and guide.html, interprets the evidence and writes those files.
-Exit codes: 0 complete, 1 input/source error, 2 partial image acquisition.
+After argument parsing, exit codes are 0 for success, 1 for input/source/output
+errors, and 2 for failures among requested images. Argument parsing errors also
+exit 2. Unrequested cached failures remain in deck.json, not the exit status.
 """
 import argparse
 from datetime import datetime, timezone
@@ -194,8 +196,9 @@ def prepare_evidence_directory(directory, url):
         return previous
     return {}
 
+
 def reuse_images(pages, previous, directory):
-    """Preserve matching acquisition state across text-first, incremental reads."""
+    """Retain source-matched state without revalidating the remote image."""
     indexed = {page["page"]: page for page in previous.get("pages", [])}
     for page in pages:
         old = indexed.get(page["page"], {})
@@ -212,7 +215,7 @@ def reuse_images(pages, previous, directory):
 
 
 def download_images(pages, chosen, directory):
-    """Record each requested image's result while retaining successful pages."""
+    """Only selected failures retry; successful downloads stay cached."""
     failed = []
     for page in pages:
         if page["page"] not in chosen:
@@ -240,7 +243,6 @@ def download_images(pages, chosen, directory):
 
 
 def write_evidence(deck, directory):
-    """Save acquisition state and a page-by-page reading document in UTF-8."""
     (directory / "deck.json").write_text(
         json.dumps(deck, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
@@ -260,7 +262,8 @@ def main():
     parser.add_argument("--out", required=True, type=Path,
                         help="Temporary evidence directory; separate from final knowledge output")
     parser.add_argument("--html-file", type=Path, help="Parse HTML saved from the same deck")
-    parser.add_argument("--images", default="", help="all or page ranges such as 5-12,19")
+    parser.add_argument("--images", default="",
+                        help="all or page ranges such as 5-12,19; default: none; cached images are reused")
     args = parser.parse_args()
     try:
         url = deck_url(args.url)

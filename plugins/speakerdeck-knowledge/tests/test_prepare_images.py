@@ -35,8 +35,12 @@ class PrepareImagesTests(unittest.TestCase):
     def output_images(self, *args):
         result = self.run_cli(*args)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertLess(len(result.stdout), 3000)
-        return json.loads(result.stdout)['images']
+        output = json.loads(result.stdout)
+        self.assertEqual(set(output), {'images'})
+        for image in output['images']:
+            self.assertEqual(set(image), {'path', 'pages', 'width', 'height'})
+            self.assertTrue(Path(image['path']).is_file())
+        return output['images']
 
     def test_preview_dimensions_original_preservation_and_cache_reuse(self):
         self.fixture()
@@ -79,7 +83,7 @@ class PrepareImagesTests(unittest.TestCase):
             self.assertLessEqual(max(output['width'], output['height']), 1280)
             with Image.open(output['path']) as sheet:
                 self.assertEqual(sheet.size, (output['width'], output['height']))
-                # Each row's label band has dark text, separate from the colored slide.
+                # Solid color fixtures make page labels detectable without OCR.
                 columns = min(2, len(output['pages']))
                 rows = (len(output['pages']) + columns - 1) // columns
                 for index in range(len(output['pages'])):
@@ -97,17 +101,19 @@ class PrepareImagesTests(unittest.TestCase):
 
     def test_invalid_selection_crop_and_bounds_produce_no_images(self):
         self.fixture(count=2, size=(100, 100))
-        cases = [[], ['--pages', 'all'], ['--pages', ''], ['--pages', '0'], ['--pages', '3'],
-                 ['--pages', '1', '--max-edge', '9000'],
-                 ['--pages', '1', '--max-edge', '255'],
-                 ['--pages', '1', '--crop', '0.8,0,0.2,1'],
-                 ['--pages', '1', '--crop', 'nan,0,1,1'],
-                 ['--pages', '1-2', '--crop', '0,0,1,1'],
-                 ['--pages', '1', '--mode', 'sheet', '--crop', '0,0,1,1']]
-        for args in cases:
+        cases = [([], 2), (['--pages', 'all'], 1), (['--pages', ''], 1),
+                 (['--pages', '0'], 1), (['--pages', '3'], 1),
+                 (['--pages', '1', '--max-edge', '9000'], 1),
+                 (['--pages', '1', '--max-edge', '255'], 1),
+                 (['--pages', '1', '--crop', '0.8,0,0.2,1'], 2),
+                 (['--pages', '1', '--crop', 'nan,0,1,1'], 2),
+                 (['--pages', '1-2', '--crop', '0,0,1,1'], 1),
+                 (['--pages', '1', '--mode', 'sheet', '--crop', '0,0,1,1'], 1)]
+        for args, expected_status in cases:
             with self.subTest(args=args):
                 result = self.run_cli(*args)
-                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(result.returncode, expected_status)
+                self.assertEqual(result.stdout, '')
                 self.assertFalse((self.root / 'reading-images').exists())
 
     def test_missing_unrequested_and_corrupt_sources_report_errors(self):
@@ -124,6 +130,28 @@ class PrepareImagesTests(unittest.TestCase):
                 result = self.run_cli('--pages', '1')
                 self.assertEqual(result.returncode, 1)
                 self.assertIn('Page 1', result.stderr)
+
+    def test_crop_coordinates_follow_image_orientation(self):
+        self.fixture(size=(400, 200))
+        with Image.open(self.root / 'slide-001.png') as image:
+            exif = image.getexif()
+            exif[274] = 6  # Display orientation is 90 degrees clockwise.
+            image.save(self.root / 'slide-001.png', exif=exif)
+        output = self.output_images('--pages', '1', '--crop', '0,0.5,1,1')[0]
+        self.assertEqual((output['width'], output['height']), (200, 200))
+        with Image.open(output['path']) as image:
+            red, _, blue = image.getpixel((100, 100))
+            self.assertLess(red, 10)
+            self.assertGreater(blue, 240)
+
+    def test_partial_processing_failure_keeps_files_without_success_json(self):
+        self.fixture(count=2, size=(100, 100))
+        (self.root / 'slide-002.png').write_bytes(b'not an image')
+        result = self.run_cli('--pages', '1-2')
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, '')
+        self.assertNotIn('Traceback', result.stderr)
+        self.assertEqual(len(list((self.root / 'reading-images').glob('preview-1-*.jpg'))), 1)
 
 
 if __name__ == '__main__':

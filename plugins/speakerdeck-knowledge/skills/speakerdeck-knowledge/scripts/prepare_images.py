@@ -1,7 +1,8 @@
-"""Prepare bounded local slide previews; print paths, never image data.
+"""Prepare bounded local slide previews; print paths, pages and dimensions only.
 
 Requires Pillow. Originals are preserved. Preparing an image does not mean it
-has been visually reviewed. Exit codes: 0 success, 1 input/image/output error.
+has been visually reviewed. Exit codes: 0 success, 1 validation/processing error,
+2 argument parsing error. Failed runs keep generated files but emit no result JSON.
 """
 import argparse
 import hashlib
@@ -10,6 +11,9 @@ from pathlib import Path
 import sys
 
 from fetch_deck import selection
+
+# Increment when rendering changes so existing cached images cannot mask it.
+CACHE_VERSION = 1
 
 
 def crop_box(value):
@@ -67,6 +71,7 @@ def make_sheet(sources, edge):
 
     columns = min(2, len(sources))
     rows = (len(sources) + columns - 1) // columns
+    # Bound both axes for portrait slides too; trim unused row height below.
     cell = edge // max(columns, rows)
     label_height, padding = 24, 8
     images = [open_image(path, None, cell - 2 * padding - label_height)
@@ -91,7 +96,7 @@ def prepare(sources, output, mode, crop, edge):
     for offset in range(0, len(sources), batch_size):
         group = sources[offset:offset + batch_size]
         numbers = [number for number, _ in group]
-        digest = hashlib.sha256(json.dumps([1, mode, crop, edge, numbers]).encode())
+        digest = hashlib.sha256(json.dumps([CACHE_VERSION, mode, crop, edge, numbers]).encode())
         for _, path in group:
             digest.update(hashlib.sha256(path.read_bytes()).digest())
         name = f"{mode}-{'-'.join(str(n) for n in numbers)}-{digest.hexdigest()[:16]}.jpg"
@@ -109,11 +114,15 @@ def prepare(sources, output, mode, crop, edge):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--deck", required=True, type=Path, help="Local deck.json")
-    parser.add_argument("--pages", required=True, help="Explicit pages, e.g. 5-12,19")
-    parser.add_argument("--mode", choices=("preview", "sheet"), default="preview")
-    parser.add_argument("--crop", type=crop_box, help="Normalized left,top,right,bottom; one page only")
-    parser.add_argument("--max-edge", type=int, default=1280, help="Longest output edge: 256..2048 pixels")
+    parser.add_argument("--deck", required=True, type=Path,
+                        help="Local deck.json; outputs go to reading-images/ beside it")
+    parser.add_argument("--pages", required=True, help="One-based pages, e.g. 5-12,19; all is not accepted")
+    parser.add_argument("--mode", choices=("preview", "sheet"), default="preview",
+                        help="preview (default) or sheets of at most 6 pages")
+    parser.add_argument("--crop", type=crop_box,
+                        help="Normalized left,top,right,bottom after orientation correction; one preview page only")
+    parser.add_argument("--max-edge", type=int, default=1280,
+                        help="Longest output edge: 256..2048 pixels (default: 1280); no upscaling")
     args = parser.parse_args()
     try:
         if not 256 <= args.max_edge <= 2048:

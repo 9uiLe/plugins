@@ -73,7 +73,7 @@ codex plugin add <plugin-name>@9uile-plugins
 │   ├── speakerdeck-knowledge/
 │   │   ├── .claude-plugin/plugin.json
 │   │   ├── .codex-plugin/plugin.json
-│   │   ├── skills/                  ← speakerdeck-knowledge と取得補助・図解用 CSS
+│   │   ├── skills/                  ← speakerdeck-knowledge と取得・画像生成補助・図解用 CSS
 │   │   ├── tests/
 │   │   └── README.md
 │   └── model-strategy/
@@ -86,7 +86,7 @@ codex plugin add <plugin-name>@9uile-plugins
 │       ├── references/
 │       ├── tests/
 │       └── README.md
-├── docs/                           ← 設計指針・ADR
+├── docs/                           ← 設計指針・運用記録
 ├── scripts/                        ← リリース・バージョン検証
 ├── releases/                       ← リリースノート
 ├── CHANGELOG.md
