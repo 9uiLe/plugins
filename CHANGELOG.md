@@ -5,6 +5,8 @@
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-09-14
+
 ### Fixed
 
 - **speakerdeck-knowledge** (v0.1.1): 本文を先に読み、必要ページの縮小画像・部分拡大・最大6ページの俯瞰画像だけを段階的に閲覧する手順へ変更。確認メモによる再読抑制、取得済み画像の再利用、HTML の base64 をセッションへ出力しない処理を明記し、画像生成補助と回帰テストを追加。
@@ -208,7 +210,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/9uiLe/plugins/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/9uiLe/plugins/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/9uiLe/plugins/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/9uiLe/plugins/compare/v0.5.0...v0.6.0
