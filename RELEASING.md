@@ -2,8 +2,6 @@
 
 このリポジトリのリリース手順の **正本** です。`scripts/` 配下のシェルスクリプトと CI ワークフローがこの手順を機械化しています。
 
-設計判断の根拠は [`docs/adr/0001-release-automation.html`](./docs/adr/0001-release-automation.html) を参照してください。
-
 ---
 
 ## 前提
@@ -183,5 +181,3 @@ scripts/
 ├── release-publish.sh    # tag → GH Release
 └── verify-versions.sh    # 整合性ゲート（CI + ローカル）
 ```
-
-詳細な設計判断は [ADR-0001](./docs/adr/0001-release-automation.html) を参照。

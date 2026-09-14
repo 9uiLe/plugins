@@ -123,6 +123,57 @@ class FetchDeckTests(unittest.TestCase):
             self.assertEqual(deck['pages'][0]['image_status'], 'not_requested')
             self.assertEqual(list(Path(directory).iterdir()), [])
 
+    def test_incremental_acquisition_preserves_and_reuses_downloads(self):
+        jpeg = b'\xff\xd8\xff' + b'image-bytes'
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            previous = fetch.parse_deck(fixture(), URL)
+            with patch.object(fetch, 'fetch', return_value=jpeg):
+                fetch.download_images(previous['pages'], {1}, root)
+            fetch.write_evidence(previous, root)
+            deck = fetch.parse_deck(fixture(), URL)
+            fetch.reuse_images(deck['pages'], fetch.prepare_evidence_directory(root, URL), root)
+            with patch.object(fetch, 'fetch', return_value=jpeg) as request:
+                self.assertEqual(fetch.download_images(deck['pages'], {1, 2}, root), [])
+            request.assert_called_once_with(deck['pages'][1]['image_url'])
+            fetch.write_evidence(deck, root)
+            # A later text-only pass must not discard acquisition evidence.
+            text_only = fetch.parse_deck(fixture(), URL)
+            fetch.reuse_images(text_only['pages'], deck, root)
+            with patch.object(fetch, 'fetch') as request:
+                fetch.download_images(text_only['pages'], set(), root)
+            request.assert_not_called()
+            self.assertEqual([p['image_status'] for p in text_only['pages']], ['downloaded'] * 2)
+
+    def test_cache_misses_and_failed_retry(self):
+        jpeg = b'\xff\xd8\xff' + b'image-bytes'
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            previous = fetch.parse_deck(fixture(), URL)
+            with patch.object(fetch, 'fetch', side_effect=[jpeg, ValueError('HTTP 403')]):
+                fetch.download_images(previous['pages'], {1, 2}, root)
+            for change in ['url', 'missing', 'empty', 'unsafe_path']:
+                with self.subTest(change=change):
+                    old = json.loads(json.dumps(previous))
+                    page = old['pages'][0]
+                    if change == 'url':
+                        page['image_url'] += '?new'
+                    elif change == 'missing':
+                        page['image_file'] = 'slide-001.png'
+                    elif change == 'empty':
+                        (root / page['image_file']).write_bytes(b'')
+                    else:
+                        page['image_file'] = '../slide-001.jpg'
+                    deck = fetch.parse_deck(fixture(), URL)
+                    fetch.reuse_images(deck['pages'], old, root)
+                    self.assertEqual(deck['pages'][0]['image_status'], 'not_requested')
+                    self.assertEqual(deck['pages'][1]['image_status'], 'failed')
+            with patch.object(fetch, 'fetch', return_value=jpeg) as request:
+                self.assertEqual(fetch.download_images(deck['pages'], {2}, root), [])
+            request.assert_called_once()
+            self.assertEqual(deck['pages'][1]['image_status'], 'downloaded')
+            self.assertNotIn('image_error', deck['pages'][1])
+
 
 if __name__ == '__main__':
     unittest.main()

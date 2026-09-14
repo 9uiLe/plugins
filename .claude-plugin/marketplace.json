@@ -41,7 +41,7 @@
       "name": "speakerdeck-knowledge",
       "source": "./plugins/speakerdeck-knowledge",
       "description": "Extract actionable knowledge from SpeakerDeck into AI-ready Markdown and visual HTML for readers without prior context.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "productivity",
       "tags": [
         "speakerdeck",
