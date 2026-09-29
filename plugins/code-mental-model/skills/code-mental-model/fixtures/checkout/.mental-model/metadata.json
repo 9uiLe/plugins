@@ -1,0 +1,48 @@
+{
+  "analysisConfiguration": {},
+  "assets": {
+    "SKILL.md": "d838b368663e12a85b72392bf7d5e28b2de0122b78c023b900d88af62e98ae2f",
+    "assets/mental-model.css": "f5406869dacf13dc6c1979e61c6b48c2f93b3b80ab83f558af6a7b2848b732a9",
+    "assets/mental-model.js": "4fe11ad026e7ccbf2ab3d47417974fadd9a8d7129bdecd4a8cfdc3eee13b5b04",
+    "assets/template.html": "db8d7715419b3143399996be6184fbfd8d9206fdb04154b0b5d2e1eac46044a1",
+    "scripts/analysis_json.py": "ee69dd4313a69fbd7b23d14e95c2d3e0874ddecd08c42cfdace68c705b3b7e7a",
+    "scripts/artifact_metadata.py": "7e283d9b8c1311b708e9e6b108b740ac8034b21dfe685b3e416e62890b328db7",
+    "scripts/build_application.py": "f8e37289078a85205ab75dfaec5e44840492abc59545ba8873e45d0b0d41268a",
+    "scripts/build_model.py": "d95557eed46920e1128b91150e0149cb13c4419fc296d1a58f4a6c9f1962e109",
+    "scripts/canonical.py": "a73cd0fa01b1bec605b0a1d392eb82a6e28fe223aac221d9db071142cb2fe6c7",
+    "scripts/canonicalizer.py": "bbc1406101ec973b357e3d3d0b8d2066b09c3ad9234621d1568b8b058015af6c",
+    "scripts/code_lens.py": "dd19188292f81aeb96e45ce628ce5cd63824021b71862b4610699995b37887ff",
+    "scripts/domain.py": "553cfbaba4b7f434b2526f6f7286d5a14819d3635df51a5c21b8c99a3cae0dac",
+    "scripts/generate_application.py": "7cc6addf038d8b20174f07375776308b1d17a623a9cfa8a27a6ac56d06438d2a",
+    "scripts/graph_layout.py": "0ec587f933020a0dd73a2fc6200d2aef2a5efa46b6dcce2b2f891f7ecd1a0229",
+    "scripts/hashing.py": "4dcf2381597cd466e56b3e3b5d72eecfe3d2f892459c899aed27c452d208fcff",
+    "scripts/infrastructure.py": "c1d8277d3481ab88cc748691e1392daa72b731c2ea3c21d5529f1806650a8ea5",
+    "scripts/layout_engine.py": "532a0f9f23d6ccc5849a45b553f60e6ec1b495df8601b97e6f2e70bde06faa16",
+    "scripts/layout_model.py": "fcc7a622da1a5870290ca5cfe85f974cc9dd4e13a70d711afc688f4ef91d7d0e",
+    "scripts/localization.py": "fd9ed32321dde10dc47fab4f6d2ddd365b974923a1df0bb8a978b994b260c15e",
+    "scripts/model_json.py": "065de15d7ed1f63b8bcfe52f1b048e36e0e93485ea8874d7330efa75c1240878",
+    "scripts/presentation.py": "84861c631c11a82a997d759141c29f6c734712d19e1da416768aa507e8c137a0",
+    "scripts/readability.py": "db6da12eb2837dcadf47d79d95d655c76771d48f566394de3c229e6d3cde79d1",
+    "scripts/render_html.py": "d15df0f0833d2173edaad5443c46d0581b82f6a888f28909113dc2ac091806d4",
+    "scripts/versions.py": "3cc1b11915d556370a97ff052be9163665c3565bcf022dd898b51ea66ebe5c79"
+  },
+  "baseRevision": "a9f62ae",
+  "headRevision": "working-tree",
+  "inputFingerprint": "cbc55b58a105b52767e0c6a451133f73c541b26fb2e0f6e829e89ced908dce0b",
+  "locale": "ja-JP",
+  "modelSha256": "30a6df1389a67a4be46425ef395fa875cce449b7deeff615c1a6bf1cdaf52290",
+  "rendererVersion": 11,
+  "repositoryRevision": "a6f750c2e968a9c198acea033fdeec5ea9a92995",
+  "schemaVersion": 1,
+  "skillVersion": "0.3.5",
+  "targets": [
+    {
+      "path": "service.py",
+      "sha256": "61fb662bd2e0fb995dd19f407ed635d2897bd55ce3ab2d1b6950446a21f9606d"
+    },
+    {
+      "path": "test_service.py",
+      "sha256": "25e72815c3214a4597041a2ad2e774b88d824784af84ffd07f26196329219e76"
+    }
+  ]
+}
