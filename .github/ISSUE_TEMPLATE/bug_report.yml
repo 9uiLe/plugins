@@ -30,8 +30,8 @@ body:
       label: 対象プラグイン
       description: 不具合が発生しているプラグインを選択してください。
       options:
-        - quality-architect
         - model-strategy
+        - speakerdeck-knowledge
         - marketplace 全体 / インストール周り
         - その他・不明
     validations:
@@ -43,8 +43,8 @@ body:
       label: 対象の Skill / コマンド
       description: |
         どの Skill・スラッシュコマンドで発生しましたか。
-        例: `quality-architecture`, `quality-review`, `model-effort-guide`
-      placeholder: "例: quality-review"
+        例: `model-effort-guide`, `speakerdeck-knowledge`
+      placeholder: "例: speakerdeck-knowledge"
     validations:
       required: false
 
@@ -53,7 +53,7 @@ body:
     attributes:
       label: 不具合の概要
       description: 何が起きているかを簡潔に説明してください。
-      placeholder: "例: quality-review が対象コードの静的計測結果を出力しない。"
+      placeholder: "例: speakerdeck-knowledge が画像のみのスライドから本文を抽出しない。"
     validations:
       required: true
 
@@ -74,7 +74,7 @@ body:
     id: expected
     attributes:
       label: 期待した挙動
-      placeholder: "例: 静的計測結果と根拠を含むレビューが出力される。"
+      placeholder: "例: 画像から読み取った内容と出典を含む knowledge.md が出力される。"
     validations:
       required: true
 
@@ -83,7 +83,7 @@ body:
     attributes:
       label: 実際の挙動
       description: 実際に起きたことを記載してください。
-      placeholder: "例: 計測結果や未計測の理由が記載されない。"
+      placeholder: "例: 画像のみのページが欠損扱いになり、理由が記載されない。"
     validations:
       required: true
 

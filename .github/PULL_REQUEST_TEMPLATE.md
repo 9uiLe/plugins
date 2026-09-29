@@ -9,8 +9,8 @@
 
 ## 対象プラグイン
 
-- [ ] quality-architect
 - [ ] model-strategy
+- [ ] speakerdeck-knowledge
 - [ ] marketplace / リポジトリ全体
 - [ ] その他:
 
@@ -34,7 +34,7 @@
 - [ ] `marketplace.json` / `plugin.json` の JSON 構文が壊れていないことを確認した
 
 確認手順:
-<!-- 例: quality-review を実行し、対象コードに対する計測結果と指摘の根拠を確認 -->
+<!-- 例: speakerdeck-knowledge を実行し、生成された knowledge.md と guide.html の出典を確認 -->
 
 ## チェックリスト
 

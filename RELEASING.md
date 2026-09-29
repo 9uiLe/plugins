@@ -30,15 +30,15 @@
 
 ### 1. リリース対象を決める
 
-- どのプラグインを bump するか（例: `quality-architect`）
+- どのプラグインを bump するか（例: `model-strategy`）
 - プラグインの bump 種別（`patch` / `minor` / `major`）
 - リリース版の bump 種別（同じ。デフォルト `patch`）
-- 例: `quality-architect` を patch、リリース版を patch → quality-architect 0.1.1 → 0.1.2、リポジトリ v0.1.1 → v0.1.2
+- 例: `model-strategy` を patch、リリース版を patch → model-strategy 0.4.1 → 0.4.2、リポジトリ v0.7.2 → v0.7.3
 
 ### 2. dry-run で差分を確認
 
 ```bash
-scripts/release-prepare.sh --plugin quality-architect --bump patch --release-bump patch --dry-run
+scripts/release-prepare.sh --plugin model-strategy --bump patch --release-bump patch --dry-run
 ```
 
 ファイルは書き換えず、CHANGELOG・Claude/Codex plugin.json・marketplace.json・releases/*.md の差分プレビューが流れます。
@@ -46,7 +46,7 @@ scripts/release-prepare.sh --plugin quality-architect --bump patch --release-bum
 ### 3. 本番実行（PR 作成まで）
 
 ```bash
-scripts/release-prepare.sh --plugin quality-architect --bump patch --release-bump patch
+scripts/release-prepare.sh --plugin model-strategy --bump patch --release-bump patch
 ```
 
 実行内容:

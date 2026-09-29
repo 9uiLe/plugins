@@ -5,6 +5,10 @@
 
 ## [Unreleased]
 
+### Removed
+
+- **quality-architect**: プラグインを削除し、Claude Code / Codex の marketplace から除外。README、コントリビューション・リリース・セキュリティの各ガイド、Issue / PR テンプレートの参照を整理。
+
 ## [0.7.2] - 2026-09-14
 
 ### Fixed
