@@ -25,8 +25,8 @@ body:
       label: 対象プラグイン
       description: 提案の対象となるプラグインを選択してください。
       options:
-        - quality-architect
         - model-strategy
+        - speakerdeck-knowledge
         - marketplace 全体 / リポジトリ運用
         - 新規プラグインの提案
         - その他・横断的
@@ -38,7 +38,7 @@ body:
     attributes:
       label: 対象の Skill / コマンド
       description: 関連する Skill やコマンドがあれば記入してください。
-      placeholder: "例: quality-review"
+      placeholder: "例: model-effort-guide"
     validations:
       required: false
 
@@ -49,7 +49,7 @@ body:
       description: |
         どんな場面で困っているか、なぜこの改善が必要かを説明してください。
         「〜のとき、〜できなくて困っている」という形式が書きやすいです。
-      placeholder: "例: 品質レビュー時にプロジェクト固有の非機能要件を評価基準へ反映しにくい。"
+      placeholder: "例: 委譲方針を決めるときにプロジェクト固有の利用量上限を反映しにくい。"
     validations:
       required: true
 

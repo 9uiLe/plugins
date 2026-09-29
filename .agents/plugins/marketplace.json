@@ -5,18 +5,6 @@
   },
   "plugins": [
     {
-      "name": "quality-architect",
-      "source": {
-        "source": "local",
-        "path": "./plugins/quality-architect"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
       "name": "model-strategy",
       "source": {
         "source": "local",

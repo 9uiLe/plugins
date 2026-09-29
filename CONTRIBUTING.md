@@ -1,6 +1,6 @@
 # コントリビューションガイド
 
-このリポジトリでは、Claude Code / Codex 用の `quality-architect`、`model-strategy`、`speakerdeck-knowledge` を配布しています。プラグインの用途と構成は [README](./README.md) を参照してください。
+このリポジトリでは、Claude Code / Codex 用の `model-strategy`、`speakerdeck-knowledge` を配布しています。プラグインの用途と構成は [README](./README.md) を参照してください。
 
 ## 不具合・改善提案・質問
 
@@ -28,8 +28,6 @@
 | 変更内容 | 対象 |
 | --- | --- |
 | スキルの起動条件・手順・出力 | `plugins/<name>/skills/<skill>/SKILL.md` |
-| 品質特性の定義・設計やレビューの観点 | `plugins/quality-architect/references/` |
-| 品質指標・測定ツール・しきい値 | `plugins/quality-architect/quality-gates.yml` と `scripts/` |
 | モデル・委譲の判断資料 | `plugins/model-strategy/references/` |
 | 操作の振り分け・警告・委譲先の動作 | `plugins/model-strategy/scripts/`、`hooks/`、`agents/` |
 | GitHub の報告・PR フォーム | `.github/ISSUE_TEMPLATE/`、`.github/PULL_REQUEST_TEMPLATE.md` |
