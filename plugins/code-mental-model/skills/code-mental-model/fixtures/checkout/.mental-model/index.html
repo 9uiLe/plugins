@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkout — System Mental Model Map</title>
+  <style>
+:root {
+  color-scheme: light;
+  --surface-page: #f3f6f5;
+  --surface-card: #fbfcfb;
+  --surface-map: #f8faf9;
+  --surface-subtle: #edf2f0;
+  --text-primary: #1b3338;
+  --text-secondary: #4d6368;
+  --text-tertiary: #5e7276;
+  --border-subtle: #ccd8d4;
+  --border-strong: #688088;
+  --edge-default: #526e76;
+  --accent-primary: #075f6d;
+  --accent-soft: #dceff0;
+  --status-added: #216b4a;
+  --status-added-soft: #e6f2e9;
+  --status-changed: #875516;
+  --status-changed-soft: #faf0dd;
+  --status-removed: #a13f49;
+  --status-removed-soft: #f9eaeb;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; color: var(--text-primary); background: var(--surface-page); font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif; }
+button { font: inherit; }
+a { color: var(--accent-primary); }
+a:focus-visible, button:focus-visible, .graph-link:focus-visible { outline: 3px solid var(--accent-primary); outline-offset: 3px; }
+.skip { position: absolute; left: -9999px; }
+.skip:focus { left: 12px; top: 12px; z-index: 10; padding: 8px; background: var(--surface-card); }
+.page { max-width: 940px; margin: auto; padding: 24px 28px 72px; }
+.head { padding: 0 0 16px; }
+.kicker { margin: 0; color: var(--accent-primary); font-size: .7rem; font-weight: 750; letter-spacing: .12em; }
+.head h1 { margin: 7px 0 8px; font-size: clamp(1.8rem, 3.2vw, 2.6rem); line-height: 1.2; }
+.summary { max-width: 68ch; margin: 0; font-size: 1.05rem; font-weight: 550; line-height: 1.6; }
+.sidebar { margin-bottom: 20px; border-bottom: 1px solid var(--border-subtle); }
+.sidebar nav { display: flex; flex-wrap: wrap; gap: 6px 26px; }
+.sidebar a { padding: 0 0 9px; color: var(--text-secondary); font-size: .8rem; font-weight: 650; text-decoration: none; }
+.sidebar a:hover { color: var(--accent-primary); text-decoration: underline; text-underline-offset: 4px; }
+section { scroll-margin-top: 24px; }
+h2 { margin: 0; font-size: 1.3rem; line-height: 1.3; }
+.map-heading { display: flex; align-items: start; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px; margin-bottom: 10px; }
+.mode-question { margin: 4px 0 0; color: var(--text-secondary); font-size: .85rem; }
+.modes { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--surface-subtle); }
+.modes button, .scenarios button, #overview-button { border: 1px solid transparent; border-radius: 5px; background: transparent; color: var(--text-secondary); padding: 5px 12px; font-size: .8rem; font-weight: 650; cursor: pointer; }
+.modes button:hover, .scenarios button:hover, #overview-button:hover { color: var(--accent-primary); background: var(--surface-card); }
+.modes button[aria-pressed=true], .scenarios button[aria-pressed=true] { border-color: var(--accent-primary); background: var(--accent-primary); color: var(--surface-card); }
+.scenarios { display: none; flex-wrap: wrap; gap: 4px; margin: 0 0 12px; }
+.page[data-mode=execution] .scenarios:not(:empty) { display: flex; }
+.execution-hint { display: none; margin: 0 0 10px; color: var(--text-secondary); font-size: .8rem; }
+.page[data-mode=execution] .execution-hint { display: block; }
+.step-explanation { position: sticky; top: 12px; z-index: 2; margin: 0 0 12px; padding: 12px 132px 12px 16px; border: 1px solid var(--border-subtle); border-left: 4px solid var(--accent-primary); border-radius: 5px; background: var(--surface-card); box-shadow: 0 8px 24px rgb(27 51 56 / 10%); }
+.step-explanation[hidden], .step-detail[hidden] { display: none; }
+#step-explanation-close { position: absolute; top: 10px; right: 12px; padding: 4px 8px; border: 1px solid var(--border-subtle); border-radius: 4px; background: var(--surface-card); color: var(--text-secondary); font-size: .75rem; cursor: pointer; }
+#step-explanation-close:hover { color: var(--accent-primary); border-color: var(--accent-primary); }
+.step-scenario { margin: 0; color: var(--text-secondary); font-size: .72rem; font-weight: 700; }
+.step-detail h3 { margin: 1px 0 4px; font-size: .98rem; line-height: 1.35; }
+.step-action { margin: 0; font-size: .82rem; }
+.step-condition { margin: 7px 0 0; padding: 5px 9px; border-radius: 3px; background: var(--surface-subtle); font-size: .8rem; }
+.step-note { margin: 6px 0 0; color: var(--text-secondary); font-size: .8rem; }
+.step-note strong { margin-right: 6px; color: var(--text-primary); }
+.map-canvas { border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--surface-map); overflow: hidden; }
+.graph { display: block; width: 100%; height: auto; }
+.graph-mobile { display: none; }
+.graph text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif; fill: var(--text-primary); }
+.graph-link { text-decoration: none; cursor: pointer; }
+.marker-defs #arrow path { fill: var(--edge-default); }
+.marker-defs #arrow-focus path { fill: var(--accent-primary); }
+.marker-defs #arrow-add path { fill: var(--status-added); }
+.node .shape { fill: var(--surface-card); stroke: var(--border-strong); stroke-width: 2; }
+.node .inner { fill: none; stroke: var(--border-strong); stroke-width: 1.4; }
+.node .name { font-size: 16px; font-weight: 750; text-anchor: middle; }
+.node .role { font-size: 12px; font-weight: 650; fill: var(--text-secondary); text-anchor: middle; }
+.node.role-coordinator .shape { stroke: var(--text-primary); stroke-width: 3.5; }
+.node.role-coordinator .name { font-size: 17px; }
+.node.role-coordinator .role { fill: var(--text-primary); }
+.node.unknown .shape, .node.inferred .shape { stroke-dasharray: 6 5; }
+.node.unknown .shape { fill: var(--surface-subtle); }
+.edge .line { fill: none; stroke: var(--edge-default); stroke-width: 2; marker-end: url(#arrow); }
+.edge .hit { fill: none; stroke: transparent; stroke-width: 19; }
+.edge text { font-size: 12px; font-weight: 650; text-anchor: middle; paint-order: stroke; stroke: var(--surface-map); stroke-width: 4px; stroke-linejoin: round; }
+.edge.inferred .line, .edge.unknown .line { stroke-dasharray: 5 5; }
+.edge .change-prefix { font-weight: 850; }
+.edge .step { display: none; font-size: 14px; fill: var(--accent-primary); font-weight: 800; text-decoration: underline; }
+.edge .label-leader-halo { fill: none; stroke: var(--surface-map); stroke-width: 6; stroke-linecap: round; }
+.edge .label-leader { fill: none; stroke: var(--edge-default); stroke-width: 1.5; }
+.edge .label-anchor { fill: var(--edge-default); stroke: var(--surface-map); stroke-width: 2; }
+.graph-link.is-muted { opacity: .88; }
+.graph-link.is-related { opacity: .9; }
+.graph-link.is-selected { opacity: 1; }
+.node:is(:hover, :focus-visible) .shape { stroke: var(--accent-primary); stroke-width: 3; }
+.edge:is(:hover, :focus-visible) .line { stroke: var(--accent-primary); stroke-width: 3; marker-end: url(#arrow-focus); }
+.edge:is(:hover, :focus-visible) .edge-label { fill: var(--accent-primary); font-weight: 800; }
+.edge:is(:hover, :focus-visible) .label-leader { stroke: var(--accent-primary); }
+.edge:is(:hover, :focus-visible) .label-anchor { fill: var(--accent-primary); }
+.node.is-selected .shape { stroke: var(--accent-primary); stroke-width: 4; fill: var(--accent-soft); }
+.node.is-related .shape { stroke-width: 3; }
+.edge.is-selected .line { stroke: var(--accent-primary); stroke-width: 5; marker-end: url(#arrow-focus); }
+.edge.is-selected .edge-label { fill: var(--accent-primary); font-weight: 800; }
+.edge.is-selected .label-leader { stroke: var(--accent-primary); stroke-width: 2; }
+.edge.is-selected .label-anchor { fill: var(--accent-primary); }
+.edge.is-related .line { stroke-width: 3; }
+.page[data-mode=structure] .edge .change-prefix { opacity: .45; }
+.page[data-mode=execution] .edge:not(.path-on) { display: none; }
+.page[data-mode=execution] .edge .edge-label, .page[data-mode=execution] .edge .label-leader-halo, .page[data-mode=execution] .edge .label-leader, .page[data-mode=execution] .edge .label-anchor { display: none; }
+.page[data-mode=execution] .edge.path-on .line { stroke: var(--accent-primary); stroke-width: 4; marker-end: url(#arrow-focus); }
+.page[data-mode=execution] .edge.path-on .step { display: block; fill: var(--accent-primary); }
+.page[data-mode=execution] .node:not(.path-node) { display: none; }
+.page[data-mode=execution] .node.path-node .shape { stroke-width: 3; }
+.page[data-mode=change] .edge.existing:not(.is-selected) { opacity: .25; }
+.page[data-mode=change] .edge.existing:not(.is-selected) .edge-label, .page[data-mode=change] .edge.existing:not(.is-selected) .label-leader-halo, .page[data-mode=change] .edge.existing:not(.is-selected) .label-leader, .page[data-mode=change] .edge.existing:not(.is-selected) .label-anchor { display: none; }
+.page[data-mode=change] .edge:not(.existing) .edge-label { font-weight: 800; }
+.page[data-mode=change] .edge.added .line { stroke: var(--status-added); stroke-width: 4; marker-end: url(#arrow-add); }
+.page[data-mode=change] .edge.changed .line { stroke: var(--status-changed); stroke-width: 4; }
+.page[data-mode=change] .edge.removed .line { stroke: var(--status-removed); stroke-dasharray: 6 4; }
+.page[data-mode=change] .edge.added .edge-label { fill: var(--status-added); }
+.page[data-mode=change] .edge.changed .edge-label { fill: var(--status-changed); }
+.page[data-mode=change] .edge.removed .edge-label { fill: var(--status-removed); }
+.page[data-mode=change] .edge.added .label-leader { stroke: var(--status-added); }
+.page[data-mode=change] .edge.changed .label-leader { stroke: var(--status-changed); }
+.page[data-mode=change] .edge.removed .label-leader { stroke: var(--status-removed); }
+.map-hint { margin: 10px 0 0; color: var(--text-secondary); font-size: .78rem; }
+.legend { display: flex; flex-wrap: wrap; gap: 5px 18px; margin-top: 5px; color: var(--text-tertiary); font-size: .73rem; }
+.legend b { color: var(--text-primary); }
+.legend-change { display: none; }
+.page[data-mode=change] .legend-change { display: inline; }
+.page[data-mode=change] .legend-structure, .page[data-mode=execution] .legend { display: none; }
+.code-dock { margin-top: 24px; padding: 22px; border: 1px solid var(--border-subtle); border-top: 3px solid var(--accent-primary); border-radius: 5px 5px 8px 8px; background: var(--surface-card); box-shadow: 0 8px 24px rgb(27 51 56 / 6%); }
+.has-js .page:not(.is-focused) .code-dock { display: none; }
+.dock-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+#overview-button { border: 1px solid var(--border-subtle); }
+.detail { min-width: 0; }
+.has-js .detail:not(.active) { display: none; }
+.detail h3 { margin: 14px 0 4px; font-size: 1.08rem; line-height: 1.35; }
+.detail .meaning { max-width: 90ch; margin: 0 0 12px; font-size: .88rem; }
+.detail .source { margin: 9px 0 0; color: var(--text-secondary); font-size: .78rem; }
+.detail-evidence { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; margin: 0 0 14px; font-size: .8rem; }
+.detail-evidence strong { font-size: .78rem; }
+.evidence-status { padding: 2px 8px; border-radius: 3px; background: var(--status-added-soft); color: var(--status-added); font-weight: 700; }
+.evidence-status.inferred { background: var(--status-changed-soft); color: var(--status-changed); }
+.evidence-status.unknown { background: var(--surface-subtle); color: var(--text-secondary); }
+.evidence-source { color: var(--text-secondary); overflow-wrap: anywhere; }
+.code-lens { overflow: hidden; border: 1px solid var(--border-subtle); border-radius: 5px; background: var(--surface-card); }
+.lens-top { display: flex; justify-content: space-between; gap: 10px; padding: 7px 10px; color: var(--text-secondary); font-size: .74rem; font-weight: 700; }
+.code-lens pre { margin: 0; padding: 5px 0 7px; overflow-x: auto; overflow-y: visible; background: var(--surface-map); font: 15px/1.58 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.code-row { display: flex; width: max-content; min-width: 100%; white-space: pre; border-left: 3px solid transparent; }
+.code-row code { display: block; padding: 0; background: none; font: inherit; white-space: pre; }
+.code-row.is-focus { background: var(--accent-soft); border-left-color: var(--accent-primary); }
+.gutter { position: sticky; left: 0; flex: none; width: 3.6em; margin-right: .6em; padding: 0 .4em; border-right: 1px solid var(--border-subtle); background: inherit; color: var(--text-secondary); text-align: right; user-select: none; }
+.page[data-mode=change] .code-row.is-change:not(.is-focus) { background: var(--status-added-soft); }
+.page[data-mode=change] .code-row.is-change.removed:not(.is-focus) { background: var(--status-removed-soft); }
+.code-row.is-change .gutter { color: var(--status-added); font-weight: 700; }
+.code-row.is-change.removed .gutter { color: var(--status-removed); }
+.tok-keyword { color: #623f7d; font-weight: 600; }
+.tok-type { color: #675034; }
+.tok-function, .tok-member { color: #285465; }
+.tok-string { color: #7b4350; }
+.tok-number { color: #614f7c; }
+.tok-comment { color: #4e6268; font-style: italic; }
+.tok-operator { color: #465f6c; }
+.evidence { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border-subtle); }
+.evidence h2 { font-size: 1.05rem; }
+.evidence-stats { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 14px 0 10px; }
+.evidence-stat { min-width: 88px; }
+.evidence-stat dt { color: var(--text-secondary); font-size: .78rem; }
+.evidence-stat dd { margin: 0; font-size: 1.35rem; font-weight: 750; line-height: 1.3; }
+.evidence-coverage, .evidence-note { margin: 6px 0; color: var(--text-secondary); font-size: .82rem; }
+.evidence-note { line-height: 1.7; }
+.evidence-groups { display: flex; flex-wrap: wrap; gap: 12px 28px; margin-top: 14px; }
+.evidence-group { min-width: 220px; flex: 1; }
+.evidence-group h3 { margin: 0 0 4px; font-size: .84rem; }
+.evidence-group ul { margin: 0; padding-left: 1.25em; color: var(--text-secondary); font-size: .8rem; }
+@media (max-width: 700px) {
+  .page { padding: 22px 14px 52px; }
+  .head { padding-bottom: 18px; }
+  .sidebar { margin-bottom: 24px; }
+  .sidebar nav { flex-wrap: nowrap; gap: 20px; overflow-x: auto; white-space: nowrap; }
+  .head h1 { font-size: 1.8rem; }
+  .map-heading { gap: 12px; }
+  .modes { width: 100%; }
+  .modes button { flex: 1; }
+  .step-explanation { padding: 12px 12px 14px; }
+  #step-explanation-close { position: static; float: right; margin-left: 8px; }
+  .graph-desktop { display: none; }
+  .graph-mobile { display: block; }
+  .node .name { font-size: 15px; }
+  .edge text { font-size: 11px; }
+  .code-dock { padding: 14px; }
+  .code-lens pre { font-size: 14px; }
+  .detail h3 { font-size: 1rem; }
+  .legend { font-size: .7rem; }
+  .page[data-mode=change] .graph-mobile .edge.existing .edge-label { display: none; }
+}
+@media print {
+  .sidebar, .modes, .scenarios, #overview-button { display: none !important; }
+  .page { padding: 0; }
+  .graph-mobile { display: none !important; }
+  .graph-desktop { display: block !important; }
+  .has-js .page:not(.is-focused) .code-dock { display: none; }
+  .code-dock { break-inside: avoid; }
+  .graph-link { opacity: 1 !important; }
+}
+  </style>
+</head>
+<body>
+  <a class="skip" href="#mental-map">関係図へ移動</a>
+  <div class="page" data-mode="structure" data-scenario="first" data-locale="ja-JP">
+    <header class="head">
+      <p class="kicker">CODE MENTAL MODEL</p>
+      <h1>Checkout</h1>
+      <p class="summary">保存済みの結果があれば外部への副作用を繰り返しません。</p>
+    </header>
+    <aside class="sidebar">
+      <nav aria-label="ページ内の移動">
+        <a href="#mental-map">関係図</a>
+        <a href="#evidence">根拠の全体像</a>
+      </nav>
+    </aside>
+    <main>
+      <section id="mental-map" aria-labelledby="map-title">
+        <div class="map-heading">
+          <div><h2 id="map-title">関係図</h2><p id="mode-question" class="mode-question">何が存在し、どう繋がるか。</p></div>
+          <div class="modes" role="group" aria-label="図の表示"><button type="button" data-mode="structure" aria-pressed="true">構造</button><button type="button" data-mode="execution" aria-pressed="false">実行順</button><button type="button" data-mode="change" aria-pressed="false">変更</button></div>
+        </div>
+        <div class="scenarios" role="group" aria-label="実行経路"><button type="button" data-scenario="first" aria-pressed="true">初回</button><button type="button" data-scenario="repeat" aria-pressed="false">再要求</button></div>
+        <p class="execution-hint">図の番号を選ぶと、その手順と分岐条件を確認できます。</p>
+        <div id="step-explanation" class="step-explanation" aria-label="選択した手順の説明" aria-live="polite" hidden>
+          <button id="step-explanation-close" type="button">説明を閉じる</button>
+          <article class="step-detail" data-step-scenario="first" data-step-edge="caller--calls--checkout-service--checkout-order-id-amount" hidden><p class="step-scenario">初回</p><h3>手順 1 · Caller → CheckoutService</h3><p class="step-action">Caller は checkout(orderId, amount) を使って CheckoutService を呼び出します。</p></article>
+          <article class="step-detail" data-step-scenario="first" data-step-edge="checkout-service--reads--orders--find-order-id" hidden><p class="step-scenario">初回</p><h3>手順 2 · CheckoutService → Orders</h3><p class="step-action">CheckoutService は find(orderId) を使って Orders を参照します。</p><p class="step-note"><strong>補足</strong> orderId</p></article>
+          <article class="step-detail" data-step-scenario="first" data-step-edge="orders--returns--checkout-service--receipt" hidden><p class="step-scenario">初回</p><h3>手順 3 · Orders → CheckoutService</h3><p class="step-action">Orders は Receipt? を CheckoutService に返します。</p><p class="step-note"><strong>補足</strong> Receipt または None</p></article>
+          <article class="step-detail" data-step-scenario="first" data-step-edge="checkout-service--calls--gateway--charge-order-id-amount" hidden><p class="step-scenario">初回</p><h3>手順 4 · CheckoutService → Gateway</h3><p class="step-action">CheckoutService は charge(orderId, amount) を使って Gateway を呼び出します。</p><p class="step-condition">Orders の find(orderId) で結果が見つからなかった場合に進む経路です。miss は検索結果を指し、この手順の失敗ではありません。</p></article>
+          <article class="step-detail" data-step-scenario="first" data-step-edge="gateway--returns--checkout-service--charge-id" hidden><p class="step-scenario">初回</p><h3>手順 5 · Gateway → CheckoutService</h3><p class="step-action">Gateway は chargeId を CheckoutService に返します。</p><p class="step-condition">Orders の find(orderId) で結果が見つからなかった場合に進む経路です。miss は検索結果を指し、この手順の失敗ではありません。</p></article>
+          <article class="step-detail" data-step-scenario="first" data-step-edge="checkout-service--creates--receipt--receipt-order-id-charge-id" hidden><p class="step-scenario">初回</p><h3>手順 6 · CheckoutService → Receipt</h3><p class="step-action">CheckoutService は Receipt(orderId, chargeId) として Receipt を生成します。</p><p class="step-condition">Orders の find(orderId) で結果が見つからなかった場合に進む経路です。miss は検索結果を指し、この手順の失敗ではありません。</p></article>
+          <article class="step-detail" data-step-scenario="first" data-step-edge="checkout-service--writes--orders--save-receipt" hidden><p class="step-scenario">初回</p><h3>手順 7 · CheckoutService → Orders</h3><p class="step-action">CheckoutService は save(receipt) を使って Orders を書き込みます。</p><p class="step-condition">Orders の find(orderId) で結果が見つからなかった場合に進む経路です。miss は検索結果を指し、この手順の失敗ではありません。</p></article>
+          <article class="step-detail" data-step-scenario="first" data-step-edge="checkout-service--returns--caller--receipt" hidden><p class="step-scenario">初回</p><h3>手順 8 · CheckoutService → Caller</h3><p class="step-action">CheckoutService は Receipt を Caller に返します。</p></article>
+          <article class="step-detail" data-step-scenario="repeat" data-step-edge="caller--calls--checkout-service--checkout-order-id-amount" hidden><p class="step-scenario">再要求</p><h3>手順 1 · Caller → CheckoutService</h3><p class="step-action">Caller は checkout(orderId, amount) を使って CheckoutService を呼び出します。</p></article>
+          <article class="step-detail" data-step-scenario="repeat" data-step-edge="checkout-service--reads--orders--find-order-id" hidden><p class="step-scenario">再要求</p><h3>手順 2 · CheckoutService → Orders</h3><p class="step-action">CheckoutService は find(orderId) を使って Orders を参照します。</p><p class="step-note"><strong>補足</strong> orderId</p></article>
+          <article class="step-detail" data-step-scenario="repeat" data-step-edge="orders--returns--checkout-service--receipt" hidden><p class="step-scenario">再要求</p><h3>手順 3 · Orders → CheckoutService</h3><p class="step-action">Orders は Receipt? を CheckoutService に返します。</p><p class="step-note"><strong>補足</strong> Receipt または None</p></article>
+          <article class="step-detail" data-step-scenario="repeat" data-step-edge="checkout-service--returns--caller--receipt" hidden><p class="step-scenario">再要求</p><h3>手順 4 · CheckoutService → Caller</h3><p class="step-action">CheckoutService は Receipt を Caller に返します。</p></article>
+        </div>
+        <div class="map-canvas">
+<svg class="marker-defs" width="0" height="0" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z"/></marker><marker id="arrow-focus" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z"/></marker><marker id="arrow-add" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z"/></marker></defs></svg>
+<svg class="graph graph-desktop" viewBox="0 0 708 782" style="max-width:708px;margin-inline:auto" data-layout="h-wide-orthogonal" data-readability-cost="437.0" role="img" aria-label="関係図" xmlns="http://www.w3.org/2000/svg"><title>関係図</title><desc>オブジェクトと接続。ノードや線を選ぶと対応するコードが開きます。</desc><a class="graph-link edge existing unknown" href="#detail-caller--calls--checkout-service--checkout-order-id-amount" data-detail="caller--calls--checkout-service--checkout-order-id-amount" data-from="caller" data-to="checkout-service" data-execution="{&quot;first&quot;:1,&quot;repeat&quot;:1}"><path class="line" d="M342 150 L342 188 L342 188 L342 262"/><path class="hit" d="M342 150 L342 188 L342 188 L342 262"/><text class="edge-label" x="306" y="225">checkout(…)</text><text class="step" x="306" y="225"></text><title>calls: checkout(orderId, amount)</title></a><a class="graph-link edge existing confirmed" href="#detail-checkout-service--returns--caller--receipt" data-detail="checkout-service--returns--caller--receipt" data-from="checkout-service" data-to="caller" data-execution="{&quot;first&quot;:8,&quot;repeat&quot;:4}"><path class="line" d="M366 262 L366 224 L366 224 L366 150"/><path class="hit" d="M366 262 L366 224 L366 224 L366 150"/><text class="edge-label" x="378" y="187">Receipt</text><text class="step" x="378" y="187"></text><title>returns: Receipt</title></a><a class="graph-link edge added confirmed" href="#detail-checkout-service--reads--orders--find-order-id" data-detail="checkout-service--reads--orders--find-order-id" data-from="checkout-service" data-to="orders" data-execution="{&quot;first&quot;:2,&quot;repeat&quot;:2}"><path class="line" d="M294 338 L294 358 L128 358 L128 450"/><path class="hit" d="M294 338 L294 358 L128 358 L128 450"/><text class="edge-label" x="128" y="380"><tspan class="change-prefix">+ </tspan><tspan>find(orderId)</tspan></text><text class="step" x="128" y="380"></text><title>reads: find(orderId)</title></a><a class="graph-link edge existing confirmed" href="#detail-checkout-service--writes--orders--save-receipt" data-detail="checkout-service--writes--orders--save-receipt" data-from="checkout-service" data-to="orders" data-execution="{&quot;first&quot;:7}"><path class="line" d="M342 338 L342 430 L176 430 L176 450"/><path class="hit" d="M342 338 L342 430 L176 430 L176 450"/><text class="edge-label" x="259" y="430">save(receipt)</text><text class="step" x="259" y="430"></text><title>writes: save(receipt)</title></a><a class="graph-link edge changed confirmed" href="#detail-checkout-service--calls--gateway--charge-order-id-amount" data-detail="checkout-service--calls--gateway--charge-order-id-amount" data-from="checkout-service" data-to="gateway" data-execution="{&quot;first&quot;:4}"><path class="line" d="M390 338 L390 412 L544 412 L544 450"/><path class="hit" d="M390 338 L390 412 L544 412 L544 450"/><text class="edge-label" x="467" y="412"><tspan class="change-prefix">Δ </tspan><tspan>charge(…)</tspan></text><text class="step" x="467" y="412"></text><title>calls: charge(orderId, amount)</title></a><a class="graph-link edge existing confirmed" href="#detail-checkout-service--creates--receipt--receipt-order-id-charge-id" data-detail="checkout-service--creates--receipt--receipt-order-id-charge-id" data-from="checkout-service" data-to="receipt" data-execution="{&quot;first&quot;:6}"><path class="line" d="M366 338 L366 485 L354 485 L354 632"/><path class="hit" d="M366 338 L366 485 L354 485 L354 632"/><text class="edge-label" x="354" y="558">Receipt(…)</text><text class="step" x="354" y="558"></text><title>creates: Receipt(orderId, chargeId)</title></a><a class="graph-link edge added confirmed" href="#detail-orders--returns--checkout-service--receipt" data-detail="orders--returns--checkout-service--receipt" data-from="orders" data-to="checkout-service" data-execution="{&quot;first&quot;:3,&quot;repeat&quot;:3}"><path class="line" d="M152 450 L152 394 L318 394 L318 338"/><path class="hit" d="M152 450 L152 394 L318 394 L318 338"/><text class="edge-label" x="259" y="394"><tspan class="change-prefix">+ </tspan><tspan>Receipt?</tspan></text><text class="step" x="259" y="394"></text><title>returns: Receipt?</title></a><a class="graph-link edge existing confirmed" href="#detail-gateway--returns--checkout-service--charge-id" data-detail="gateway--returns--checkout-service--charge-id" data-from="gateway" data-to="checkout-service" data-execution="{&quot;first&quot;:5}"><path class="line" d="M568 450 L568 376 L414 376 L414 338"/><path class="hit" d="M568 450 L568 376 L414 376 L414 338"/><text class="edge-label" x="491" y="376">chargeId</text><text class="step" x="491" y="376"></text><title>returns: chargeId</title></a><a class="graph-link node unknown caller role-entry" href="#detail-caller" data-detail="caller"><rect class="shape" x="262" y="80" width="184" height="70" rx="7"/><text class="name" x="354" y="112">Caller</text><text class="role" x="354" y="130">入口 ?</text><title>Caller · caller · 入口 · unknown</title></a><a class="graph-link node confirmed service role-coordinator" href="#detail-checkout-service" data-detail="checkout-service"><rect class="shape" x="251" y="262" width="206" height="76" rx="7"/><text class="name" x="354" y="297">CheckoutService</text><text class="role" x="354" y="315">分岐を決める</text><title>CheckoutService · service · 分岐を決める · confirmed</title></a><a class="graph-link node confirmed repository role-state-holder" href="#detail-orders" data-detail="orders"><rect class="shape" x="60" y="450" width="184" height="70" rx="7"/><rect class="inner" x="65" y="455" width="174" height="60" rx="4"/><text class="name" x="152" y="482">Orders</text><text class="role" x="152" y="500">結果を保持</text><title>Orders · repository · 結果を保持 · confirmed</title></a><a class="graph-link node inferred external-system role-side-effect-boundary" href="#detail-gateway" data-detail="gateway"><polygon class="shape" points="479,450 633,450 648,485 633,520 479,520 464,485"/><text class="name" x="556" y="482">Gateway</text><text class="role" x="556" y="500">外部副作用</text><title>Gateway · external-system · 外部副作用 · inferred</title></a><a class="graph-link node confirmed entity role-data-value" href="#detail-receipt" data-detail="receipt"><path class="shape" d="M262 632 H428 L446 650 V702 H262 Z"/><text class="name" x="354" y="664">Receipt</text><text class="role" x="354" y="682">結果データ</text><title>Receipt · entity · 結果データ · confirmed</title></a></svg>
+<svg class="graph graph-mobile" viewBox="0 0 360 782" style="max-width:360px;margin-inline:auto" data-layout="g-compact-orthogonal" data-readability-cost="416.8" role="img" aria-label="関係図" xmlns="http://www.w3.org/2000/svg"><title>関係図</title><desc>オブジェクトと接続。ノードや線を選ぶと対応するコードが開きます。</desc><a class="graph-link edge existing unknown" href="#detail-caller--calls--checkout-service--checkout-order-id-amount" data-detail="caller--calls--checkout-service--checkout-order-id-amount" data-from="caller" data-to="checkout-service" data-execution="{&quot;first&quot;:1,&quot;repeat&quot;:1}"><path class="line" d="M168 150 L168 188 L168 188 L168 262"/><path class="hit" d="M168 150 L168 188 L168 188 L168 262"/><text class="edge-label" x="156" y="225">Checkout</text><text class="step" x="156" y="225"></text><title>calls: checkout(orderId, amount)</title></a><a class="graph-link edge existing confirmed" href="#detail-checkout-service--returns--caller--receipt" data-detail="checkout-service--returns--caller--receipt" data-from="checkout-service" data-to="caller" data-execution="{&quot;first&quot;:8,&quot;repeat&quot;:4}"><path class="line" d="M192 262 L192 224 L192 224 L192 150"/><path class="hit" d="M192 262 L192 224 L192 224 L192 150"/><text class="edge-label" x="204" y="187">Return</text><text class="step" x="204" y="187"></text><title>returns: Receipt</title></a><a class="graph-link edge added confirmed" href="#detail-checkout-service--reads--orders--find-order-id" data-detail="checkout-service--reads--orders--find-order-id" data-from="checkout-service" data-to="orders" data-execution="{&quot;first&quot;:2,&quot;repeat&quot;:2}"><path class="line" d="M120 338 L120 358 L64 358 L64 450"/><path class="hit" d="M120 338 L120 358 L64 358 L64 450"/><text class="edge-label" x="64" y="380"><tspan class="change-prefix">+ </tspan><tspan>Find</tspan></text><text class="step" x="64" y="380"></text><title>reads: find(orderId)</title></a><a class="graph-link edge existing confirmed" href="#detail-checkout-service--writes--orders--save-receipt" data-detail="checkout-service--writes--orders--save-receipt" data-from="checkout-service" data-to="orders" data-execution="{&quot;first&quot;:7}"><path class="line" d="M168 338 L168 430 L112 430 L112 450"/><path class="hit" d="M168 338 L168 430 L112 430 L112 450"/><text class="edge-label" x="168" y="384">Save</text><text class="step" x="168" y="384"></text><title>writes: save(receipt)</title></a><a class="graph-link edge changed confirmed" href="#detail-checkout-service--calls--gateway--charge-order-id-amount" data-detail="checkout-service--calls--gateway--charge-order-id-amount" data-from="checkout-service" data-to="gateway" data-execution="{&quot;first&quot;:4}"><path class="line" d="M216 338 L216 412 L260 412 L260 450"/><path class="hit" d="M216 338 L216 412 L260 412 L260 450"/><text class="edge-label" x="238" y="412"><tspan class="change-prefix">Δ </tspan><tspan>Charge</tspan></text><text class="step" x="238" y="412"></text><title>calls: charge(orderId, amount)</title></a><a class="graph-link edge existing confirmed" href="#detail-checkout-service--creates--receipt--receipt-order-id-charge-id" data-detail="checkout-service--creates--receipt--receipt-order-id-charge-id" data-from="checkout-service" data-to="receipt" data-execution="{&quot;first&quot;:6}"><path class="line" d="M192 338 L192 485 L180 485 L180 632"/><path class="hit" d="M192 338 L192 485 L180 485 L180 632"/><text class="edge-label" x="180" y="558">Create</text><text class="step" x="180" y="558"></text><title>creates: Receipt(orderId, chargeId)</title></a><a class="graph-link edge added confirmed" href="#detail-orders--returns--checkout-service--receipt" data-detail="orders--returns--checkout-service--receipt" data-from="orders" data-to="checkout-service" data-execution="{&quot;first&quot;:3,&quot;repeat&quot;:3}"><path class="line" d="M88 450 L88 394 L144 394 L144 338"/><path class="hit" d="M88 450 L88 394 L144 394 L144 338"/><text class="edge-label" x="106" y="422"><tspan class="change-prefix">+ </tspan><tspan>Return?</tspan></text><text class="step" x="106" y="422"></text><title>returns: Receipt?</title></a><a class="graph-link edge existing confirmed" href="#detail-gateway--returns--checkout-service--charge-id" data-detail="gateway--returns--checkout-service--charge-id" data-from="gateway" data-to="checkout-service" data-execution="{&quot;first&quot;:5}"><path class="line" d="M284 450 L284 376 L240 376 L240 338"/><path class="hit" d="M284 450 L284 376 L240 376 L240 338"/><text class="edge-label" x="262" y="376">chargeId</text><text class="step" x="262" y="376"></text><title>returns: chargeId</title></a><a class="graph-link node unknown caller role-entry" href="#detail-caller" data-detail="caller"><rect class="shape" x="124" y="80" width="112" height="70" rx="7"/><text class="name" x="180" y="112">Caller</text><text class="role" x="180" y="130">入口 ?</text><title>Caller · caller · 入口 · unknown</title></a><a class="graph-link node confirmed service role-coordinator" href="#detail-checkout-service" data-detail="checkout-service"><rect class="shape" x="85" y="262" width="191" height="76" rx="7"/><text class="name" x="180" y="297">CheckoutService</text><text class="role" x="180" y="315">分岐を決める</text><title>CheckoutService · service · 分岐を決める · confirmed</title></a><a class="graph-link node confirmed repository role-state-holder" href="#detail-orders" data-detail="orders"><rect class="shape" x="32" y="450" width="112" height="70" rx="7"/><rect class="inner" x="37" y="455" width="102" height="60" rx="4"/><text class="name" x="88" y="482">Orders</text><text class="role" x="88" y="500">結果を保持</text><title>Orders · repository · 結果を保持 · confirmed</title></a><a class="graph-link node inferred external-system role-side-effect-boundary" href="#detail-gateway" data-detail="gateway"><polygon class="shape" points="231,450 313,450 328,485 313,520 231,520 216,485"/><text class="name" x="272" y="482">Gateway</text><text class="role" x="272" y="500">外部副作用</text><title>Gateway · external-system · 外部副作用 · inferred</title></a><a class="graph-link node confirmed entity role-data-value" href="#detail-receipt" data-detail="receipt"><path class="shape" d="M124 632 H218 L236 650 V702 H124 Z"/><text class="name" x="180" y="664">Receipt</text><text class="role" x="180" y="682">結果データ</text><title>Receipt · entity · 結果データ · confirmed</title></a></svg>
+        </div>
+        <p class="map-hint">線やノードを選ぶと、対応する根拠とコードを確認できます。</p>
+        <div class="legend"><span class="legend-change"><b>+</b> 追加</span><span class="legend-change"><b>Δ</b> 変更</span><span class="legend-change"><b>−</b> 削除</span><span class="legend-structure"><b>?</b> 未確認</span><span class="legend-structure">二重枠 = 状態保持</span><span class="legend-structure">六角形 = 外部境界</span></div>
+      </section>
+      <section id="selected-object" class="code-dock" aria-label="選択対象の根拠とコード" aria-live="polite">
+        <div class="dock-head"><h2>選択した対象</h2><button id="overview-button" type="button">全体を見る</button></div>
+        <article class="detail" id="detail-caller" data-detail="caller"><h3>Caller</h3><p class="meaning">入口 · unknown</p><div class="detail-evidence"><strong>根拠</strong><span class="evidence-status unknown">未確認</span><span class="evidence-source">出典位置未確認</span></div><p class="source">対応コードは未確認です。</p></article>
+        <article class="detail" id="detail-checkout-service" data-detail="checkout-service"><h3>CheckoutService</h3><p class="meaning">分岐を決める · stateless</p><div class="detail-evidence"><strong>根拠</strong><span class="evidence-status confirmed">確認済み</span><span class="evidence-source">service.py:10–22</span></div><div class="code-lens"><div class="lens-top"><span>CODE LENS</span><span>service.py:8–22</span></div><pre><span class="code-row"><span class="gutter" aria-hidden="true">│ 8</span><code></code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 9</span><code></code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 10</span><code><span class="tok-keyword">class</span> <span class="tok-type">CheckoutService</span>:</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 11</span><code>    <span class="tok-keyword">def</span> <span class="tok-function">__init__</span>(<span class="tok-keyword">self</span>, orders, gateway):</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 12</span><code>        <span class="tok-keyword">self</span>.<span class="tok-member">orders</span> <span class="tok-operator">=</span> orders</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 13</span><code>        <span class="tok-keyword">self</span>.<span class="tok-member">gateway</span> <span class="tok-operator">=</span> gateway</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 14</span><code></code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 15</span><code>    <span class="tok-keyword">def</span> <span class="tok-function">checkout</span>(<span class="tok-keyword">self</span>, order_id: str, amount: int) <span class="tok-operator">-&gt;</span> Receipt:</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 16</span><code>        existing <span class="tok-operator">=</span> <span class="tok-keyword">self</span>.<span class="tok-member">orders</span>.<span class="tok-member">find</span>(order_id)</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 17</span><code>        <span class="tok-keyword">if</span> existing <span class="tok-keyword">is</span> <span class="tok-keyword">not</span> <span class="tok-keyword">None</span>:</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 18</span><code>            <span class="tok-keyword">return</span> existing</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 19</span><code>        charge_id <span class="tok-operator">=</span> <span class="tok-keyword">self</span>.<span class="tok-member">gateway</span>.<span class="tok-member">charge</span>(order_id, amount)</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 20</span><code>        receipt <span class="tok-operator">=</span> Receipt(order_id, charge_id)</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 21</span><code>        <span class="tok-keyword">self</span>.<span class="tok-member">orders</span>.<span class="tok-member">save</span>(receipt)</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 22</span><code>        <span class="tok-keyword">return</span> receipt</code></span></pre></div></article>
+        <article class="detail" id="detail-orders" data-detail="orders"><h3>Orders</h3><p class="meaning">結果を保持 · owned</p><div class="detail-evidence"><strong>根拠</strong><span class="evidence-status confirmed">確認済み</span><span class="evidence-source">test_service.py:4–12</span></div><div class="code-lens"><div class="lens-top"><span>CODE LENS</span><span>test_service.py:2–15</span></div><pre><span class="code-row"><span class="gutter" aria-hidden="true">│ 2</span><code></code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 3</span><code></code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 4</span><code><span class="tok-keyword">class</span> <span class="tok-type">MemoryOrders</span>:</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 5</span><code>    <span class="tok-keyword">def</span> <span class="tok-function">__init__</span>(<span class="tok-keyword">self</span>):</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 6</span><code>        <span class="tok-keyword">self</span>.<span class="tok-member">receipts</span> <span class="tok-operator">=</span> {}</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 7</span><code></code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 8</span><code>    <span class="tok-keyword">def</span> <span class="tok-function">find</span>(<span class="tok-keyword">self</span>, order_id):</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 9</span><code>        <span class="tok-keyword">return</span> <span class="tok-keyword">self</span>.<span class="tok-member">receipts</span>.<span class="tok-member">get</span>(order_id)</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 10</span><code></code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 11</span><code>    <span class="tok-keyword">def</span> <span class="tok-function">save</span>(<span class="tok-keyword">self</span>, receipt):</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 12</span><code>        <span class="tok-keyword">self</span>.<span class="tok-member">receipts</span>[receipt.<span class="tok-member">order_id</span>] <span class="tok-operator">=</span> receipt</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 13</span><code></code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 14</span><code></code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 15</span><code><span class="tok-keyword">class</span> <span class="tok-type">FakeGateway</span>:</code></span></pre></div></article>
+        <article class="detail" id="detail-gateway" data-detail="gateway"><h3>Gateway</h3><p class="meaning">外部副作用 · external</p><div class="detail-evidence"><strong>根拠</strong><span class="evidence-status inferred">推定</span><span class="evidence-source">test_service.py:15–21</span></div><div class="code-lens"><div class="lens-top"><span>CODE LENS</span><span>test_service.py:13–24</span></div><pre><span class="code-row"><span class="gutter" aria-hidden="true">│ 13</span><code></code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 14</span><code></code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 15</span><code><span class="tok-keyword">class</span> <span class="tok-type">FakeGateway</span>:</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 16</span><code>    <span class="tok-keyword">def</span> <span class="tok-function">__init__</span>(<span class="tok-keyword">self</span>):</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 17</span><code>        <span class="tok-keyword">self</span>.<span class="tok-member">calls</span> <span class="tok-operator">=</span> []</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 18</span><code></code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 19</span><code>    <span class="tok-keyword">def</span> <span class="tok-function">charge</span>(<span class="tok-keyword">self</span>, order_id, amount):</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 20</span><code>        <span class="tok-keyword">self</span>.<span class="tok-member">calls</span>.<span class="tok-member">append</span>((order_id, amount))</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 21</span><code>        <span class="tok-keyword">return</span> f<span class="tok-string">&quot;charge-{len(self.calls)}&quot;</span></code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 22</span><code></code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 23</span><code></code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 24</span><code><span class="tok-keyword">def</span> <span class="tok-function">test_checkout_saves_receipt</span>():</code></span></pre></div></article>
+        <article class="detail" id="detail-receipt" data-detail="receipt"><h3>Receipt</h3><p class="meaning">結果データ · transient</p><div class="detail-evidence"><strong>根拠</strong><span class="evidence-status confirmed">確認済み</span><span class="evidence-source">service.py:4–7</span></div><div class="code-lens"><div class="lens-top"><span>CODE LENS</span><span>service.py:2–10</span></div><pre><span class="code-row"><span class="gutter" aria-hidden="true">│ 2</span><code></code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 3</span><code></code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 4</span><code>@dataclass(frozen<span class="tok-operator">=</span><span class="tok-keyword">True</span>)</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 5</span><code><span class="tok-keyword">class</span> <span class="tok-type">Receipt</span>:</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 6</span><code>    order_id: str</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 7</span><code>    charge_id: str</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 8</span><code></code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 9</span><code></code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 10</span><code><span class="tok-keyword">class</span> <span class="tok-type">CheckoutService</span>:</code></span></pre></div></article>
+        <article class="detail" id="detail-caller--calls--checkout-service--checkout-order-id-amount" data-detail="caller--calls--checkout-service--checkout-order-id-amount"><h3>Caller → CheckoutService · checkout(orderId, amount)</h3><p class="meaning">Caller は checkout(orderId, amount) を使って CheckoutService を呼び出します。 </p><div class="detail-evidence"><strong>根拠</strong><span class="evidence-status unknown">未確認</span><span class="evidence-source">service.py:15–15</span></div><div class="code-lens"><div class="lens-top"><span>CODE LENS</span><span>service.py:13–18</span></div><pre><span class="code-row"><span class="gutter" aria-hidden="true">│ 13</span><code>        <span class="tok-keyword">self</span>.<span class="tok-member">gateway</span> <span class="tok-operator">=</span> gateway</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 14</span><code></code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 15</span><code>    <span class="tok-keyword">def</span> <span class="tok-function">checkout</span>(<span class="tok-keyword">self</span>, order_id: str, amount: int) <span class="tok-operator">-&gt;</span> Receipt:</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 16</span><code>        existing <span class="tok-operator">=</span> <span class="tok-keyword">self</span>.<span class="tok-member">orders</span>.<span class="tok-member">find</span>(order_id)</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 17</span><code>        <span class="tok-keyword">if</span> existing <span class="tok-keyword">is</span> <span class="tok-keyword">not</span> <span class="tok-keyword">None</span>:</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 18</span><code>            <span class="tok-keyword">return</span> existing</code></span></pre></div></article>
+        <article class="detail" id="detail-checkout-service--returns--caller--receipt" data-detail="checkout-service--returns--caller--receipt"><h3>CheckoutService → Caller · Receipt</h3><p class="meaning">CheckoutService は Receipt を Caller に返します。 </p><div class="detail-evidence"><strong>根拠</strong><span class="evidence-status confirmed">確認済み</span><span class="evidence-source">service.py:18–22</span></div><div class="code-lens"><div class="lens-top"><span>CODE LENS</span><span>service.py:16–22</span></div><pre><span class="code-row"><span class="gutter" aria-hidden="true">│ 16</span><code>        existing <span class="tok-operator">=</span> <span class="tok-keyword">self</span>.<span class="tok-member">orders</span>.<span class="tok-member">find</span>(order_id)</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 17</span><code>        <span class="tok-keyword">if</span> existing <span class="tok-keyword">is</span> <span class="tok-keyword">not</span> <span class="tok-keyword">None</span>:</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 18</span><code>            <span class="tok-keyword">return</span> existing</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 19</span><code>        charge_id <span class="tok-operator">=</span> <span class="tok-keyword">self</span>.<span class="tok-member">gateway</span>.<span class="tok-member">charge</span>(order_id, amount)</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 20</span><code>        receipt <span class="tok-operator">=</span> Receipt(order_id, charge_id)</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 21</span><code>        <span class="tok-keyword">self</span>.<span class="tok-member">orders</span>.<span class="tok-member">save</span>(receipt)</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 22</span><code>        <span class="tok-keyword">return</span> receipt</code></span></pre></div></article>
+        <article class="detail" id="detail-checkout-service--reads--orders--find-order-id" data-detail="checkout-service--reads--orders--find-order-id"><h3>CheckoutService → Orders · find(orderId)</h3><p class="meaning">CheckoutService は find(orderId) を使って Orders を参照します。 差分で追加された接続です。 orderId.</p><div class="detail-evidence"><strong>根拠</strong><span class="evidence-status confirmed">確認済み</span><span class="evidence-source">service.py:16–16</span></div><div class="code-lens"><div class="lens-top"><span>CODE LENS</span><span>service.py:14–19</span></div><pre><span class="code-row"><span class="gutter" aria-hidden="true">│ 14</span><code></code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 15</span><code>    <span class="tok-keyword">def</span> <span class="tok-function">checkout</span>(<span class="tok-keyword">self</span>, order_id: str, amount: int) <span class="tok-operator">-&gt;</span> Receipt:</code></span><span class="code-row is-focus is-change"><span class="gutter" aria-hidden="true">+ 16</span><code>        existing <span class="tok-operator">=</span> <span class="tok-keyword">self</span>.<span class="tok-member">orders</span>.<span class="tok-member">find</span>(order_id)</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 17</span><code>        <span class="tok-keyword">if</span> existing <span class="tok-keyword">is</span> <span class="tok-keyword">not</span> <span class="tok-keyword">None</span>:</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 18</span><code>            <span class="tok-keyword">return</span> existing</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 19</span><code>        charge_id <span class="tok-operator">=</span> <span class="tok-keyword">self</span>.<span class="tok-member">gateway</span>.<span class="tok-member">charge</span>(order_id, amount)</code></span></pre></div></article>
+        <article class="detail" id="detail-checkout-service--writes--orders--save-receipt" data-detail="checkout-service--writes--orders--save-receipt"><h3>CheckoutService → Orders · save(receipt)</h3><p class="meaning">CheckoutService は save(receipt) を使って Orders を書き込みます。 </p><div class="detail-evidence"><strong>根拠</strong><span class="evidence-status confirmed">確認済み</span><span class="evidence-source">service.py:21–21</span></div><div class="code-lens"><div class="lens-top"><span>CODE LENS</span><span>service.py:19–22</span></div><pre><span class="code-row"><span class="gutter" aria-hidden="true">│ 19</span><code>        charge_id <span class="tok-operator">=</span> <span class="tok-keyword">self</span>.<span class="tok-member">gateway</span>.<span class="tok-member">charge</span>(order_id, amount)</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 20</span><code>        receipt <span class="tok-operator">=</span> Receipt(order_id, charge_id)</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 21</span><code>        <span class="tok-keyword">self</span>.<span class="tok-member">orders</span>.<span class="tok-member">save</span>(receipt)</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 22</span><code>        <span class="tok-keyword">return</span> receipt</code></span></pre></div></article>
+        <article class="detail" id="detail-checkout-service--calls--gateway--charge-order-id-amount" data-detail="checkout-service--calls--gateway--charge-order-id-amount"><h3>CheckoutService → Gateway · charge(orderId, amount)</h3><p class="meaning">CheckoutService は charge(orderId, amount) を使って Gateway を呼び出します。 差分で変更された接続です。</p><div class="detail-evidence"><strong>根拠</strong><span class="evidence-status confirmed">確認済み</span><span class="evidence-source">service.py:19–19</span></div><div class="code-lens"><div class="lens-top"><span>CODE LENS</span><span>service.py:17–22</span></div><pre><span class="code-row"><span class="gutter" aria-hidden="true">│ 17</span><code>        <span class="tok-keyword">if</span> existing <span class="tok-keyword">is</span> <span class="tok-keyword">not</span> <span class="tok-keyword">None</span>:</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 18</span><code>            <span class="tok-keyword">return</span> existing</code></span><span class="code-row is-focus is-change"><span class="gutter" aria-hidden="true">Δ 19</span><code>        charge_id <span class="tok-operator">=</span> <span class="tok-keyword">self</span>.<span class="tok-member">gateway</span>.<span class="tok-member">charge</span>(order_id, amount)</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 20</span><code>        receipt <span class="tok-operator">=</span> Receipt(order_id, charge_id)</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 21</span><code>        <span class="tok-keyword">self</span>.<span class="tok-member">orders</span>.<span class="tok-member">save</span>(receipt)</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 22</span><code>        <span class="tok-keyword">return</span> receipt</code></span></pre></div></article>
+        <article class="detail" id="detail-checkout-service--creates--receipt--receipt-order-id-charge-id" data-detail="checkout-service--creates--receipt--receipt-order-id-charge-id"><h3>CheckoutService → Receipt · Receipt(orderId, chargeId)</h3><p class="meaning">CheckoutService は Receipt(orderId, chargeId) として Receipt を生成します。 </p><div class="detail-evidence"><strong>根拠</strong><span class="evidence-status confirmed">確認済み</span><span class="evidence-source">service.py:20–20</span></div><div class="code-lens"><div class="lens-top"><span>CODE LENS</span><span>service.py:18–22</span></div><pre><span class="code-row"><span class="gutter" aria-hidden="true">│ 18</span><code>            <span class="tok-keyword">return</span> existing</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 19</span><code>        charge_id <span class="tok-operator">=</span> <span class="tok-keyword">self</span>.<span class="tok-member">gateway</span>.<span class="tok-member">charge</span>(order_id, amount)</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 20</span><code>        receipt <span class="tok-operator">=</span> Receipt(order_id, charge_id)</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 21</span><code>        <span class="tok-keyword">self</span>.<span class="tok-member">orders</span>.<span class="tok-member">save</span>(receipt)</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 22</span><code>        <span class="tok-keyword">return</span> receipt</code></span></pre></div></article>
+        <article class="detail" id="detail-orders--returns--checkout-service--receipt" data-detail="orders--returns--checkout-service--receipt"><h3>Orders → CheckoutService · Receipt?</h3><p class="meaning">Orders は Receipt? を CheckoutService に返します。 差分で追加された接続です。 Receipt または None.</p><div class="detail-evidence"><strong>根拠</strong><span class="evidence-status confirmed">確認済み</span><span class="evidence-source">service.py:16–18</span></div><div class="code-lens"><div class="lens-top"><span>CODE LENS</span><span>service.py:14–21</span></div><pre><span class="code-row"><span class="gutter" aria-hidden="true">│ 14</span><code></code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 15</span><code>    <span class="tok-keyword">def</span> <span class="tok-function">checkout</span>(<span class="tok-keyword">self</span>, order_id: str, amount: int) <span class="tok-operator">-&gt;</span> Receipt:</code></span><span class="code-row is-focus is-change"><span class="gutter" aria-hidden="true">+ 16</span><code>        existing <span class="tok-operator">=</span> <span class="tok-keyword">self</span>.<span class="tok-member">orders</span>.<span class="tok-member">find</span>(order_id)</code></span><span class="code-row is-focus is-change"><span class="gutter" aria-hidden="true">+ 17</span><code>        <span class="tok-keyword">if</span> existing <span class="tok-keyword">is</span> <span class="tok-keyword">not</span> <span class="tok-keyword">None</span>:</code></span><span class="code-row is-focus is-change"><span class="gutter" aria-hidden="true">+ 18</span><code>            <span class="tok-keyword">return</span> existing</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 19</span><code>        charge_id <span class="tok-operator">=</span> <span class="tok-keyword">self</span>.<span class="tok-member">gateway</span>.<span class="tok-member">charge</span>(order_id, amount)</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 20</span><code>        receipt <span class="tok-operator">=</span> Receipt(order_id, charge_id)</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 21</span><code>        <span class="tok-keyword">self</span>.<span class="tok-member">orders</span>.<span class="tok-member">save</span>(receipt)</code></span></pre></div></article>
+        <article class="detail" id="detail-gateway--returns--checkout-service--charge-id" data-detail="gateway--returns--checkout-service--charge-id"><h3>Gateway → CheckoutService · chargeId</h3><p class="meaning">Gateway は chargeId を CheckoutService に返します。 </p><div class="detail-evidence"><strong>根拠</strong><span class="evidence-status confirmed">確認済み</span><span class="evidence-source">service.py:19–19</span></div><div class="code-lens"><div class="lens-top"><span>CODE LENS</span><span>service.py:17–22</span></div><pre><span class="code-row"><span class="gutter" aria-hidden="true">│ 17</span><code>        <span class="tok-keyword">if</span> existing <span class="tok-keyword">is</span> <span class="tok-keyword">not</span> <span class="tok-keyword">None</span>:</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 18</span><code>            <span class="tok-keyword">return</span> existing</code></span><span class="code-row is-focus"><span class="gutter" aria-hidden="true">│ 19</span><code>        charge_id <span class="tok-operator">=</span> <span class="tok-keyword">self</span>.<span class="tok-member">gateway</span>.<span class="tok-member">charge</span>(order_id, amount)</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 20</span><code>        receipt <span class="tok-operator">=</span> Receipt(order_id, charge_id)</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 21</span><code>        <span class="tok-keyword">self</span>.<span class="tok-member">orders</span>.<span class="tok-member">save</span>(receipt)</code></span><span class="code-row"><span class="gutter" aria-hidden="true">│ 22</span><code>        <span class="tok-keyword">return</span> receipt</code></span></pre></div></article>
+      </section>
+      <section id="evidence" class="evidence" aria-label="根拠の全体像"><h2>モデル全体の根拠</h2><dl class="evidence-stats"><div class="evidence-stat confirmed"><dt>確認済み</dt><dd>10</dd></div><div class="evidence-stat inferred"><dt>推定</dt><dd>1</dd></div><div class="evidence-stat unknown"><dt>未確認</dt><dd>2</dd></div></dl><p class="evidence-coverage">出典位置あり 12/13 件</p><p class="evidence-note">推定: ノード 1 件、接続 0 件<br>未確認: ノード 1 件、接続 1 件</p><div class="evidence-groups"><div class="evidence-group"><h3>推定した対象</h3><ul><li>Gateway</li></ul></div><div class="evidence-group"><h3>未確認の対象</h3><ul><li>Caller</li><li>Caller → CheckoutService · checkout(orderId, amount)</li></ul></div></div></section>
+    </main>
+  </div>
+  <script>
+(()=>{
+  const page=document.querySelector('.page');
+  const links=[...document.querySelectorAll('.graph-link')];
+  const details=[...document.querySelectorAll('.detail')];
+  const stepPanel=document.getElementById('step-explanation');
+  const stepDetails=[...stepPanel.querySelectorAll('.step-detail')];
+  const endpoints=new Map([...document.querySelectorAll('.edge[data-from]')].map(e=>[e.dataset.detail,[e.dataset.from,e.dataset.to]]));
+  let selected=null,mode='structure',scenario=page.dataset.scenario;
+  document.documentElement.classList.add('has-js');
+  function updateStepExplanation(){
+    const active=mode==='execution'&&selected
+      ?stepDetails.find(detail=>detail.dataset.stepScenario===scenario&&detail.dataset.stepEdge===selected)
+      :null;
+    stepPanel.hidden=!active;
+    stepDetails.forEach(detail=>{detail.hidden=detail!==active});
+  }
+  function focus(id){
+    selected=id;page.classList.add('is-focused');
+    details.forEach(d=>d.classList.toggle('active',d.dataset.detail===id));
+    const pair=endpoints.get(id),near=new Set(pair||[id]);
+    links.forEach(link=>{
+      const key=link.dataset.detail,ends=endpoints.get(key);
+      const related=key!==id&&(near.has(key)||!!ends&&ends.some(v=>near.has(v)));
+      link.classList.toggle('is-selected',key===id);
+      link.classList.toggle('is-related',related);
+      link.classList.toggle('is-muted',key!==id&&!related);
+      if(key===id)link.setAttribute('aria-current','true');else link.removeAttribute('aria-current');
+    });
+    updateStepExplanation();
+  }
+  function overview(){
+    selected=null;page.classList.remove('is-focused');
+    details.forEach(d=>d.classList.remove('active'));
+    links.forEach(link=>{link.classList.remove('is-selected','is-related','is-muted');link.removeAttribute('aria-current')});
+    updateStepExplanation();
+  }
+  function renderMode(){
+    page.dataset.mode=mode;page.dataset.scenario=scenario;
+    document.querySelectorAll('.modes button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));
+    document.querySelectorAll('.scenarios button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.scenario===scenario)));
+    const questions=page.dataset.locale==='en-US'
+      ?{structure:'What exists, and how is it connected?',execution:'Where does execution start, and what happens next?',change:'Which connections changed?'}
+      :{structure:'何が存在し、どう繋がるか。',execution:'どこから始まり、どの順番で進むか。',change:'どの接続が変わったか。'};
+    document.getElementById('mode-question').textContent=questions[mode];
+    document.querySelectorAll('.edge').forEach(edge=>{
+      const steps=JSON.parse(edge.dataset.execution||'{}');
+      edge.classList.toggle('path-on',mode==='execution'&&!!steps[scenario]);
+      const label=edge.querySelector('.step');
+      if(label)label.textContent=steps[scenario]||'';
+    });
+    const activeNodes=new Set([...document.querySelectorAll('.edge.path-on')].flatMap(edge=>[edge.dataset.from,edge.dataset.to]));
+    document.querySelectorAll('.node').forEach(node=>node.classList.toggle('path-node',mode==='execution'&&activeNodes.has(node.dataset.detail)));
+    const selectedLink=links.find(link=>link.dataset.detail===selected);
+    if(mode==='execution'&&selectedLink&&!selectedLink.classList.contains('path-on')&&!selectedLink.classList.contains('path-node'))overview();
+    else if(selected)focus(selected);
+    else updateStepExplanation();
+  }
+  links.forEach(link=>link.addEventListener('click',event=>{
+    if(!details.some(d=>d.dataset.detail===link.dataset.detail))return;
+    event.preventDefault();focus(link.dataset.detail);
+  }));
+  document.getElementById('overview-button').addEventListener('click',overview);
+  document.getElementById('step-explanation-close').addEventListener('click',()=>{
+    overview();
+    document.querySelector('.modes button[data-mode=execution]')?.focus();
+  });
+  document.querySelectorAll('.modes button').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;renderMode()}));
+  document.querySelectorAll('.scenarios button').forEach(b=>b.addEventListener('click',()=>{scenario=b.dataset.scenario;renderMode()}));
+  renderMode();
+})();
+  </script>
+</body>
+</html>

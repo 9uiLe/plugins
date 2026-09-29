@@ -1,0 +1,739 @@
+{
+  "edges": [
+    {
+      "change": "existing",
+      "codeLens": {
+        "endLine": 18,
+        "focusEnd": 15,
+        "focusStart": 15,
+        "lines": [
+          {
+            "number": 13,
+            "text": "        self.gateway = gateway"
+          },
+          {
+            "number": 14,
+            "text": ""
+          },
+          {
+            "number": 15,
+            "text": "    def checkout(self, order_id: str, amount: int) -> Receipt:"
+          },
+          {
+            "number": 16,
+            "text": "        existing = self.orders.find(order_id)"
+          },
+          {
+            "number": 17,
+            "text": "        if existing is not None:"
+          },
+          {
+            "number": 18,
+            "text": "            return existing"
+          }
+        ],
+        "path": "service.py",
+        "startLine": 13
+      },
+      "condition": "always",
+      "data": "",
+      "execution": {
+        "first": 1,
+        "repeat": 1
+      },
+      "from": "caller",
+      "id": "caller--calls--checkout-service--checkout-order-id-amount",
+      "kind": "calls",
+      "label": "checkout(orderId, amount)",
+      "source": {
+        "endLine": 15,
+        "path": "service.py",
+        "startLine": 15
+      },
+      "status": "unknown",
+      "to": "checkout-service"
+    },
+    {
+      "change": "existing",
+      "codeLens": {
+        "endLine": 22,
+        "focusEnd": 22,
+        "focusStart": 18,
+        "lines": [
+          {
+            "number": 16,
+            "text": "        existing = self.orders.find(order_id)"
+          },
+          {
+            "number": 17,
+            "text": "        if existing is not None:"
+          },
+          {
+            "number": 18,
+            "text": "            return existing"
+          },
+          {
+            "number": 19,
+            "text": "        charge_id = self.gateway.charge(order_id, amount)"
+          },
+          {
+            "number": 20,
+            "text": "        receipt = Receipt(order_id, charge_id)"
+          },
+          {
+            "number": 21,
+            "text": "        self.orders.save(receipt)"
+          },
+          {
+            "number": 22,
+            "text": "        return receipt"
+          }
+        ],
+        "path": "service.py",
+        "startLine": 16
+      },
+      "condition": "always",
+      "data": "",
+      "execution": {
+        "first": 8,
+        "repeat": 4
+      },
+      "from": "checkout-service",
+      "id": "checkout-service--returns--caller--receipt",
+      "kind": "returns",
+      "label": "Receipt",
+      "source": {
+        "endLine": 22,
+        "path": "service.py",
+        "startLine": 18
+      },
+      "status": "confirmed",
+      "to": "caller"
+    },
+    {
+      "change": "added",
+      "codeLens": {
+        "endLine": 19,
+        "focusEnd": 16,
+        "focusStart": 16,
+        "lines": [
+          {
+            "number": 14,
+            "text": ""
+          },
+          {
+            "number": 15,
+            "text": "    def checkout(self, order_id: str, amount: int) -> Receipt:"
+          },
+          {
+            "number": 16,
+            "text": "        existing = self.orders.find(order_id)"
+          },
+          {
+            "number": 17,
+            "text": "        if existing is not None:"
+          },
+          {
+            "number": 18,
+            "text": "            return existing"
+          },
+          {
+            "number": 19,
+            "text": "        charge_id = self.gateway.charge(order_id, amount)"
+          }
+        ],
+        "path": "service.py",
+        "startLine": 14
+      },
+      "condition": "always",
+      "data": "orderId",
+      "execution": {
+        "first": 2,
+        "repeat": 2
+      },
+      "from": "checkout-service",
+      "id": "checkout-service--reads--orders--find-order-id",
+      "kind": "reads",
+      "label": "find(orderId)",
+      "source": {
+        "endLine": 16,
+        "path": "service.py",
+        "startLine": 16
+      },
+      "status": "confirmed",
+      "to": "orders"
+    },
+    {
+      "change": "existing",
+      "codeLens": {
+        "endLine": 22,
+        "focusEnd": 21,
+        "focusStart": 21,
+        "lines": [
+          {
+            "number": 19,
+            "text": "        charge_id = self.gateway.charge(order_id, amount)"
+          },
+          {
+            "number": 20,
+            "text": "        receipt = Receipt(order_id, charge_id)"
+          },
+          {
+            "number": 21,
+            "text": "        self.orders.save(receipt)"
+          },
+          {
+            "number": 22,
+            "text": "        return receipt"
+          }
+        ],
+        "path": "service.py",
+        "startLine": 19
+      },
+      "condition": "on-miss",
+      "data": "",
+      "execution": {
+        "first": 7
+      },
+      "from": "checkout-service",
+      "id": "checkout-service--writes--orders--save-receipt",
+      "kind": "writes",
+      "label": "save(receipt)",
+      "source": {
+        "endLine": 21,
+        "path": "service.py",
+        "startLine": 21
+      },
+      "status": "confirmed",
+      "to": "orders"
+    },
+    {
+      "change": "changed",
+      "codeLens": {
+        "endLine": 22,
+        "focusEnd": 19,
+        "focusStart": 19,
+        "lines": [
+          {
+            "number": 17,
+            "text": "        if existing is not None:"
+          },
+          {
+            "number": 18,
+            "text": "            return existing"
+          },
+          {
+            "number": 19,
+            "text": "        charge_id = self.gateway.charge(order_id, amount)"
+          },
+          {
+            "number": 20,
+            "text": "        receipt = Receipt(order_id, charge_id)"
+          },
+          {
+            "number": 21,
+            "text": "        self.orders.save(receipt)"
+          },
+          {
+            "number": 22,
+            "text": "        return receipt"
+          }
+        ],
+        "path": "service.py",
+        "startLine": 17
+      },
+      "condition": "on-miss",
+      "data": "",
+      "execution": {
+        "first": 4
+      },
+      "from": "checkout-service",
+      "id": "checkout-service--calls--gateway--charge-order-id-amount",
+      "kind": "calls",
+      "label": "charge(orderId, amount)",
+      "source": {
+        "endLine": 19,
+        "path": "service.py",
+        "startLine": 19
+      },
+      "status": "confirmed",
+      "to": "gateway"
+    },
+    {
+      "change": "existing",
+      "codeLens": {
+        "endLine": 22,
+        "focusEnd": 20,
+        "focusStart": 20,
+        "lines": [
+          {
+            "number": 18,
+            "text": "            return existing"
+          },
+          {
+            "number": 19,
+            "text": "        charge_id = self.gateway.charge(order_id, amount)"
+          },
+          {
+            "number": 20,
+            "text": "        receipt = Receipt(order_id, charge_id)"
+          },
+          {
+            "number": 21,
+            "text": "        self.orders.save(receipt)"
+          },
+          {
+            "number": 22,
+            "text": "        return receipt"
+          }
+        ],
+        "path": "service.py",
+        "startLine": 18
+      },
+      "condition": "on-miss",
+      "data": "",
+      "execution": {
+        "first": 6
+      },
+      "from": "checkout-service",
+      "id": "checkout-service--creates--receipt--receipt-order-id-charge-id",
+      "kind": "creates",
+      "label": "Receipt(orderId, chargeId)",
+      "source": {
+        "endLine": 20,
+        "path": "service.py",
+        "startLine": 20
+      },
+      "status": "confirmed",
+      "to": "receipt"
+    },
+    {
+      "change": "added",
+      "codeLens": {
+        "endLine": 21,
+        "focusEnd": 18,
+        "focusStart": 16,
+        "lines": [
+          {
+            "number": 14,
+            "text": ""
+          },
+          {
+            "number": 15,
+            "text": "    def checkout(self, order_id: str, amount: int) -> Receipt:"
+          },
+          {
+            "number": 16,
+            "text": "        existing = self.orders.find(order_id)"
+          },
+          {
+            "number": 17,
+            "text": "        if existing is not None:"
+          },
+          {
+            "number": 18,
+            "text": "            return existing"
+          },
+          {
+            "number": 19,
+            "text": "        charge_id = self.gateway.charge(order_id, amount)"
+          },
+          {
+            "number": 20,
+            "text": "        receipt = Receipt(order_id, charge_id)"
+          },
+          {
+            "number": 21,
+            "text": "        self.orders.save(receipt)"
+          }
+        ],
+        "path": "service.py",
+        "startLine": 14
+      },
+      "condition": "always",
+      "data": "Receipt または None",
+      "execution": {
+        "first": 3,
+        "repeat": 3
+      },
+      "from": "orders",
+      "id": "orders--returns--checkout-service--receipt",
+      "kind": "returns",
+      "label": "Receipt?",
+      "source": {
+        "endLine": 18,
+        "path": "service.py",
+        "startLine": 16
+      },
+      "status": "confirmed",
+      "to": "checkout-service"
+    },
+    {
+      "change": "existing",
+      "codeLens": {
+        "endLine": 22,
+        "focusEnd": 19,
+        "focusStart": 19,
+        "lines": [
+          {
+            "number": 17,
+            "text": "        if existing is not None:"
+          },
+          {
+            "number": 18,
+            "text": "            return existing"
+          },
+          {
+            "number": 19,
+            "text": "        charge_id = self.gateway.charge(order_id, amount)"
+          },
+          {
+            "number": 20,
+            "text": "        receipt = Receipt(order_id, charge_id)"
+          },
+          {
+            "number": 21,
+            "text": "        self.orders.save(receipt)"
+          },
+          {
+            "number": 22,
+            "text": "        return receipt"
+          }
+        ],
+        "path": "service.py",
+        "startLine": 17
+      },
+      "condition": "on-miss",
+      "data": "",
+      "execution": {
+        "first": 5
+      },
+      "from": "gateway",
+      "id": "gateway--returns--checkout-service--charge-id",
+      "kind": "returns",
+      "label": "chargeId",
+      "source": {
+        "endLine": 19,
+        "path": "service.py",
+        "startLine": 19
+      },
+      "status": "confirmed",
+      "to": "checkout-service"
+    }
+  ],
+  "locale": "ja-JP",
+  "nodes": [
+    {
+      "codeLens": null,
+      "id": "caller",
+      "kind": "caller",
+      "label": "Caller",
+      "layer": "entry",
+      "roleCode": "entry",
+      "source": null,
+      "state": "unknown",
+      "status": "unknown"
+    },
+    {
+      "codeLens": {
+        "endLine": 22,
+        "focusEnd": 22,
+        "focusStart": 10,
+        "lines": [
+          {
+            "number": 8,
+            "text": ""
+          },
+          {
+            "number": 9,
+            "text": ""
+          },
+          {
+            "number": 10,
+            "text": "class CheckoutService:"
+          },
+          {
+            "number": 11,
+            "text": "    def __init__(self, orders, gateway):"
+          },
+          {
+            "number": 12,
+            "text": "        self.orders = orders"
+          },
+          {
+            "number": 13,
+            "text": "        self.gateway = gateway"
+          },
+          {
+            "number": 14,
+            "text": ""
+          },
+          {
+            "number": 15,
+            "text": "    def checkout(self, order_id: str, amount: int) -> Receipt:"
+          },
+          {
+            "number": 16,
+            "text": "        existing = self.orders.find(order_id)"
+          },
+          {
+            "number": 17,
+            "text": "        if existing is not None:"
+          },
+          {
+            "number": 18,
+            "text": "            return existing"
+          },
+          {
+            "number": 19,
+            "text": "        charge_id = self.gateway.charge(order_id, amount)"
+          },
+          {
+            "number": 20,
+            "text": "        receipt = Receipt(order_id, charge_id)"
+          },
+          {
+            "number": 21,
+            "text": "        self.orders.save(receipt)"
+          },
+          {
+            "number": 22,
+            "text": "        return receipt"
+          }
+        ],
+        "path": "service.py",
+        "startLine": 8
+      },
+      "id": "checkout-service",
+      "kind": "service",
+      "label": "CheckoutService",
+      "layer": "application",
+      "roleCode": "coordinator",
+      "source": {
+        "endLine": 22,
+        "path": "service.py",
+        "startLine": 10
+      },
+      "state": "stateless",
+      "status": "confirmed"
+    },
+    {
+      "codeLens": {
+        "endLine": 15,
+        "focusEnd": 12,
+        "focusStart": 4,
+        "lines": [
+          {
+            "number": 2,
+            "text": ""
+          },
+          {
+            "number": 3,
+            "text": ""
+          },
+          {
+            "number": 4,
+            "text": "class MemoryOrders:"
+          },
+          {
+            "number": 5,
+            "text": "    def __init__(self):"
+          },
+          {
+            "number": 6,
+            "text": "        self.receipts = {}"
+          },
+          {
+            "number": 7,
+            "text": ""
+          },
+          {
+            "number": 8,
+            "text": "    def find(self, order_id):"
+          },
+          {
+            "number": 9,
+            "text": "        return self.receipts.get(order_id)"
+          },
+          {
+            "number": 10,
+            "text": ""
+          },
+          {
+            "number": 11,
+            "text": "    def save(self, receipt):"
+          },
+          {
+            "number": 12,
+            "text": "        self.receipts[receipt.order_id] = receipt"
+          },
+          {
+            "number": 13,
+            "text": ""
+          },
+          {
+            "number": 14,
+            "text": ""
+          },
+          {
+            "number": 15,
+            "text": "class FakeGateway:"
+          }
+        ],
+        "path": "test_service.py",
+        "startLine": 2
+      },
+      "id": "orders",
+      "kind": "repository",
+      "label": "Orders",
+      "layer": "data",
+      "roleCode": "state-holder",
+      "source": {
+        "endLine": 12,
+        "path": "test_service.py",
+        "startLine": 4
+      },
+      "state": "owned",
+      "status": "confirmed"
+    },
+    {
+      "codeLens": {
+        "endLine": 24,
+        "focusEnd": 21,
+        "focusStart": 15,
+        "lines": [
+          {
+            "number": 13,
+            "text": ""
+          },
+          {
+            "number": 14,
+            "text": ""
+          },
+          {
+            "number": 15,
+            "text": "class FakeGateway:"
+          },
+          {
+            "number": 16,
+            "text": "    def __init__(self):"
+          },
+          {
+            "number": 17,
+            "text": "        self.calls = []"
+          },
+          {
+            "number": 18,
+            "text": ""
+          },
+          {
+            "number": 19,
+            "text": "    def charge(self, order_id, amount):"
+          },
+          {
+            "number": 20,
+            "text": "        self.calls.append((order_id, amount))"
+          },
+          {
+            "number": 21,
+            "text": "        return f\"charge-{len(self.calls)}\""
+          },
+          {
+            "number": 22,
+            "text": ""
+          },
+          {
+            "number": 23,
+            "text": ""
+          },
+          {
+            "number": 24,
+            "text": "def test_checkout_saves_receipt():"
+          }
+        ],
+        "path": "test_service.py",
+        "startLine": 13
+      },
+      "id": "gateway",
+      "kind": "external-system",
+      "label": "Gateway",
+      "layer": "external",
+      "roleCode": "side-effect-boundary",
+      "source": {
+        "endLine": 21,
+        "path": "test_service.py",
+        "startLine": 15
+      },
+      "state": "external",
+      "status": "inferred"
+    },
+    {
+      "codeLens": {
+        "endLine": 10,
+        "focusEnd": 7,
+        "focusStart": 4,
+        "lines": [
+          {
+            "number": 2,
+            "text": ""
+          },
+          {
+            "number": 3,
+            "text": ""
+          },
+          {
+            "number": 4,
+            "text": "@dataclass(frozen=True)"
+          },
+          {
+            "number": 5,
+            "text": "class Receipt:"
+          },
+          {
+            "number": 6,
+            "text": "    order_id: str"
+          },
+          {
+            "number": 7,
+            "text": "    charge_id: str"
+          },
+          {
+            "number": 8,
+            "text": ""
+          },
+          {
+            "number": 9,
+            "text": ""
+          },
+          {
+            "number": 10,
+            "text": "class CheckoutService:"
+          }
+        ],
+        "path": "service.py",
+        "startLine": 2
+      },
+      "id": "receipt",
+      "kind": "entity",
+      "label": "Receipt",
+      "layer": "value",
+      "roleCode": "data-value",
+      "source": {
+        "endLine": 7,
+        "path": "service.py",
+        "startLine": 4
+      },
+      "state": "transient",
+      "status": "confirmed"
+    }
+  ],
+  "rendererVersion": 11,
+  "scenarios": [
+    "first",
+    "repeat"
+  ],
+  "schemaVersion": 1,
+  "skillVersion": "0.3.5",
+  "summaryCode": "cached-result-skips-side-effect",
+  "title": "Checkout"
+}
