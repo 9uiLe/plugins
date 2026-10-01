@@ -6,7 +6,7 @@
 
 ## 前提
 
-- ローカルに以下がインストールされている: `bash` `git` `jq` `gh` ([forge](https://github.com/9uiLe/forge) は任意)
+- ローカルに以下がインストールされている: `bash` `git` `jq` `gh`
 - `gh auth status` が成功している
 - 作業ブランチに移っていない `master` 上にいる
 - ワークツリーが clean（未コミットの変更がない）
@@ -72,7 +72,7 @@ scripts/release-prepare.sh --plugin model-strategy:patch
 7. `verify-versions.sh` で事後検証
 8. **タイプ確認プロンプト**（バージョン文字列を再入力）
 9. `chore(release): vX.Y.Z` でコミット & push
-10. `forge gh pr-create` で PR を作成
+10. `gh pr create` で PR を作成
 
 リリースコミットに含まれるファイル:
 
@@ -117,8 +117,7 @@ codex plugin add <plugin-name>@9uile-plugins
 PR がレビュー・CI green を経てマージされたら、ローカルで `master` を pull。
 
 ```bash
-forge git checkout master
-forge git fetch-base
+git checkout master
 git pull --ff-only
 ```
 
@@ -152,26 +151,17 @@ scripts/release-publish.sh --version X.Y.Z
 
 ## 整合性ゲート（CI）
 
-`.github/workflows/verify-versions.yml` が PR ごとに以下を実行します。
+CI（`.github/workflows/verify.yml`）は PR ごとにリポジトリ全体の検証 `scripts/verify.sh` を実行します。検証の内容とローカルでの実行方法は [CONTRIBUTING.md](./CONTRIBUTING.md#ローカルで検証する) を参照してください。
 
-- `shellcheck -x scripts/**/*.sh`
-- `bash scripts/verify-versions.sh`
-  - 各プラグインの `.claude-plugin/plugin.json.version`、`.codex-plugin/plugin.json.version`、`marketplace.json.plugins[].version` の一致
-  - `marketplace.json.metadata.version` が最大プラグイン版以上であること
-  - filesystem ↔ marketplace の双方向完全性 (Issue #64)
-    - `plugins/` 直下の各ディレクトリ（マニフェスト保有）が `.claude-plugin/marketplace.json` に登録されていること
-    - `.codex-plugin/plugin.json` を持つプラグインが `.agents/plugins/marketplace.json` にも登録されていること
-    - 両 marketplace の `source` パスが実在すること（dangling path 検出）
-    - マニフェストを一切持たない `plugins/` 直下のディレクトリ（残骸）がないこと
-- `bash scripts/tests/verify-versions.test.sh`（上記 version 一致・`metadata.version` 検査の受け入れテスト）
-- `bash scripts/tests/verify-versions-completeness.test.sh`（上記完全性チェックの受け入れテスト）
-- `bash scripts/tests/release-prepare.test.sh`（`release-prepare.sh` の受け入れテスト。fixture リポジトリで実行し、CHANGELOG の繰り上げ、リリースノート、dry-run と本番の内容一致、0〜N 件のプラグイン変更、リリース版の選択、入力の拒否を検証）
+リリースに関わる不変条件は `scripts/verify-versions.sh` が検査します。`release-prepare.sh` も編集後の事後条件としてこれを実行します。
 
-ローカルでも手動実行できます:
-
-```bash
-bash scripts/verify-versions.sh
-```
+- 各プラグインの `.claude-plugin/plugin.json.version`、`.codex-plugin/plugin.json.version`、`marketplace.json.plugins[].version` の一致
+- `marketplace.json.metadata.version` が最大プラグイン版以上であること
+- filesystem ↔ marketplace の双方向完全性 (Issue #64)
+  - `plugins/` 直下の各ディレクトリ（マニフェスト保有）が `.claude-plugin/marketplace.json` に登録されていること
+  - `.codex-plugin/plugin.json` を持つプラグインが `.agents/plugins/marketplace.json` にも登録されていること
+  - 両 marketplace の `source` パスが実在すること（dangling path 検出）
+  - マニフェストを一切持たない `plugins/` 直下のディレクトリ（残骸）がないこと
 
 ---
 
@@ -214,12 +204,10 @@ scripts/
 │   ├── version.sh        # Claude/Codex plugin.json / marketplace.json の version 読み書き
 │   ├── changelog.sh      # CHANGELOG からのリリース内容の読み取り、セクション繰り上げ + compare リンク
 │   └── release-notes.sh  # 渡されたリリース内容から releases/vX.Y.Z.md 雛形生成
-├── tests/
-│   ├── helpers.sh                            # テスト用 fixture リポジトリとアサーション
-│   ├── verify-versions.test.sh               # version 一致・metadata.version 検査の受け入れテスト
-│   ├── verify-versions-completeness.test.sh  # 双方向完全性チェックの受け入れテスト
-│   └── release-prepare.test.sh               # release-prepare の受け入れテスト
+├── tests/                # 受け入れテスト（*.test.sh）と共通 fixture（helpers.sh）
 ├── release-prepare.sh    # ブランチ → 編集 → コミット → PR
 ├── release-publish.sh    # tag → GH Release
-└── verify-versions.sh    # 整合性ゲート（CI + ローカル）
+├── verify.sh             # リポジトリ全体の検証（CI + ローカル）
+├── verify-plugin-catalog.sh  # README のプラグイン一覧と配布対象の一致
+└── verify-versions.sh    # バージョン・配布登録の整合性（verify.sh + リリースの事後条件）
 ```

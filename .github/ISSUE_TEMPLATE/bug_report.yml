@@ -25,17 +25,26 @@ body:
           required: false
 
   - type: dropdown
-    id: plugin
+    id: target
     attributes:
-      label: 対象プラグイン
-      description: 不具合が発生しているプラグインを選択してください。
+      label: 対象範囲
+      description: 不具合が発生している範囲を選択してください。
       options:
-        - model-strategy
-        - speakerdeck-knowledge
+        - 特定のプラグイン
         - marketplace 全体 / インストール周り
         - その他・不明
     validations:
       required: true
+
+  - type: input
+    id: plugin
+    attributes:
+      label: 対象プラグイン名
+      description: |
+        「特定のプラグイン」を選んだ場合に記入してください。
+        プラグイン名は [README のプラグイン一覧](https://github.com/9uiLe/plugins#プラグインを選ぶ) を参照してください。
+    validations:
+      required: false
 
   - type: input
     id: skill

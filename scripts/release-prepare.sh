@@ -63,7 +63,6 @@ require_cmd jq
 require_cmd git
 require_cmd awk
 require_cmd sed
-[[ "$NO_PR" == "1" ]] || require_cmd forge
 [[ "$NO_PR" == "1" ]] || require_cmd gh
 
 # ---------- resolve plugin changes ----------
@@ -183,7 +182,7 @@ ${pr_summary}
 
 ## Test plan
 
-- [ ] CI green (\`verify-versions\` を含む)
+- [ ] CI green (\`verify\`)
 - [ ] \`/plugin marketplace add\` で v${RELEASE_VERSION} として認識されること
 - [ ] 対象 Skill を 1 回実行して回帰がないこと
 EOF
@@ -274,7 +273,7 @@ fi
 
 confirm "Open PR for ${BRANCH} -> master?"
 
-forge gh pr-create --base master \
+gh pr create --base master \
   --title "chore(release): v${RELEASE_VERSION}" \
   --body "$pr_body"
 log ok "PR opened"

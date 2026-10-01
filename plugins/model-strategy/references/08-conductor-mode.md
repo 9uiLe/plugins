@@ -19,7 +19,7 @@ conductor mode は、メインセッション (conductor) が Sonnet 級など�
 タスク完了時にマニフェストを JSON 化し、次で監査する (`PLUGIN_ROOT` は本プラグインのルート)。findings は完了報告に含める。Node.js が使えない場合は予定・実効担当と該当規則を手動で突合し、機械監査を実行できなかったことを記録する。
 
 ```bash
-rtk proxy node "$PLUGIN_ROOT/scripts/route-policy.mjs" audit < manifest.json
+node "$PLUGIN_ROOT/scripts/route-policy.mjs" audit < manifest.json
 ```
 
 conductor で基準線ファイルを生成した場合は、監査と実効担当の記録後、§7 の手順で当該ファイルを削除する。

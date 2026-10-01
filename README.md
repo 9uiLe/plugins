@@ -22,7 +22,7 @@ Claude Code / Codex で使う、AI エージェントの利用量管理、スラ
 
 ## インストール
 
-`<plugin-name>` を `model-strategy`、`speakerdeck-knowledge`、`architecture-explainer`、`engineering-principles` のいずれかに置き換えてください。
+`<plugin-name>` は [プラグインを選ぶ](#プラグインを選ぶ) の一覧にあるプラグイン名に置き換えてください。
 
 ### Claude Code
 
@@ -62,35 +62,15 @@ codex plugin add <plugin-name>@9uile-plugins
 ├── .claude-plugin/marketplace.json   ← Claude Code Marketplace
 ├── .agents/plugins/marketplace.json ← Codex Marketplace
 ├── plugins/
-│   ├── architecture-explainer/
-│   │   ├── .claude-plugin/plugin.json
-│   │   ├── .codex-plugin/plugin.json
-│   │   ├── skills/                  ← architecture-explainer と validator・説明資料用 CSS
-│   │   ├── tests/
-│   │   └── README.md
-│   ├── engineering-principles/
-│   │   ├── .claude-plugin/plugin.json
-│   │   ├── .codex-plugin/plugin.json
-│   │   ├── skills/                  ← maintainable-code
-│   │   └── README.md
-│   ├── speakerdeck-knowledge/
-│   │   ├── .claude-plugin/plugin.json
-│   │   ├── .codex-plugin/plugin.json
-│   │   ├── skills/                  ← speakerdeck-knowledge と取得・画像生成補助・図解用 CSS
-│   │   ├── tests/
-│   │   └── README.md
-│   └── model-strategy/
+│   └── <name>/                      ← プラグインごとに 1 ディレクトリ
 │       ├── .claude-plugin/plugin.json
 │       ├── .codex-plugin/plugin.json
-│       ├── skills/                  ← model-effort-guide
-│       ├── agents/                  ← Claude Code 向け委譲先・judge
-│       ├── hooks/                   ← opt-in の警告・範囲ガード
-│       ├── scripts/                 ← ルーティング・ステータス表示
-│       ├── references/
-│       ├── tests/
-│       └── README.md
+│       ├── skills/                  ← スキル本体と、その補助スクリプト・asset・reference
+│       ├── tests/                   ← 自動テスト（同梱する場合）
+│       ├── README.md                ← 用途・構成・プラグイン固有の検証
+│       └── …                        ← プラグイン固有の agents/・hooks/・scripts/・references/ など
 ├── docs/                           ← 設計指針・運用記録
-├── scripts/                        ← リリース・バージョン検証
+├── scripts/                        ← リポジトリの検証・リリース
 ├── releases/                       ← リリースノート
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md

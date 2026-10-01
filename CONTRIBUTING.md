@@ -1,6 +1,6 @@
 # コントリビューションガイド
 
-このリポジトリでは、Claude Code / Codex 用の `model-strategy`、`speakerdeck-knowledge`、`architecture-explainer`、`engineering-principles` を配布しています。プラグインの用途と構成は [README](./README.md) を参照してください。
+このリポジトリでは、Claude Code / Codex 用のプラグインを配布しています。配布中のプラグインと用途・構成は [README](./README.md) を参照してください。
 
 ## 不具合・改善提案・質問
 
@@ -31,7 +31,8 @@
 | モデル・委譲の判断資料 | `plugins/model-strategy/references/` |
 | 操作の振り分け・警告・委譲先の動作 | `plugins/model-strategy/scripts/`、`hooks/`、`agents/` |
 | GitHub の報告・PR フォーム | `.github/ISSUE_TEMPLATE/`、`.github/PULL_REQUEST_TEMPLATE.md` |
-| リリース手順 | `RELEASING.md`、`scripts/`、`.github/workflows/verify-versions.yml` |
+| リポジトリの検証・CI | `scripts/verify.sh`、`scripts/tests/`、`.github/workflows/verify.yml` |
+| リリース手順 | `RELEASING.md`、`scripts/release-*.sh`、`scripts/lib/` |
 
 スキルやプラグインを設計する際は、[コンテキスト効率を考慮した設計指針](./docs/context-efficient-skill-design.md) を参照してください。リリース手順を変更する場合は、手順書・スクリプト・CI の仕様を同じ PR で揃えます。
 
@@ -44,7 +45,7 @@
 - スキル本体: `skills/<skill>/SKILL.md`
 - 利用案内: `README.md`
 
-ルートの `.claude-plugin/marketplace.json` と `.agents/plugins/marketplace.json` に配布エントリを追加し、ルート README のプラグイン一覧にも掲載します。
+ルートの `.claude-plugin/marketplace.json` と `.agents/plugins/marketplace.json` に配布エントリを追加し、ルート README の [プラグイン一覧](./README.md#プラグインを選ぶ) に `plugins/<name>/README.md` へのリンクを持つ行を追加します。配布対象の正本は `.claude-plugin/marketplace.json` で、Codex 側の登録と README の一覧がこれと一致することを `scripts/verify.sh` が検査します。プラグインを削除する場合も同じ 3 箇所から取り除きます。
 
 個別プラグインのバージョンは、両環境の `plugin.json` と Claude Code 用 Marketplace の該当エントリで揃えます。リポジトリ全体のリリース版とは別に管理します。更新・公開の手順は [RELEASING.md](./RELEASING.md) に記載しています。
 
@@ -68,17 +69,23 @@ codex plugin add <plugin-name>@9uile-plugins
 
 対象のスキルに再現手順や利用例を渡し、期待する出力を確認します。文書だけの変更は、説明と実装の一致、リンク先、コマンド例を確認します。
 
-CI の検証コマンドはリポジトリのルートで実行できます。必要なツールは Bash、Git、jq、Node.js、ShellCheck です。
+CI と同じ検証は、リポジトリのルートで次の 1 コマンドで実行します。CI の [verify.yml](./.github/workflows/verify.yml) もこのスクリプトを実行します。
 
 ```bash
-bash scripts/verify-versions.sh
-bash scripts/tests/verify-versions-completeness.test.sh
-node --test plugins/model-strategy/tests/*.test.mjs
-python3 -m unittest discover -s plugins/architecture-explainer/tests -v
-shellcheck -S warning -x scripts/*.sh scripts/lib/*.sh scripts/tests/*.sh
+bash scripts/verify.sh
 ```
 
-マニフェストや配布対象の変更には `verify-versions.sh`、検証スクリプトの変更にはそのテスト、model-strategy の処理変更には Node.js のテスト、architecture-explainer の validator・fixture 変更には Python のテストを実行してください。architecture-explainer の Skill 本文・reference・asset を変更した場合は、[LLM 評価の手順](./plugins/architecture-explainer/tests/eval/README.md) で Case を再実行してください。CI の定義は [verify-versions.yml](./.github/workflows/verify-versions.yml) にあります。
+必要なツールは Bash、Git、jq、ShellCheck、Node.js、Python 3 と Pillow（`python3 -m pip install Pillow`）です。スクリプトはツールをインストールしません。
+
+`scripts/verify.sh` は ShellCheck、マニフェストとバージョンの整合性、README のプラグイン一覧と配布対象の一致を検査し、次の規約で置いたテストを自動で実行します。テストを追加・削除しても、スクリプトや CI を変更する必要はありません。
+
+| テストの置き場所 | 実行方法 |
+| --- | --- |
+| `scripts/tests/*.test.sh` | `bash scripts/tests/<name>.test.sh` |
+| `plugins/<name>/tests/*.test.mjs` | `node --test plugins/<name>/tests/*.test.mjs` |
+| `plugins/<name>/tests/test_*.py` | `python3 -m unittest discover -s plugins/<name>/tests -v` |
+
+特定の領域だけを確認する場合は、上の表のコマンドで個別に実行できます。プラグイン固有の手動確認や評価手順は、各プラグインの README を参照してください。
 
 ## Pull Request を送る
 
