@@ -67,7 +67,6 @@ Review と Improve は、見た目より先に、コードとの一致と根拠�
 
 ```bash
 python3 -m unittest discover -s plugins/architecture-explainer/tests -v
-bash scripts/verify-versions.sh
 ```
 
-`tests/` の自動テストは、validator の規則と、評価用 fixture（`tests/fixtures/auth-service/`）の再構成・bug の再現を検証します。Skill の出力品質は LLM 評価と表示確認で確かめます。手順と Case は [tests/eval/README.md](tests/eval/README.md) にあり、通常の CI には含めません。ローカル導入は [コントリビューションガイド](../../CONTRIBUTING.md#ローカルで検証する) を参照してください。
+`tests/` の自動テストは、validator の規則と、評価用 fixture（`tests/fixtures/auth-service/`）の再構成・bug の再現を検証します。Skill の出力品質は LLM 評価と表示確認で確かめます。手順と Case は [tests/eval/README.md](tests/eval/README.md) にあり、通常の CI には含めません。ローカル導入とリポジトリ全体の検証は [コントリビューションガイド](../../CONTRIBUTING.md#ローカルで検証する) を参照してください。

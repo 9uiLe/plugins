@@ -165,8 +165,7 @@ if [[ -f "$AGENTS_MARKETPLACE_JSON" ]]; then
 fi
 
 # Every plugin in the Claude marketplace must also be listed in the Codex
-# marketplace manifest, or it cannot be installed from Codex. Generalized from
-# agent-ops being registered only in .claude-plugin/marketplace.json.
+# marketplace manifest, or it cannot be installed from Codex.
 if [[ ! -f "$AGENTS_MARKETPLACE_JSON" ]]; then
   log error "Codex marketplace manifest not found: $AGENTS_MARKETPLACE_JSON"
   fail=1

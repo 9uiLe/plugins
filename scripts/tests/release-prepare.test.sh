@@ -242,6 +242,35 @@ else
   fail "dry-run without plugin changes succeeds" "release-prepare --dry-run failed" "$dry_out"
 fi
 
+# ---------- PR creation ----------
+# A gh stub records its arguments, one per line; the PR body spans several lines.
+mkdir -p "$WORK_DIR/bin"
+cat >"$WORK_DIR/bin/gh" <<'SH'
+#!/bin/sh
+printf '%s\n' "$@" >"$GH_ARGS_FILE"
+SH
+chmod +x "$WORK_DIR/bin/gh"
+gh_args="$WORK_DIR/gh-args"
+
+make_release_fixture "$fixture"
+if out="$(cd "$fixture" && PATH="$WORK_DIR/bin:$PATH" GH_ARGS_FILE="$gh_args" \
+  bash scripts/release-prepare.sh --yes --plugin alpha:patch 2>&1)"; then
+  pass "release with PR creation succeeds"
+  assert_contains "opens the PR against master with gh and the release title" "$(cat "$gh_args")" \
+    "pr
+create
+--base
+master
+--title
+chore(release): v1.0.1
+--body
+## Summary"
+  assert_contains "PR body lists the plugin change" "$(cat "$gh_args")" \
+    "- プラグイン \`alpha\` を v1.0.0 → v1.0.1 に bump"
+else
+  fail "release with PR creation succeeds" "release-prepare failed" "$out"
+fi
+
 # ---------- rejected input (validated before any side effect) ----------
 
 expect_failure_with "--release-bump and --release-version together are rejected" \

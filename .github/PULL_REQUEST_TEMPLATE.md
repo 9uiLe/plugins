@@ -7,12 +7,11 @@
 ## 関連 Issue
 <!-- 例: Closes #12 / Refs #34 -->
 
-## 対象プラグイン
+## 対象
+<!-- 変更したプラグイン名を記入し、リポジトリ全体に関わる場合はチェックしてください。 -->
 
-- [ ] model-strategy
-- [ ] speakerdeck-knowledge
+- プラグイン:
 - [ ] marketplace / リポジトリ全体
-- [ ] その他:
 
 ## 変更の種類
 
@@ -31,7 +30,7 @@
 - [ ] ローカルの Marketplace 登録 (`/plugin marketplace add /path/to/repo`) で読み込めることを確認した
 - [ ] Codex のローカル Marketplace 登録 (`codex plugin marketplace add /path/to/repo`) で読み込めることを確認した
 - [ ] 対象の Skill / コマンドを実行し、期待どおり動作することを確認した
-- [ ] `marketplace.json` / `plugin.json` の JSON 構文が壊れていないことを確認した
+- [ ] `bash scripts/verify.sh` が成功することを確認した
 
 確認手順:
 <!-- 例: speakerdeck-knowledge を実行し、生成された knowledge.md と guide.html の出典を確認 -->
