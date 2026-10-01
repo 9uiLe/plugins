@@ -1,6 +1,6 @@
 # コントリビューションガイド
 
-このリポジトリでは、Claude Code / Codex 用の `model-strategy`、`speakerdeck-knowledge`、`architecture-explainer` を配布しています。プラグインの用途と構成は [README](./README.md) を参照してください。
+このリポジトリでは、Claude Code / Codex 用の `model-strategy`、`speakerdeck-knowledge`、`architecture-explainer`、`engineering-principles` を配布しています。プラグインの用途と構成は [README](./README.md) を参照してください。
 
 ## 不具合・改善提案・質問
 
