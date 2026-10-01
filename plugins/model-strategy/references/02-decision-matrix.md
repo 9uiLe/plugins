@@ -15,10 +15,10 @@
 | --- | --- | --- | --- |
 | **P0** | 対象外ゲート — 外向き・破壊的・履歴改変操作 (push / PR 作成 / rebase / reset / clean / リポジトリ外の状態変更)。担当決定の対象外とし、どの担当でも実行前にユーザー承認を要する | `approval-gate` | `approval-gate` |
 | **R0** | 単発直接実行 — diff を生まない・許可リスト内の・単発 (同一サブタスク内で 1 回目) の読み取りコマンド。メインが直接実行する | `main-direct` | `main-direct` |
-| **R1** | 取得・列挙・抽出 — 成果物が「所在・列挙・抽出結果」であり diff を生まず、意味解釈を要しない操作 (grep/glob、ファイル所在特定、依存列挙、既知パターン検索)。要約・評価・原因推定は含まない | `haiku-scout` | `luna-mini` (+ low) |
-| **R2** | 既知検証手順の実行 — 事前に確定したコマンド (テスト・lint・ビルド) の実行と結果の事実報告。失敗の原因診断・デバッグ中の反復実行は R2 ではなく R4 | `haiku-scout` | `luna-mini` (+ low) |
-| **R3** | 構造化契約付き変更 — diff を生む操作のうち、メインが**構造化仕様 4 フィールド (対象 / 期待する観測可能結果 / 変更可能範囲 / 検証方法)** を先に書き切ったもの。書き切れなければ R4 | `sonnet-implementer` | `terra` (+ medium) |
-| **R4** | デフォルト — 設計・技術選定・曖昧さの解消・失敗原因の仮説形成・デバッグ・レビュー統合・受け入れ判定・仕様が書き切れない実装。R4 に割り当てた際は「R0〜R3 のどの条件が N だったか」を記録する (`route-policy.mjs` の `reasons` に機械生成される) | `main` | `sol` |
+| **R1** | 取得・列挙・抽出 — 成果物が「所在・列挙・抽出結果」であり diff を生まず、意味解釈を要しない操作 (grep/glob、ファイル所在特定、依存列挙、既知パターン検索)。要約・評価・原因推定は含まない | `haiku-scout` | `scout` |
+| **R2** | 既知検証手順の実行 — 事前に確定したコマンド (テスト・lint・ビルド) の実行と結果の事実報告。失敗の原因診断・デバッグ中の反復実行は R2 ではなく R4 | `haiku-scout` | `scout` |
+| **R3** | 構造化契約付き変更 — diff を生む操作のうち、メインが**構造化仕様 4 フィールド (対象 / 期待する観測可能結果 / 変更可能範囲 / 検証方法)** を先に書き切ったもの。書き切れなければ R4 | `sonnet-implementer` | `implementer` |
+| **R4** | デフォルト — 設計・技術選定・曖昧さの解消・失敗原因の仮説形成・デバッグ・レビュー統合・受け入れ判定・仕様が書き切れない実装。R4 に割り当てた際は「R0〜R3 のどの条件が N だったか」を記録する (`route-policy.mjs` の `reasons` に機械生成される) | `main` | `main` |
 
 `kind` は `"search"|"enumerate"|"read"|"execute-verification"|"modify"|"judge"` のいずれか。先勝ち評価の正確な述語 (`producesDiff` / `outward` / `interpretationRequired` / `singleShot` / `allowlistedCommand` / `kind` / `spec`) は `scripts/route-policy.mjs` の `routeOperation` を参照。
 
@@ -82,11 +82,11 @@ Fable 5 のコストは Opus 4.8 の約 2 倍（トークナイザは同一。`0
 
 ## §9 Codex ランタイムでの読み替え
 
-担当列の読み替え: `sol` = R4 / `terra` = R3 / `luna`・`mini` = R1・R2。effort は「要求目標値」であり、Terra / Luna の対応レベルは未確認 — `references/07-codex.md` §2 の probe 注記に従う (確定値として書かない)。hook による warn 強制は Claude Code のみ (`references/07-codex.md` に明記)。原則 (ルーティング表・マニフェスト・監査) は環境非依存で両対応。
+担当 (Codex) 列は `references/07-codex.md` §3 の `agents.<name>` の役割名 (`scout` / `implementer`) と、R4 を担うメインを指す。各役割のモデルと effort の対応は 07 だけに置く。hook による warn 強制は Claude Code のみ (`references/07-codex.md` に明記)。原則 (ルーティング表・マニフェスト・監査) は環境非依存で両対応。
 
 ## §10 R4 のサブタイプ (conductor mode, v0.3.0)
 
-`MODEL_STRATEGY_MODE=conductor` のとき、R4 と判定された操作はさらに **R4-ctx / R4a / R4b** の 3 通りに機械分割される (正本は `route-policy.mjs` の `deriveR4Subtype`)。既定 (`judge-main`、未設定を含む) では発生しない — v0.2.0 の `routeOperation` 出力とは完全後方互換。
+`MODEL_STRATEGY_MODE=conductor` のとき、R4 と判定された操作はさらに **R4-ctx / R4a / R4b** の 3 通りに機械分割される (正本は `route-policy.mjs` の `deriveR4Subtype`)。既定 (`judge-main`、未設定を含む) では発生せず、`routeOperation` の `subtype` は `null` になる。
 
 | サブタイプ | 定義 | 担当 |
 | --- | --- | --- |

@@ -2,7 +2,7 @@
 
 > **前提**: 本書は `02-decision-matrix.md` の R4 (デフォルト・判断) を、`MODEL_STRATEGY_MODE=conductor` のときにさらに分割する追補である。ルールの正本は引き続き `scripts/route-policy.mjs` (`routeOperation` の `deriveR4Subtype` / `auditManifest`)。本書はその機序の解説と、機械検査が証明する範囲・証明しない範囲の明記に専念する。
 
-conductor mode は、メインセッション (conductor) が Sonnet 級など判断に不向きなモデルであっても、R4 のうち「判断そのもの」を `judge` (Opus/Fable) へ委譲し、conductor は判断パケットの構成・実行の指揮・R4-ctx (会話文脈が本体の操作) に専念できるようにする運用モードである。既定は `judge-main` (メインが自ら R4 判断も担う。v0.2.0 と同じ) であり、conductor mode は明示 opt-in のみ。tier 推定からの自動切替はしない。
+conductor mode は、メインセッション (conductor) が Sonnet 級など判断に不向きなモデルであっても、R4 のうち「判断そのもの」を `judge` (Opus/Fable) へ委譲し、conductor は判断パケットの構成・実行の指揮・R4-ctx (会話文脈が本体の操作) に専念できるようにする運用モードである。既定は `judge-main` (メインが自ら R4 判断も担う) であり、conductor mode は明示 opt-in のみ。tier 推定からの自動切替はしない。
 
 ## §0 高保証 opt-in 時のマニフェストと出口監査
 
@@ -26,14 +26,14 @@ conductor で基準線ファイルを生成した場合は、監査と実効担�
 
 ## §1 モード宣言
 
-- `MODEL_STRATEGY_MODE` env: `conductor` | `judge-main` の閉じた enum。未設定は `judge-main` (v0.2.0 と完全後方互換)
+- `MODEL_STRATEGY_MODE` env: `conductor` | `judge-main` の閉じた enum。未設定は `judge-main`
 - スキルはセッションモデルが Sonnet 級のとき conductor を**提案**してよいが、自動切替はしない (判断は常にユーザー)
 - 委譲マニフェストに次の 3 フィールドを記録する:
   - `mode`: 実効モード (`conductor` | `judge-main`)
   - `modeSource`: `env` (環境変数由来) | `user-instruction` (会話内の明示指示) | `default` (未設定によるフォールバック)
   - `sessionModel`: セッションの実モデル名 (固定文字列で書かず、実際のモデル名を記入する。`03-cost-levers.md` 等と同じ規約)
-- `mode`/`modeSource`/`sessionModel` のいずれかが欠落・enum 外であれば finding `MISSING_MODE_FIELDS`。ただし `mode` フィールド自体を書いていないマニフェスト (v0.2.0 形式) には適用しない — モード宣言に opt-in していないマニフェストを新 v0.3.0 検査の対象にしないことが後方互換の根拠
-- 実効モードとセッションモデルの乖離を検出する finding `MODE_MODEL_MISMATCH` (warn 級): `mode=conductor` かつ `sessionModel` が `opus`/`fable` を含む (conductor で高価なメインを使う意味が薄い)、または `mode=judge-main` かつ `sessionModel` が `sonnet` を含む (安いメインが judge を介さず自ら R4 判断をしている懸念)。小文字比較の部分一致で機械判定する
+- `mode`/`modeSource`/`sessionModel` のいずれかが欠落・enum 外であれば finding `MISSING_MODE_FIELDS`。`mode` を省略したマニフェストはどのモードの検査を適用するか決められないため、マニフェスト監査だけを使う場合も `mode: "judge-main"` を記録する
+- 実効モードとセッションモデルの乖離を検出する finding `MODE_MODEL_MISMATCH`: `mode=conductor` かつ `sessionModel` が `opus`/`fable` を含む (conductor で高価なメインを使う意味が薄い)、または `mode=judge-main` かつ `sessionModel` が `sonnet` を含む (安いメインが judge を介さず自ら R4 判断をしている懸念)。小文字比較の部分一致で機械判定する
 
 ## §2 R4 の 3 分割
 
@@ -45,7 +45,7 @@ conductor で基準線ファイルを生成した場合は、監査と実効担�
 | **R4a (closed)** | ctx でなく、判断パケットの必須 6 フィールド (`question` / `options` / `evidencePointers` / `constraints` / `acceptanceCriteria` / `impactScope`) が全て非空、かつ `dependsOn` (他 R4 行への依存宣言) が空 | `judge` |
 | **R4b (adaptive)** | ctx でなく、パケットを書き切れない、または `dependsOn` が非空 | `session-escalation` (上位セッションへのタスク昇格を提案し、conductor は作業を止める) |
 
-- `ctxClass` が `CTX_CLASSES` の enum 外の値であれば finding `INVALID_CTX_CLASS` (error 級) を発火させたうえで、**判断型として扱う** (subtype は R4a/R4b の評価に落ちる)。自己分類の一語で `CONDUCTOR_EXECUTED_R4` (§8) を回避できる抜け道を塞ぐための設計 (round2-fable.md 裁定 D 修正)
+- `ctxClass` が `CTX_CLASSES` の enum 外の値であれば finding `INVALID_CTX_CLASS` を発火させたうえで、**判断型として扱う** (subtype は R4a/R4b の評価に落ちる)。自己分類の一語で `CONDUCTOR_EXECUTED_R4` (§8) を回避できる抜け道を塞ぐための設計
 - パケット完結性の判定は R3 の `missingSpecFields` と同型の非空チェック (`nonEmptyString`)
 - judge の「証拠不足」差し戻しが同一 R4a 行で 2 回連続した場合、conductor はその行を R4b へ昇格させる。これは `route-policy.mjs` が状態を追跡して自動判定するものではなく、**conductor が判断履歴を見て自ら行うプロトコル上の義務**である (route-policy.mjs はステートレスな単発 JSON I/O であり、複数回の呼び出しにまたがる履歴を保持しない)
 
@@ -118,7 +118,7 @@ R3 行スキーマを次の 2 フィールドで拡張する:
   受け入れ基準が変わった場合は同じ方法で `currentContractHash` を算出し、マニフェストに記録する。監査前に凍結済み baseline を上書きして変化を隠さない。
 - **束縛**: ファイル名の `session_id` (セッションに束縛) + 内容の `manifestId` (どのマニフェストの基準線かを一意化)。並行セッションや前タスクの古い基準線による誤発火・見逃しを避ける
 - **破棄**: タスク完了時、§0 の監査後に conductor が `${CLAUDE_PLUGIN_DATA}/scope-baseline-<session_id>.json` の `manifestId` と当該タスクの ID の一致を確認し、そのファイルだけを削除する。別セッションや別マニフェストの基準線は削除しない。削除できなかった場合は完了報告に残す
-- **不発検出**: 基準線を書く規約自体が守られなければ hook は永久に不発になる (「沈黙のまま死ぬ」故障)。これを検出するため、`mode=conductor` かつ R3 行が存在するのに `baseline` がマニフェストに記録されていない場合、finding `MISSING_BASELINE` (warn 級) を発火する
+- **不発検出**: 基準線を書く規約自体が守られなければ hook は永久に不発になる (「沈黙のまま死ぬ」故障)。これを検出するため、`mode=conductor` かつ R3 行が存在するのに `baseline` がマニフェストに記録されていない場合、finding `MISSING_BASELINE` を発火する
 
 ### 既知の迂回
 
@@ -126,9 +126,9 @@ R3 行スキーマを次の 2 フィールドで拡張する:
 
 ## §8 finding の優先順位
 
-conductor mode で判断型 R4 行 (ctx 以外) の `actualAssignee` が `conductor`/`main` であれば `CONDUCTOR_EXECUTED_R4` (error 級) が発火する。`deviationNote` による正当化はできない — plannedAssignee/actualAssignee の乖離を許容する既存の `UNDOCUMENTED_DEVIATION` 抑制機構は、この違反には適用しない。同一行の `UNDOCUMENTED_DEVIATION` はこの `CONDUCTOR_EXECUTED_R4` に吸収され、重複報告しない。
+conductor mode で判断型 R4 行 (ctx 以外) の `actualAssignee` が `conductor`/`main` であれば `CONDUCTOR_EXECUTED_R4` が発火する。`deviationNote` による正当化はできない — plannedAssignee/actualAssignee の乖離を許容する既存の `UNDOCUMENTED_DEVIATION` 抑制機構は、この違反には適用しない。同一行の `UNDOCUMENTED_DEVIATION` はこの `CONDUCTOR_EXECUTED_R4` に吸収され、重複報告しない。
 
-R4-ctx としての除外は `ctxClass` が `CTX_CLASSES` enum に所属する場合のみ有効。enum 外の `ctxClass` 主張は `INVALID_CTX_CLASS` (error 級) を発火させたうえで判断型として扱い、`CONDUCTOR_EXECUTED_R4` の判定対象に含める — 自己分類による error 回避を許さない (§2)。
+R4-ctx としての除外は `ctxClass` が `CTX_CLASSES` enum に所属する場合のみ有効。enum 外の `ctxClass` 主張は `INVALID_CTX_CLASS` を発火させたうえで判断型として扱い、`CONDUCTOR_EXECUTED_R4` の判定対象に含める — 自己分類による回避を許さない (§2)。
 
 ## §9 限界のまとめ
 
