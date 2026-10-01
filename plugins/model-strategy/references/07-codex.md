@@ -53,7 +53,7 @@ Codex CLI にもマルチエージェント機構がある（`features.multi_age
 | `--profile <name>`（`$CODEX_HOME/<name>.config.toml`） | 「深い作業用 （gpt-5.6-sol + high）」「定型用 （gpt-5.6-luna + low）」等のプリセット切替 |
 
 - **Claude Code の hook (`hooks/route-warn.mjs`) は Codex では動作しない**: PreToolUse hook + `hooks/hooks.json` の自動ロードは Claude Code 固有の機構であり、Codex CLI 側に同等の自動介入は無い。R1 相当の直接実行を避ける運用は、`agents.<name>` への委譲を手動で徹底することで代替する
-- `agents.<name>` の役割定義例 (config.toml。探索役 = R1/R2 相当、実装役 = R3 相当。effort は §2 の probe 注記のとおり Terra/Luna の対応レベル未確認のため、実機で `/model` セレクタから確認してから指定する):
+- `agents.<name>` の役割定義例 (config.toml。探索役 `scout` = R1/R2 相当、実装役 `implementer` = R3 相当。この名前は `route-policy.mjs` の Codex 側担当名と同じ。effort は §2 の probe 注記のとおり Terra/Luna の対応レベル未確認のため、実機で `/model` セレクタから確認してから指定する):
 
   ```toml
   [agents.scout]
@@ -99,5 +99,5 @@ Codex CLI にもマルチエージェント機構がある（`features.multi_age
 
 - Claude Code の conductor mode は「安いメイン (Sonnet 帯) + 高いモデルへの R4a 委譲 (judge = Opus/Fable)」という**単価差**が動機になる。Codex の既定メインは `gpt-5.6-sol` (公式「迷ったら Sol」) であり、日常運用でメインを terra/luna に固定するのは §1 の役割分担 (Sol=判断, Terra=主力, Luna=定型) から外れる
 - 対応させる場合の読み替え: conductor = `gpt-5.6-terra` 起点のメイン、judge = `gpt-5.6-sol` への `spawn_agent`/`agents.<name>` 委譲 (R4a のみ、判断パケットを渡す)。conductor mode を使う利点は Codex では単価差そのものより、**判断をメインの会話コンテキストから隔離できること** (`08-conductor-mode.md` §3 の判断パケット規約と同じ理由) にある
-- `judge`/`judge-fable` (Claude Code のサブエージェント定義) は Codex には存在しない。Codex で同等の役割を持たせる場合は `agents.<name>` に `gpt-5.6-sol` + `description` で判定専任ロールを定義し、Read 系ツールのみ渡す運用で近似する (本プラグインの `.mjs`/hook 資産は Claude Code 専用のため、判定はメイン側の運用規律で代替する)
+- `judge`/`judge-fable` (Claude Code のサブエージェント定義) は Codex には存在しない。Codex で同等の役割を持たせる場合は `agents.judge` に `gpt-5.6-sol` + `description` で判定専任ロールを定義し、Read 系ツールのみ渡す運用で近似する (本プラグインの `.mjs`/hook 資産は Claude Code 専用のため、判定はメイン側の運用規律で代替する)
 - scope-guard 相当の PreToolUse 強制は Codex には存在しない (§3 で述べた `route-warn.mjs` 非対応と同じ理由)。範囲逸脱の検出は `route-policy.mjs auditManifest` の `SCOPE_EXPANSION` (マニフェストの自己申告検査) のみに依存する

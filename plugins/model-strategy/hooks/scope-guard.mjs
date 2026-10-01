@@ -5,7 +5,7 @@
 // MODEL_STRATEGY_MODE=conductor かつ、マニフェスト凍結時に conductor が書いた
 // 基準線ファイル ${CLAUDE_PLUGIN_DATA}/scope-baseline-<session_id>.json
 // ({manifestId, globs, contractHash}) が存在する場合のみ発火する
-// (baseline の生成・破棄手順は skills/model-effort-guide/SKILL.md §3/§4)。
+// (baseline の生成・破棄手順は references/08-conductor-mode.md §7)。
 //
 // route-warn との明確な差異: **agent_id があってもスキップしない**。
 // route-warn はメインセッションの直接実行だけを対象にする (サブエージェント
@@ -54,7 +54,7 @@ function globToRegExp(glob) {
   return new RegExp(`^${pattern}$`);
 }
 
-// baseline の globs はリポジトリルート相対パスで書く規約 (SKILL.md §3)。
+// baseline の globs (08-conductor-mode.md §7) はリポジトリルート相対パスで書く。
 // tool_input の file_path は通常絶対パスなので、cwd 相対化した形と生の形の
 // 両方を試す (絶対 glob・非標準 cwd でも取りこぼさないための保険)。
 function matchesAnyGlob(filePath, globs) {

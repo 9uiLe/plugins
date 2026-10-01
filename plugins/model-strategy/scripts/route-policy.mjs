@@ -8,17 +8,18 @@
 // ルール表そのものがルーティングの正本。references/02-decision-matrix.md は
 // 解説であり、tests/route-policy.test.mjs の 02 同期テストでドリフトを検知する。
 //
-// v0.3.0 (conductor mode): MODEL_STRATEGY_MODE=conductor のとき、R4 は
-// ctx (会話文脈が本体) / R4a (判断パケット完結) / R4b (パケット未完結・上位
-// セッション昇格) の 3 サブタイプに機械分岐する。詳細・限界は
-// references/08-conductor-mode.md。mode 省略時は judge-main で v0.2.0 と
-// 完全に同一の出力 (後方互換)。
+// conductor mode では R4 を ctx (会話文脈が本体) / R4a (判断パケット完結) /
+// R4b (パケット未完結・上位セッション昇格) の 3 サブタイプに機械分岐する。
+// 詳細・限界は references/08-conductor-mode.md。
 
 import fs from "node:fs";
 
 // RULES: 各要素は { id, title, assignee: { claude, codex } }。
-// R1/R2 で claude 側 assignee (haiku-scout) が重複するのは仕様どおり
-// (探索と既知検証手順の実行を、どちらも haiku-scout に委譲する)。
+// assignee は役割名であり、モデル ID ではない。claude 側は agents/ の定義名、
+// codex 側は references/07-codex.md §3 の agents.<name> の名前で、モデルと
+// effort への対応は 07 だけが持つ。
+// R1/R2 の assignee が重複するのは仕様どおり
+// (探索と既知検証手順の実行を、どちらも同じ探索役に委譲する)。
 export const RULES = [
   {
     id: "P0",
@@ -33,28 +34,35 @@ export const RULES = [
   {
     id: "R1",
     title: "取得・列挙・抽出 — 意味解釈を要しない探索",
-    assignee: { claude: "haiku-scout", codex: "luna-mini" }
+    assignee: { claude: "haiku-scout", codex: "scout" }
   },
   {
     id: "R2",
     title: "既知検証手順の実行 — 事前確定コマンドの実行と事実報告",
-    assignee: { claude: "haiku-scout", codex: "luna-mini" }
+    assignee: { claude: "haiku-scout", codex: "scout" }
   },
   {
     id: "R3",
     title: "構造化契約付き変更 — 4 フィールド仕様を渡した実装委譲",
-    assignee: { claude: "sonnet-implementer", codex: "terra" }
+    assignee: { claude: "sonnet-implementer", codex: "implementer" }
   },
   {
     id: "R4",
     title: "デフォルト — 判断・曖昧さの解消・仕様が書き切れない作業",
-    assignee: { claude: "main", codex: "sol" }
+    assignee: { claude: "main", codex: "main" }
   }
 ];
 
-// conductor mode の R4-ctx 閉じた許可リスト (裁定 D 修正 / round2-fable.md)。
-// リスト外の ctxClass 自称は自己分類による error 回避を許さない (finding
-// INVALID_CTX_CLASS + 判断型として CONDUCTOR_EXECUTED_R4 の判定対象に含める)。
+// conductor mode で R4 をサブタイプ別に割り当てる先。
+export const R4_SUBTYPE_ASSIGNEES = {
+  "R4-ctx": { claude: "main", codex: "main" },
+  R4a: { claude: "judge", codex: "judge" },
+  R4b: { claude: "session-escalation", codex: "session-escalation" }
+};
+
+// conductor mode で R4-ctx として conductor に残せる操作の閉じた許可リスト。
+// リスト外の ctxClass は、自己申告の分類で CONDUCTOR_EXECUTED_R4 を回避させない
+// ため、INVALID_CTX_CLASS を出したうえで判断型として扱う。
 export const CTX_CLASSES = ["commit-authoring", "user-communication"];
 
 // R4a (closed) の判断パケット必須 6 フィールド。R3 の missingSpecFields と
@@ -75,8 +83,9 @@ function ruleById(id) {
   return RULES.find((rule) => rule.id === id);
 }
 
-function finalize(ruleId, reasons) {
-  return { rule: ruleId, assignee: ruleById(ruleId).assignee, reasons };
+function finalize(ruleId, reasons, subtype = null) {
+  const assignee = subtype === null ? ruleById(ruleId).assignee : R4_SUBTYPE_ASSIGNEES[subtype];
+  return { rule: ruleId, subtype, assignee, reasons };
 }
 
 // R0〜R3 それぞれについて「どの条件が N だったか」を 1 行で返す (満たしていれば null)。
@@ -110,7 +119,7 @@ function r3Reason({ producesDiff, missingSpecFields }) {
 
 // deriveR4Subtype: R4 操作記述子 (routeOperation の op、または auditManifest の
 // task 行) の ctxClass/packet/dependsOn から R4 のサブタイプを機械導出する。
-// conductor の自由分類を許さない (裁定D修正: ctxClass は閉じた enum 所属判定のみ)。
+// conductor の自由分類を許さない (ctxClass は閉じた enum への所属だけを見る)。
 //
 // 戻り値: { subtype: "R4-ctx"|"R4a"|"R4b", ctxClassInvalid, missingPacketFields }
 // ctxClassInvalid=true の場合、subtype は enum 外主張を無視して判断型 (R4a/R4b)
@@ -132,13 +141,10 @@ function deriveR4Subtype({ ctxClass, packet, dependsOn } = {}) {
   return { subtype: closed ? "R4a" : "R4b", ctxClassInvalid, missingPacketFields };
 }
 
-// routeOperation: 操作記述子 → { rule, assignee, reasons }。
+// routeOperation: 操作記述子 → { rule, subtype, assignee: { claude, codex }, reasons }。
 // 先勝ち評価: outward → P0 / R0 条件 / R1 条件 / R2 条件 / R3 条件 / それ以外 R4。
-//
-// 第 2 引数 { mode } 省略時は judge-main として扱い、v0.2.0 と完全同一の
-// 出力 (subtype キーなし・assignee は RULES の { claude, codex } のまま) を返す
-// (後方互換)。mode="conductor" のときのみ R4 の戻り値に subtype を追加し、
-// assignee を ctx="main" / R4a="judge" / R4b="session-escalation" に分岐する。
+// subtype は mode="conductor" の R4 だけが持ち、それ以外は null。
+// mode 省略は judge-main と同じ。
 export function routeOperation(op, { mode } = {}) {
   const producesDiff = op?.producesDiff === true;
   const outward = op?.outward === true;
@@ -161,9 +167,7 @@ export function routeOperation(op, { mode } = {}) {
 
   if (mode !== "conductor") return finalize("R4", reasons);
 
-  const { subtype } = deriveR4Subtype(op || {});
-  const assignee = subtype === "R4-ctx" ? "main" : subtype === "R4a" ? "judge" : "session-escalation";
-  return { rule: "R4", assignee, reasons, subtype };
+  return finalize("R4", reasons, deriveR4Subtype(op || {}).subtype);
 }
 
 const KNOWN_RULE_IDS = new Set(RULES.map((rule) => rule.id));
@@ -174,11 +178,8 @@ function findingItem(code, ref, message) {
 
 // auditManifest: 委譲マニフェスト JSON → { status: 'PASS'|'FINDINGS', findings }。
 // findings ありでも実行ブロックではない (情報提供)。
-//
-// v0.3.0: manifest.mode が "conductor"/"judge-main" のいずれかを明示した場合に
-// 限り mode 対応の検査 (MODE_MODEL_MISMATCH / MISSING_MODE_FIELDS / R4 サブタイプ
-// 系 / MISSING_BASELINE) を追加する。manifest.mode が未設定 (v0.2.0 マニフェスト)
-// のときはこれらを一切評価しない — 後方互換の根拠 (mode 宣言なし = 判定対象外)。
+// mode/modeSource/sessionModel は必須。mode が無いマニフェストはどのモードの
+// 検査を適用するか決められないため、MISSING_MODE_FIELDS として報告する。
 export function auditManifest(manifest) {
   const tasks = Array.isArray(manifest?.tasks) ? manifest.tasks : [];
   const findings = [];
@@ -201,15 +202,14 @@ export function auditManifest(manifest) {
       const { subtype, ctxClassInvalid } = deriveR4Subtype(task);
       judgmentType = subtype !== "R4-ctx";
 
-      // enum 外の ctxClass 主張は、error 回避のための自己分類を許さない
-      // (裁定D修正) — INVALID_CTX_CLASS を発火させたうえで判断型として扱う
+      // enum 外の ctxClass は INVALID_CTX_CLASS を発火させたうえで判断型として扱う
       // (judgmentType は deriveR4Subtype が既に enum 外を判断型に落としている)。
       if (ctxClassInvalid) {
         findings.push(findingItem("INVALID_CTX_CLASS", ref, `ctxClass "${task.ctxClass}" は CTX_CLASSES に含まれない`));
       }
 
       // CONDUCTOR_EXECUTED_R4: 判断型 R4 (ctx 以外) を conductor/main が実行した
-      // 場合は error 級・deviationNote による正当化不可 (裁定 C)。同一行の
+      // 場合は deviationNote による正当化を認めない。同一行の
       // UNDOCUMENTED_DEVIATION は重複報告のため抑制する。
       if (judgmentType && (task.actualAssignee === "conductor" || task.actualAssignee === "main")) {
         findings.push(
@@ -288,30 +288,27 @@ export function auditManifest(manifest) {
   }
 
   // マニフェスト全体に対する検査 (mode/modeSource/sessionModel/baseline/contractHash)。
-  // manifest.mode が未設定 (v0.2.0 マニフェスト) の場合はここを一切評価しない。
-  if (mode !== undefined) {
-    const validMode = MODE_VALUES.has(mode);
-    const validModeSource = MODE_SOURCE_VALUES.has(manifest.modeSource);
-    const validSessionModel = nonEmptyString(manifest.sessionModel);
-    if (!validMode || !validModeSource || !validSessionModel) {
-      findings.push(findingItem("MISSING_MODE_FIELDS", null, "manifest の mode/modeSource/sessionModel が不完全または不正"));
-    }
+  const validMode = MODE_VALUES.has(mode);
+  const validModeSource = MODE_SOURCE_VALUES.has(manifest?.modeSource);
+  const validSessionModel = nonEmptyString(manifest?.sessionModel);
+  if (!validMode || !validModeSource || !validSessionModel) {
+    findings.push(findingItem("MISSING_MODE_FIELDS", null, "manifest の mode/modeSource/sessionModel が不完全または不正"));
+  }
 
-    const sessionModel = validSessionModel ? manifest.sessionModel.toLowerCase() : "";
-    const mismatch =
-      (mode === "conductor" && (sessionModel.includes("opus") || sessionModel.includes("fable"))) ||
-      (mode === "judge-main" && sessionModel.includes("sonnet"));
-    if (mismatch) {
-      findings.push(
-        findingItem("MODE_MODEL_MISMATCH", null, `mode=${mode} と sessionModel="${manifest.sessionModel}" が整合しない`)
-      );
-    }
+  const sessionModel = validSessionModel ? manifest.sessionModel.toLowerCase() : "";
+  const mismatch =
+    (mode === "conductor" && (sessionModel.includes("opus") || sessionModel.includes("fable"))) ||
+    (mode === "judge-main" && sessionModel.includes("sonnet"));
+  if (mismatch) {
+    findings.push(
+      findingItem("MODE_MODEL_MISMATCH", null, `mode=${mode} と sessionModel="${manifest.sessionModel}" が整合しない`)
+    );
+  }
 
-    if (conductorMode) {
-      const hasR3 = tasks.some((task) => task?.rule === "R3");
-      if (hasR3 && !manifest.baseline) {
-        findings.push(findingItem("MISSING_BASELINE", null, "mode=conductor かつ R3 行が存在するが baseline がマニフェストに記録されていない"));
-      }
+  if (conductorMode) {
+    const hasR3 = tasks.some((task) => task?.rule === "R3");
+    if (hasR3 && !manifest.baseline) {
+      findings.push(findingItem("MISSING_BASELINE", null, "mode=conductor かつ R3 行が存在するが baseline がマニフェストに記録されていない"));
     }
   }
 
@@ -328,7 +325,7 @@ export function auditManifest(manifest) {
 // verifyEvidence: { items: [{ file, line, quote }] } → 各 quote が file に文字どおり
 // (exact substring) 存在するか検査する。存在すれば実際の行番号 (1 始まり) と
 // 申告 line とのズレを返し、無ければ found=false で報告する。幻覚引用・stale
-// 引用の機械検出 (裁定 A の「引用実在検査」)。
+// 引用の機械検出。
 export function verifyEvidence(input) {
   const items = Array.isArray(input?.items) ? input.items : [];
 
@@ -411,7 +408,7 @@ async function main() {
   }
 
   // verify-evidence は route/audit と異なり真偽判定ツールであるため、
-  // challenge-guard.mjs 等と同じく判定結果を exit code にも反映する。
+  // 判定結果を exit code にも反映する。
   const result = verifyEvidence(input);
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   process.exitCode = result.status === "PASS" ? 0 : 1;

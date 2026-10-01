@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { RULES, CTX_CLASSES, routeOperation, auditManifest, verifyEvidence } from "../scripts/route-policy.mjs";
+import { RULES, R4_SUBTYPE_ASSIGNEES, CTX_CLASSES, routeOperation, auditManifest, verifyEvidence } from "../scripts/route-policy.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -110,7 +110,7 @@ for (const { name, input, expectedRule, expectReasonIncludes } of cases) {
 }
 
 function manifest(tasks) {
-  return { tasks };
+  return { mode: "judge-main", modeSource: "default", sessionModel: "claude-opus-4-8", tasks };
 }
 
 function task(overrides = {}) {
@@ -186,15 +186,30 @@ for (const { name, input, expectedStatus, expectedCodes } of auditCases) {
 
 // 二重正本ドリフト検知: references/02-decision-matrix.md はルール表の解説であり、
 // scripts/route-policy.mjs の RULES がルーティングの正本。両者のルール ID と
-// claude 側 assignee 名がズレたらこのテストが落ちる。
-test("references/02-decision-matrix.md は RULES の全 id と claude 側 assignee 名を含む", () => {
+// assignee 名がズレたらこのテストが落ちる。
+test("references/02-decision-matrix.md は RULES の全 id と claude / codex 両側の assignee 名を含む", () => {
   const doc = fs.readFileSync(path.join(__dirname, "../references/02-decision-matrix.md"), "utf8");
   for (const rule of RULES) {
     assert.ok(doc.includes(rule.id), `02-decision-matrix.md に ${rule.id} が見つからない`);
-    assert.ok(
-      doc.includes(rule.assignee.claude),
-      `02-decision-matrix.md に assignee "${rule.assignee.claude}" (${rule.id}) が見つからない`
-    );
+    for (const runtime of ["claude", "codex"]) {
+      assert.ok(
+        doc.includes(`\`${rule.assignee[runtime]}\``),
+        `02-decision-matrix.md に ${runtime} 側 assignee "${rule.assignee[runtime]}" (${rule.id}) が見つからない`
+      );
+    }
+  }
+});
+
+// Codex 側の委譲先はモデル名ではなく 07-codex.md の agents.<name> で定義した役割名。
+// モデルと effort への対応は 07 だけが持つ。
+test("Codex 側の委譲先 assignee は references/07-codex.md の agents.<name> として定義されている", () => {
+  const doc = fs.readFileSync(path.join(__dirname, "../references/07-codex.md"), "utf8");
+  const delegated = new Set([
+    ...["R1", "R2", "R3"].map((id) => RULES.find((rule) => rule.id === id).assignee.codex),
+    R4_SUBTYPE_ASSIGNEES.R4a.codex
+  ]);
+  for (const name of delegated) {
+    assert.ok(doc.includes(`agents.${name}`), `07-codex.md に agents.${name} が見つからない`);
   }
 });
 
@@ -213,13 +228,33 @@ function conductorOp(overrides = {}) {
   return op({ producesDiff: true, interpretationRequired: true, kind: "judge", ...overrides });
 }
 
-test("routeOperation: mode 省略時は judge-main で v0.2.0 と同一の出力 (subtype キーなし)", () => {
+test("routeOperation: mode 省略は judge-main と同一の出力で、R4 は subtype を持たずメインが担う", () => {
   const withoutMode = routeOperation(conductorOp());
   const withJudgeMain = routeOperation(conductorOp(), { mode: "judge-main" });
   assert.equal(withoutMode.rule, "R4");
-  assert.deepEqual(withoutMode.assignee, { claude: "main", codex: "sol" });
-  assert.equal("subtype" in withoutMode, false, "judge-main (省略時) の出力に subtype キーがあってはならない");
+  assert.equal(withoutMode.subtype, null);
+  assert.deepEqual(withoutMode.assignee, { claude: "main", codex: "main" });
   assert.deepEqual(withoutMode, withJudgeMain, "mode 省略と mode:'judge-main' 明示は同一の出力");
+});
+
+test("routeOperation: 戻り値は mode とルールに関係なく { rule, subtype, assignee: { claude, codex }, reasons } の形", () => {
+  const ops = [
+    op({ outward: true }),
+    op({ singleShot: true, allowlistedCommand: true }),
+    op({ kind: "execute-verification" }),
+    conductorOp(),
+    conductorOp({ ctxClass: CTX_CLASSES[0] })
+  ];
+  for (const mode of ["judge-main", "conductor"]) {
+    for (const input of ops) {
+      const result = routeOperation(input, { mode });
+      assert.deepEqual(Object.keys(result).sort(), ["assignee", "reasons", "rule", "subtype"]);
+      assert.deepEqual(Object.keys(result.assignee).sort(), ["claude", "codex"]);
+      if (mode !== "conductor" || result.rule !== "R4") {
+        assert.equal(result.subtype, null, `${mode} の ${result.rule} は subtype を持たない`);
+      }
+    }
+  }
 });
 
 test("routeOperation: conductor mode の R4-ctx — ctxClass が CTX_CLASSES に所属すれば ctx 扱い", () => {
@@ -227,7 +262,7 @@ test("routeOperation: conductor mode の R4-ctx — ctxClass が CTX_CLASSES に
     const result = routeOperation(conductorOp({ ctxClass }), { mode: "conductor" });
     assert.equal(result.rule, "R4");
     assert.equal(result.subtype, "R4-ctx");
-    assert.equal(result.assignee, "main");
+    assert.deepEqual(result.assignee, { claude: "main", codex: "main" });
   }
 });
 
@@ -243,7 +278,7 @@ test("routeOperation: conductor mode の R4a (closed) — packet 6 フィール�
   const result = routeOperation(conductorOp({ packet, dependsOn: [] }), { mode: "conductor" });
   assert.equal(result.rule, "R4");
   assert.equal(result.subtype, "R4a");
-  assert.equal(result.assignee, "judge");
+  assert.deepEqual(result.assignee, { claude: "judge", codex: "judge" });
 });
 
 test("routeOperation: conductor mode の R4b (adaptive) — packet 未完結", () => {
@@ -251,7 +286,7 @@ test("routeOperation: conductor mode の R4b (adaptive) — packet 未完結", (
   const result = routeOperation(conductorOp({ packet, dependsOn: [] }), { mode: "conductor" });
   assert.equal(result.rule, "R4");
   assert.equal(result.subtype, "R4b");
-  assert.equal(result.assignee, "session-escalation");
+  assert.deepEqual(result.assignee, { claude: "session-escalation", codex: "session-escalation" });
 });
 
 test("routeOperation: conductor mode の R4b (adaptive) — packet 完備でも dependsOn 非空なら R4b", () => {
@@ -265,7 +300,7 @@ test("routeOperation: conductor mode の R4b (adaptive) — packet 完備でも 
   };
   const result = routeOperation(conductorOp({ packet, dependsOn: ["row-1"] }), { mode: "conductor" });
   assert.equal(result.subtype, "R4b");
-  assert.equal(result.assignee, "session-escalation");
+  assert.deepEqual(result.assignee, { claude: "session-escalation", codex: "session-escalation" });
 });
 
 test("routeOperation: conductor mode で CTX_CLASSES 外の ctxClass 主張は判断型 (R4a/R4b) として評価される", () => {
@@ -288,13 +323,13 @@ function conductorManifest(tasks, overrides = {}) {
   return { mode: "conductor", modeSource: "env", sessionModel: "claude-sonnet-4-5", tasks, ...overrides };
 }
 
-test("auditManifest: mode=conductor かつ sessionModel が opus/fable を含むと MODE_MODEL_MISMATCH (warn)", () => {
+test("auditManifest: mode=conductor かつ sessionModel が opus/fable を含むと MODE_MODEL_MISMATCH", () => {
   const result = auditManifest(conductorManifest([], { sessionModel: "claude-opus-4-8" }));
   assert.equal(result.status, "FINDINGS");
   assert.ok(result.findings.some((f) => f.code === "MODE_MODEL_MISMATCH"));
 });
 
-test("auditManifest: mode=judge-main かつ sessionModel が sonnet を含むと MODE_MODEL_MISMATCH (warn)", () => {
+test("auditManifest: mode=judge-main かつ sessionModel が sonnet を含むと MODE_MODEL_MISMATCH", () => {
   const result = auditManifest({ mode: "judge-main", modeSource: "default", sessionModel: "claude-sonnet-4-5", tasks: [] });
   assert.equal(result.status, "FINDINGS");
   assert.ok(result.findings.some((f) => f.code === "MODE_MODEL_MISMATCH"));
@@ -460,9 +495,11 @@ test("auditManifest: baseline.contractHash と currentContractHash が食い違�
   assert.ok(result.findings.some((f) => f.code === "SCOPE_EXPANSION"));
 });
 
-test("auditManifest: mode 未設定 (v0.2.0 マニフェスト) は mode 関連の新 findings を一切評価しない", () => {
-  const result = auditManifest(manifest([task()]));
-  assert.deepEqual(result.findings, []);
+test("auditManifest: mode を省略したマニフェストは、判断型 R4 を main が実行していても PASS せず MISSING_MODE_FIELDS", () => {
+  const t = task({ id: "r4-3", rule: "R4", plannedAssignee: "judge", actualAssignee: "main", r4Reason: "reason", deviationNote: "note" });
+  const result = auditManifest({ tasks: [t] });
+  assert.equal(result.status, "FINDINGS");
+  assert.ok(result.findings.some((f) => f.code === "MISSING_MODE_FIELDS"));
 });
 
 test("auditManifest: mode が enum 外の値だと MISSING_MODE_FIELDS", () => {
@@ -475,7 +512,7 @@ test("auditManifest: modeSource/sessionModel が欠落していると MISSING_MO
   assert.ok(result.findings.some((f) => f.code === "MISSING_MODE_FIELDS"));
 });
 
-test("auditManifest: mode=conductor かつ R3 行が存在するが baseline がなければ MISSING_BASELINE (warn)", () => {
+test("auditManifest: mode=conductor かつ R3 行が存在するが baseline がなければ MISSING_BASELINE", () => {
   const t = task({
     rule: "R3",
     plannedAssignee: "sonnet-implementer",
