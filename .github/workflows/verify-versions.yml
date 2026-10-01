@@ -35,8 +35,14 @@ jobs:
       - name: verify-versions
         run: bash scripts/verify-versions.sh
 
+      - name: Test verify-versions version consistency checks
+        run: bash scripts/tests/verify-versions.test.sh
+
       - name: Test verify-versions completeness checks
         run: bash scripts/tests/verify-versions-completeness.test.sh
+
+      - name: Test release-prepare
+        run: bash scripts/tests/release-prepare.test.sh
 
       - name: Test model-strategy
         run: node --test plugins/model-strategy/tests/*.test.mjs

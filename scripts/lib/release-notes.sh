@@ -1,59 +1,24 @@
 #!/usr/bin/env bash
-# release-notes.sh — scaffold releases/vX.Y.Z.md from CHANGELOG section
+# release-notes.sh — scaffold releases/vX.Y.Z.md from release data
 # shellcheck source=common.sh
 . "$(dirname "${BASH_SOURCE[0]}")/common.sh"
-# shellcheck source=changelog.sh
-. "$(dirname "${BASH_SOURCE[0]}")/changelog.sh"
 
 RELEASES_DIR="$REPO_ROOT/releases"
 
-# extract_section <version> — body of [X.Y.Z] section from CHANGELOG.md
-extract_section() {
-  local version="$1"
-  awk -v v="$version" '
-    $0 ~ "^## \\[" v "\\]" { capture=1; next }
-    capture && /^## \[/ { exit }
-    capture { print }
-  ' "$CHANGELOG"
+# release_notes_path <version>
+release_notes_path() {
+  printf '%s/v%s.md\n' "$RELEASES_DIR" "$1"
 }
 
-# generate_release_notes <version> <date>
+# generate_release_notes <version> <date YYYY-MM-DD> <previous-version> <body>
 generate_release_notes() {
-  local version="$1" date="$2"
+  local version="$1" date="$2" prev="$3" body="$4"
   is_semver "$version" || die "invalid semver: $version"
+  is_semver "$prev" || die "invalid semver: $prev"
   [[ "$date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || die "invalid date: $date"
 
-  local prev
-  prev="$(awk -v v="$version" '
-    /^## \[[0-9]+\.[0-9]+\.[0-9]+\]/ {
-      match($0, /[0-9]+\.[0-9]+\.[0-9]+/)
-      ver = substr($0, RSTART, RLENGTH)
-      if (ver == v) { found=1; next }
-      if (found) { print ver; exit }
-    }
-  ' "$CHANGELOG")"
-  # In --dry-run, CHANGELOG hasn't been promoted yet, so the new [X.Y.Z] heading
-  # is absent. Fall back to the current latest released version.
-  if [[ -z "$prev" && "$DRY_RUN" == "1" ]]; then
-    prev="$(previous_version)"
-  fi
-  [[ -n "$prev" ]] || die "could not find previous version before $version in CHANGELOG.md"
-
-  local out="$RELEASES_DIR/v${version}.md"
-  if [[ -e "$out" && "$DRY_RUN" != "1" ]]; then
-    die "release notes already exist: $out"
-  fi
-
-  local body
-  body="$(extract_section "$version")"
-  # In --dry-run, the [X.Y.Z] heading doesn't exist yet; preview against the
-  # [Unreleased] body instead (that's what promote_unreleased will copy over).
-  if [[ -z "${body// /}" && "$DRY_RUN" == "1" ]]; then
-    body="$(extract_unreleased)"
-  fi
-  if [[ -z "${body// /}" ]]; then
-    die "CHANGELOG section [$version] is empty; promote it first"
-  fi
+  local out
+  out="$(release_notes_path "$version")"
 
   local content
   content="$(cat <<EOF
@@ -67,7 +32,7 @@ generate_release_notes() {
 
 - TODO: 1〜3 行で主要な変更点を要約する
 
-$(printf '%s' "$body")
+${body}
 
 ## Compatibility / Migration
 

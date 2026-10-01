@@ -7,88 +7,26 @@
 # the expected diagnostic.
 set -euo pipefail
 
-TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$TESTS_DIR/../.." && pwd)"
+# shellcheck source=helpers.sh
+. "$(dirname "${BASH_SOURCE[0]}")/helpers.sh"
 
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
-failures=0
-run=0
-
-# make_fixture <dir> — create a minimal repo with one dual-registered plugin
-make_fixture() {
-  local fixture="$1"
-  rm -rf "$fixture"
-  mkdir -p "$fixture"
-  cp -R "$REPO_ROOT/scripts" "$fixture/scripts"
-  rm -rf "$fixture/scripts/tests"
-
-  mkdir -p "$fixture/.claude-plugin" "$fixture/.agents/plugins"
-  cat >"$fixture/.claude-plugin/marketplace.json" <<'JSON'
-{
-  "metadata": { "version": "1.0.0" },
-  "plugins": [
-    { "name": "alpha", "source": "./plugins/alpha", "version": "1.0.0" }
-  ]
-}
-JSON
-  cat >"$fixture/.agents/plugins/marketplace.json" <<'JSON'
-{
-  "plugins": [
-    { "name": "alpha", "source": { "source": "local", "path": "./plugins/alpha" } }
-  ]
-}
-JSON
-
-  mkdir -p "$fixture/plugins/alpha/.claude-plugin" "$fixture/plugins/alpha/.codex-plugin"
-  printf '{ "name": "alpha", "version": "1.0.0" }\n' >"$fixture/plugins/alpha/.claude-plugin/plugin.json"
-  printf '{ "name": "alpha", "version": "1.0.0" }\n' >"$fixture/plugins/alpha/.codex-plugin/plugin.json"
-}
-
-# expect_pass <label> <fixture>
-expect_pass() {
-  local label="$1" fixture="$2" out
-  run=$((run + 1))
-  if out="$(bash "$fixture/scripts/verify-versions.sh" 2>&1)"; then
-    echo "ok: $label"
-  else
-    echo "FAIL: $label — expected pass, got failure:"
-    printf '%s\n' "$out" | sed 's/^/    /'
-    failures=$((failures + 1))
-  fi
-}
-
-# expect_fail_with <label> <fixture> <diagnostic-substring>
-expect_fail_with() {
-  local label="$1" fixture="$2" needle="$3" out
-  run=$((run + 1))
-  if out="$(bash "$fixture/scripts/verify-versions.sh" 2>&1)"; then
-    echo "FAIL: $label — expected failure, but verify-versions passed"
-    failures=$((failures + 1))
-    return
-  fi
-  if grep -qF "$needle" <<<"$out"; then
-    echo "ok: $label"
-  else
-    echo "FAIL: $label — failed, but expected diagnostic not found: $needle"
-    printf '%s\n' "$out" | sed 's/^/    /'
-    failures=$((failures + 1))
-  fi
-}
+verify() { bash "$1/scripts/verify-versions.sh"; }
 
 fixture="$WORK_DIR/fixture"
 
 # 1. Baseline: a consistent repo passes.
 make_fixture "$fixture"
-expect_pass "baseline fixture passes" "$fixture"
+expect_success "baseline fixture passes" verify "$fixture"
 
 # 2. Plugin directory exists but is missing from the Claude marketplace.
 make_fixture "$fixture"
 mkdir -p "$fixture/plugins/beta/.claude-plugin"
 printf '{ "name": "beta", "version": "1.0.0" }\n' >"$fixture/plugins/beta/.claude-plugin/plugin.json"
-expect_fail_with "unregistered plugin directory fails" "$fixture" \
-  "plugins/beta: exists on filesystem but is not registered in .claude-plugin/marketplace.json"
+expect_failure_with "unregistered plugin directory fails" \
+  "plugins/beta: exists on filesystem but is not registered in .claude-plugin/marketplace.json" verify "$fixture"
 
 # 3. Codex-capable plugin missing from the Codex marketplace (filesystem origin).
 make_fixture "$fixture"
@@ -98,15 +36,15 @@ printf '{ "name": "gamma", "version": "1.0.0" }\n' >"$fixture/plugins/gamma/.cod
 jq '.plugins += [{ "name": "gamma", "source": "./plugins/gamma", "version": "1.0.0" }]' \
   "$fixture/.claude-plugin/marketplace.json" >"$fixture/.claude-plugin/marketplace.json.tmp"
 mv "$fixture/.claude-plugin/marketplace.json.tmp" "$fixture/.claude-plugin/marketplace.json"
-expect_fail_with "codex-capable plugin missing from Codex marketplace fails" "$fixture" \
-  "gamma: missing from .agents/plugins/marketplace.json"
+expect_failure_with "codex-capable plugin missing from Codex marketplace fails" \
+  "gamma: missing from .agents/plugins/marketplace.json" verify "$fixture"
 
 # 4. Directory with no manifest at all (stale remnant).
 make_fixture "$fixture"
 mkdir -p "$fixture/plugins/stale/skills"
 printf 'leftover\n' >"$fixture/plugins/stale/skills/notes.md"
-expect_fail_with "manifest-less plugin directory fails" "$fixture" \
-  "plugins/stale: no plugin manifest"
+expect_failure_with "manifest-less plugin directory fails" \
+  "plugins/stale: no plugin manifest" verify "$fixture"
 
 # 5. Claude marketplace entry with a dangling source path.
 make_fixture "$fixture"
@@ -122,19 +60,15 @@ mv "$fixture/.agents/plugins/marketplace.json.tmp" "$fixture/.agents/plugins/mar
 jq '(.plugins[] | select(.name == "ghost") | .source) = "./plugins/missing"' \
   "$fixture/.claude-plugin/marketplace.json" >"$fixture/.claude-plugin/marketplace.json.tmp"
 mv "$fixture/.claude-plugin/marketplace.json.tmp" "$fixture/.claude-plugin/marketplace.json"
-expect_fail_with "dangling Claude marketplace source path fails" "$fixture" \
-  "does not exist (dangling path)"
+expect_failure_with "dangling Claude marketplace source path fails" \
+  "does not exist (dangling path)" verify "$fixture"
 
 # 6. Codex marketplace entry with a dangling source path.
 make_fixture "$fixture"
 jq '(.plugins[] | select(.name == "alpha") | .source.path) = "./plugins/missing"' \
   "$fixture/.agents/plugins/marketplace.json" >"$fixture/.agents/plugins/marketplace.json.tmp"
 mv "$fixture/.agents/plugins/marketplace.json.tmp" "$fixture/.agents/plugins/marketplace.json"
-expect_fail_with "dangling Codex marketplace source path fails" "$fixture" \
-  ".agents/plugins/marketplace.json source.path './plugins/missing' does not exist"
+expect_failure_with "dangling Codex marketplace source path fails" \
+  ".agents/plugins/marketplace.json source.path './plugins/missing' does not exist" verify "$fixture"
 
-if (( failures > 0 )); then
-  echo "verify-versions-completeness: $failures/$run tests failed"
-  exit 1
-fi
-echo "verify-versions-completeness: all $run tests passed"
+finish verify-versions-completeness

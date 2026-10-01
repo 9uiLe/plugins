@@ -1,53 +1,45 @@
 #!/usr/bin/env bash
-# changelog.sh — promote [Unreleased] section to [X.Y.Z] in CHANGELOG.md
+# changelog.sh — read release data from CHANGELOG.md and promote [Unreleased] to [X.Y.Z]
 # shellcheck source=common.sh
 . "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 CHANGELOG="$REPO_ROOT/CHANGELOG.md"
 
-# extract_unreleased — print body of [Unreleased] section (without the heading)
-extract_unreleased() {
-  awk '
+# unreleased_body — body of [Unreleased] without the heading and surrounding blank lines
+unreleased_body() {
+  local body
+  body="$(awk '
     /^## \[Unreleased\]/ { capture=1; next }
     capture && /^## \[/ { exit }
     capture { print }
-  ' "$CHANGELOG"
+  ' "$CHANGELOG" | awk 'BEGIN{blank=1} { if(NF||!blank){print; blank=0} }' | sed -e :a -e '/^$/{$d;N;ba' -e '}')"
+  [[ -n "$body" ]] || die "[Unreleased] section is empty; nothing to promote"
+  printf '%s\n' "$body"
 }
 
-# previous_version — last released X.Y.Z heading, or empty if none
+# latest_release_version — X.Y.Z of the newest released section
 # Uses POSIX awk (match + RSTART/RLENGTH) so it works under BSD awk on macOS.
-previous_version() {
-  awk '
+latest_release_version() {
+  local version
+  version="$(awk '
     /^## \[[0-9]+\.[0-9]+\.[0-9]+\]/ {
       match($0, /[0-9]+\.[0-9]+\.[0-9]+/)
       print substr($0, RSTART, RLENGTH)
       exit
     }
-  ' "$CHANGELOG"
+  ' "$CHANGELOG")"
+  [[ -n "$version" ]] || die "no previous released version found in CHANGELOG.md"
+  printf '%s\n' "$version"
 }
 
-# promote_unreleased <new-version> <date YYYY-MM-DD>
+# promote_unreleased <new-version> <date YYYY-MM-DD> <previous-version> <body>
+# Moves <body> under a new [X.Y.Z] heading and links it against <previous-version>.
 # Rewrites CHANGELOG.md in place (or prints diff in dry-run).
 promote_unreleased() {
-  local new="$1" date="$2"
+  local new="$1" date="$2" prev="$3" body="$4"
   is_semver "$new" || die "invalid semver: $new"
+  is_semver "$prev" || die "invalid semver: $prev"
   [[ "$date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || die "invalid date (YYYY-MM-DD): $date"
-
-  local body
-  body="$(extract_unreleased)"
-  # strip leading/trailing blank lines
-  body="$(printf '%s' "$body" | awk 'BEGIN{blank=1} { if(NF||!blank){print; blank=0} } END{}' | sed -e :a -e '/^$/{$d;N;ba' -e '}')"
-  if [[ -z "$body" ]]; then
-    die "[Unreleased] section is empty; nothing to promote"
-  fi
-
-  local prev
-  prev="$(previous_version)"
-  [[ -n "$prev" ]] || die "no previous released version found in CHANGELOG.md"
-
-  if ! semver_gt "$new" "$prev"; then
-    die "new version $new is not greater than previous $prev"
-  fi
 
   local tmp
   tmp="$(mktemp)"
