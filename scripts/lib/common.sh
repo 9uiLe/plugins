@@ -147,11 +147,22 @@ confirm_typed() {
 # ---------- rollback ----------
 
 # install_rollback_trap <branch-to-cleanup>
-# Restores tracked files and (optionally) deletes the working branch on ERR/INT.
+# Until clear_rollback_trap, any non-zero exit restores tracked files and
+# deletes the working branch.
+# EXIT rather than ERR: ERR does not fire for `exit` (die) or for a failure
+# inside a function, so it would miss most failures.
 install_rollback_trap() {
   local branch="${1:-}"
   # shellcheck disable=SC2064
-  trap "_rollback '$branch'" ERR INT
+  trap "_rollback_on_failure '$branch'" EXIT
+  trap 'exit 130' INT TERM
+}
+
+_rollback_on_failure() {
+  local status=$?
+  if (( status != 0 )); then
+    _rollback "$1"
+  fi
 }
 
 _rollback() {
@@ -171,5 +182,5 @@ _rollback() {
 }
 
 clear_rollback_trap() {
-  trap - ERR INT
+  trap - EXIT INT TERM
 }

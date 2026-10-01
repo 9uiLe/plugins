@@ -13,6 +13,7 @@
 ### Changed
 
 - **model-strategy**: `route-policy.mjs` の route / audit の契約を整理。`route` は mode に関係なく `{ rule, subtype, assignee: { claude, codex }, reasons }` を返し、conductor 以外では `subtype` が `null` になる。Codex 側の担当名をモデル名から `07-codex.md` の役割名 (`scout` / `implementer` / `main` / `judge`) に変更し、モデルと effort の対応は 07 だけに置く。`audit` は `mode` / `modeSource` / `sessionModel` を常に必須とし、`mode` を省略したマニフェストは `MISSING_MODE_FIELDS` になる (旧形式の免除により conductor の検査を回避できた状態を解消)。finding の error / warn 級は出力に存在しない文書上の区分だったため、文書と Test 名から削除。
+- **release automation**: `release-prepare.sh` の 1 回のリリースで 0 件・1 件・複数件のプラグイン版を変更できるよう CLI を変更。**破壊的変更**: `--plugin <name> --bump <kind>` / `--version X.Y.Z` を、プラグインごとに繰り返す `--plugin <name>:<patch|minor|major|X.Y.Z>` に置き換え、`--plugin` を省略したリリースを可能にした。`--release-bump` と `--release-version` の同時指定（`patch` を含む）と同じプラグインの重複指定を拒否し、リリース版 ≥ リリース後の全プラグイン版の最大値を dry-run でも編集前に検査する。CHANGELOG の `[Unreleased]` 本文と直前のリリース版を編集前に一度だけ読み、CHANGELOG の繰り上げとリリースノート生成の両方へ渡すことで、dry-run と本番で同じ内容を生成する。dry-run は stage するファイルと PR 本文も表示する。`releases/vX.Y.Z.md` の既存チェックを編集前へ移し、ブランチ作成後・push 前の失敗では `die` や関数内の失敗・中断でも変更とブランチを必ず巻き戻すよう修正（従来は ERR trap に依存し、多くの失敗で半端なブランチと変更が残っていた）。version 一致検査と `release-prepare.sh` の受け入れテストを追加し CI で実行。`RELEASING.md` を新しい CLI と手順に更新。
 
 ### Removed
 
