@@ -5,6 +5,8 @@
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-02
+
 ### Added
 
 - **engineering-principles** (v0.1.0): コード・テスト・ドメインモデル・責務境界を、仕様変更を局所的かつ安全にする観点で設計・レビュー・改善する `maintainable-code` スキルを Claude Code / Codex の両 marketplace に追加。Test で What、Code で How、Documentation で Context を表す原則のもと、What → State → Test responsibility → Responsibility → Coupling → How → Repository coherence → Simplification & validation の順に確認する。Implement / Review / Improve を依頼から判定し、Implement / Improve は会話履歴なしで Repository から現在仕様を理解できる状態を完了条件とする。Review は Severity・Category・Finding・Evidence・Impact・Direction の形式で実際の問題だけを報告する。Test 数・abstraction・コメント削除・Documentation の量・パターン準拠をそれ自体の改善とみなさない。
@@ -21,7 +23,6 @@
 ### Removed
 
 - **quality-architect**: プラグインを削除し、Claude Code / Codex の marketplace から除外。README、コントリビューション・リリース・セキュリティの各ガイド、Issue / PR テンプレートの参照を整理。
-
 ## [0.7.2] - 2026-09-14
 
 ### Fixed
@@ -227,7 +228,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/9uiLe/plugins/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/9uiLe/plugins/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/9uiLe/plugins/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/9uiLe/plugins/compare/v0.6.0...v0.7.0
