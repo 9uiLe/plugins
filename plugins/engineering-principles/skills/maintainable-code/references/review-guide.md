@@ -22,7 +22,7 @@ Review / Improve mode で、Finding の採否、severity、範囲を判断する
 
 severity は Impact から判定する。Impact を具体的な仕様変更・状態追加・Test 保守の作業として説明できなければ、Low にもせず Finding 自体を出さない。style、好み、一般論、「より綺麗に見える」だけを理由にした Finding は出さない。
 
-報告は severity 順、同じ severity 内では SKILL.md の Review の優先順位に従う。
+報告は severity 順、同じ severity 内では SKILL.md の Review の「Category と優先順位」に従う。
 
 ## Evidence と Impact の書き方
 
