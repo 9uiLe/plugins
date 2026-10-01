@@ -36,14 +36,6 @@
         "html",
         "visualization"
       ]
-    },
-    {
-      "name": "code-mental-model",
-      "source": "./plugins/code-mental-model",
-      "description": "Build a usable mental model of unfamiliar existing code and changes in a self-contained visual HTML guide.",
-      "version": "0.3.5",
-      "category": "development",
-      "tags": ["code-comprehension", "mental-model", "visualization", "html"]
     }
   ]
 }

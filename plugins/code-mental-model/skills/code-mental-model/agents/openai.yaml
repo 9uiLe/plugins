@@ -1,4 +1,0 @@
-interface:
-  display_name: "Code Mental Model"
-  short_description: "未知の実装や差分を理解するための図解 HTML を作成"
-  default_prompt: "$code-mental-model で、この実装または変更のメンタルモデルを作成してください。"
