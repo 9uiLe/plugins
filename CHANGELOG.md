@@ -7,6 +7,7 @@
 
 ### Added
 
+- **engineering-principles** (v0.1.0): コード・テスト・ドメインモデル・責務境界を、仕様変更を局所的かつ安全にする観点で設計・レビュー・改善する `maintainable-code` スキルを Claude Code / Codex の両 marketplace に追加。Test で What、Code で How、Documentation で Context を表す原則のもと、What → State → Test responsibility → Responsibility → Coupling → How → Repository coherence → Simplification & validation の順に確認する。Implement / Review / Improve を依頼から判定し、Implement / Improve は会話履歴なしで Repository から現在仕様を理解できる状態を完了条件とする。Review は Finding / Evidence / Impact / Direction 形式で実際の問題だけを報告する。Test 数・abstraction・コメント削除・Documentation の量・パターン準拠をそれ自体の改善とみなさない。
 - **architecture-explainer** (v0.1.0): コードとアーキテクチャから、目的・構成・実行時の動き・コード・設計理由・変更影響を辿れる HTML 説明資料を作成し、既存資料をコードと照合して評価・改善するプラグインを Claude Code / Codex の両 marketplace に追加。HTML の前に Explanation Model を作り、claim を Observed / Inferred / Unknown に分けて file・symbol へ辿れるようにする。6 つの Hard Gate と評価次元による自己評価、構造・リンク・standalone・code ref を検査する validator を同梱。評価用の synthetic fixture と、その再構成・bug の再現を確かめる統合テスト、LLM 評価と表示確認の手順を追加。
 
 ### Removed

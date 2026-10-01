@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maintainable Code"
+  short_description: "Test で What、Code で How を表し、仕様変更を局所的にする実装・レビュー・改善"
+  default_prompt: "$maintainable-code の観点で、この変更を仕様の表現・状態設計・Test の責務・結合度からレビューしてください。"

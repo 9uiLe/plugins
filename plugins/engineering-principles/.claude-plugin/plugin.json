@@ -1,0 +1,19 @@
+{
+  "name": "engineering-principles",
+  "version": "0.1.0",
+  "description": "Design, review, and improve code, tests, and documentation for long-term maintainability: tests express What, code expresses How, documentation carries Context, and the repository alone explains the current specification.",
+  "author": {
+    "name": "9uiLe",
+    "url": "https://github.com/9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins/tree/master/plugins/engineering-principles",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": [
+    "maintainability",
+    "testing",
+    "state-modeling",
+    "code-review",
+    "refactoring"
+  ]
+}
