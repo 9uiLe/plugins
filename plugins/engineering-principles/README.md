@@ -21,7 +21,7 @@ codex plugin add engineering-principles@9uile-plugins
 | Mode | 依頼例 | 成果物 |
 | --- | --- | --- |
 | Implement | 「maintainable-code を使ってこの機能を実装して」 | 実装と、その仕様を保証する Test、変更に依存する Documentation 等の整合。範囲外の問題は改善候補として報告 |
-| Review | 「maintainable-code の観点でこの変更をレビューして」 | Finding / Evidence / Impact / Direction 形式の指摘（コードは変更しない） |
+| Review | 「maintainable-code の観点でこの変更をレビューして」 | severity 順の Finding 一覧。形式は `SKILL.md` の「Finding の形式」（コードは変更しない） |
 | Improve | 「maintainable-code を使ってこの実装を改善して」 | 動作を維持した構造の改善、Test の保証責任の整理、変更に依存する Documentation 等の整合 |
 
 「コードとドキュメントの整合性も確認して」「会話にしか残っていない前提がないか確認して」のように、変更後の Repository の整合性を確かめる依頼にも使います。

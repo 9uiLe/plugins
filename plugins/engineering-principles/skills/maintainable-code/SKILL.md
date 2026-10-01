@@ -50,7 +50,7 @@ description: Design, review, or improve code, tests, and docs for long-term main
 
 - チェックリストを機械的に報告せず、実際に問題になっている箇所だけを報告する。
 - Repository coherence も確認する。指摘のみの依頼なら修正せず、category `Repository coherence` の Finding として報告する。
-- 優先順位: 仕様との不一致 → 不正な状態 → Test responsibility → 責務の混在 → 強い coupling → Repository coherence → 冗長性 → style。
+- Category と優先順位: 仕様との不一致 → 不正な状態 → Test responsibility → 責務の混在 → 強い coupling → Repository coherence → 冗長性 → style。
 
 ### Improve
 
@@ -68,6 +68,8 @@ description: Design, review, or improve code, tests, and docs for long-term main
 Review と Improve の指摘は次の形式で書く。具体的な変更が明らかな場合は修正案を添えてよい。
 
 ```text
+Severity:  review-guide.md の Severity 表の値
+Category:  Review の「Category と優先順位」の項目のうち一つ
 Finding:   何が問題か
 Evidence:  file:line と、問題を示す観測事実
 Impact:    仕様変更・状態追加・Test 保守で何が起きるか

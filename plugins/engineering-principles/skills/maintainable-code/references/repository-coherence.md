@@ -104,6 +104,8 @@ How を Documentation に複製しない。README が内部の処理手順を詳
 Repository coherence の Finding は、次のような具体的な Impact を説明できる場合だけ出す: 誤った実装につながる、誤った使い方につながる、責務が再び分散する、仕様の判断を誤らせる、変更箇所の判断を誤らせる、同じ知識の二重管理で stale になりやすい。「README を更新すると親切」程度のものは Finding にしない。
 
 ```text
+Severity:  Medium
+Category:  Repository coherence
 Finding:   README が、セッションの有効期限判定の owner を旧 SessionStore と説明している。
 Evidence:  README.md:42 は SessionStore.isExpired を案内している。auth/session_policy.py:18 の
            SessionPolicy.is_expired が判定し、tests/test_session_policy.py が境界を保証している。
