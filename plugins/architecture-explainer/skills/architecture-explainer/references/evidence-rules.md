@@ -7,7 +7,7 @@
 | Status | 条件 | HTML での表示 |
 | --- | --- | --- |
 | Observed | コード・テスト・設定・設計資料・commit から直接確認できる | evidence へのリンク（code ref）を付ける。badge は任意 |
-| Inferred | 複数の Observed から合理的に導ける | 必ず `inferred` badge を付け、推論の元にした Observed を示す |
+| Inferred | Observed から合理的に導ける。推論の元にした Observed を示せる | 必ず `inferred` badge を付け、推論の元にした Observed を示す |
 | Unknown | 提供された Source Truth から判断できない | 必ず `unknown` badge を付け、Known unknowns に問いと解消方法を置く |
 
 HTML で badge も evidence リンクもない architecture claim は、Review では `unsupported` として扱う。

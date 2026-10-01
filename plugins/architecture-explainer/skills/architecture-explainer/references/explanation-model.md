@@ -71,7 +71,7 @@ Source Truth → Evidence → Explanation Model → Explanation Plan → HTML
 | Runtime | 代表 scenario の trigger、手順、例外経路 | 静的な設定・データ定義だけが対象 |
 | State | 状態を持つ要素の状態と遷移 | 状態を持たない、または状態が説明の問いに関係しない |
 | Data | 主要データの保存先、書き手、読み手 | データの所有や流れが問いに関係しない |
-| Decision | 設計判断、理由、trade-off、代替案 | 根拠がない判断は理由を作らず `unknowns` へ置く |
+| Decision | 設計判断、理由、trade-off、代替案 | 問いに関係する判断がない。判断は確認できても理由に根拠がなければ、理由を作らず `rationale.status` を `unknown` にして `unknowns` に置く |
 | Invariant | 常に成り立つべき条件と、それを強制している箇所 | 問いに関係する不変条件がない |
 | Code | `code_locations` と `evidence` による file / symbol / line | 不要な場合はない |
 | Change Impact | 変更を起点にした affected / unaffected / requires verification | 読者の目的に変更理解が含まれない（newcomer の初回 orientation など） |

@@ -1,9 +1,9 @@
 """Check the structure of an architecture explainer HTML file; print JSON findings.
 
 Checks structure only: standalone dependencies, anchors, ids, headings, figure
-contracts, evidence markers, element nesting, simple accessibility, and (with
---source-root) that code references point at existing files and symbols. It
-does not judge whether claims are true. Exit codes: 0 no errors, 1 errors found
+contracts, evidence markers, element nesting, overflow-prone tables, SVGs and
+Code Maps, simple accessibility, and (with --source-root) that code references
+point at existing files and symbols. It does not judge whether claims are true. Exit codes: 0 no errors, 1 errors found
 or file unreadable, 2 argument parsing error.
 """
 import argparse
@@ -20,8 +20,8 @@ HANDLER_ALLOWED_TAGS = {"a", "button", "input", "select", "textarea", "summary",
 VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
 OPTIONAL_END_TAGS = {"html", "head", "body", "p", "li", "dt", "dd", "tr", "td", "th", "thead", "tbody", "tfoot",
                      "caption", "colgroup", "option", "optgroup", "rt", "rp"}
-# The requester's cognitive-load heuristic is 5-9 main elements per view; it is
-# a prompt to consider splitting the view, so exceeding it is only a warning.
+# 5-9 main elements per view is a cognitive-load heuristic (visualization-selection.md);
+# it is a prompt to consider splitting the view, so exceeding it is only a warning.
 MAX_FIGURE_NODES = 9
 EXTERNAL_URL = re.compile(r"^(?:[a-z][a-z0-9+.-]*:)?//", re.IGNORECASE)
 CSS_URL = re.compile(r"""(?:@import\s+(?:url\()?|url\()\s*['"]?([^'")\s]+)""", re.IGNORECASE)

@@ -25,13 +25,13 @@ audience が指定されていなければ、依頼文の語（「新規参加�
 | 読者の問い | View | Model から読む要素 | 主な表現 |
 | --- | --- | --- | --- |
 | これは何か | Overview | purpose, subject | 2〜3 行の説明 + 小さな context 図 |
-| 誰・何と接続しているか | System Context | context.actors, external_systems, boundaries | SVG。対象 system を中央、外部を周囲、境界を明示 |
+| 誰・何と接続しているか | System Context | context.actors, external_systems, boundaries | `.map` と `.boundary`、または SVG。対象 system と外部を分け、境界を明示 |
 | 何が何を担当しているか | Component / Responsibility Map | components（同一 level）, depends_on | SVG または `.map` の格子。box に責務、矢印に意味 |
 | 実行時にどう動くか | Sequence / Runtime Flow | runtime_scenarios | `.seq` の lifeline 表または `.flow` の番号付き step。例外経路を分岐で示す |
 | 状態がどう変化するか | State Machine | states | SVG または `.states` の遷移表。遷移に `event [guard] / action` |
 | データがどう流れるか | Data Flow | data | SVG。data store と、データ名つきの流れ |
 | なぜこの設計なのか | Decision / Trade-off View | decisions, unknowns | `.decision` カード。context / decision / rationale / trade-off / 根拠 |
-| コードのどこに存在するか | Code Map | components.code_locations, evidence | 表または木。claim → file → symbol |
+| コードのどこに存在するか | Code Map | components.code_locations, evidence | `.codemap` の表。component → file → symbol → 関連 claim |
 | 変更すると何に影響するか | Change Impact Map | change_impacts, invariants | `.impact` の木。affected / unaffected / requires verification を文字と線種で区別 |
 | どこへ配置されるか | Deployment View | boundaries（process / node） | SVG。node と process の境界 |
 | アルゴリズムの内部を知りたい | Annotated Code / Step View | runtime_scenarios.steps, invariants | 抜粋コード + 番号付き注釈 |
@@ -54,7 +54,7 @@ audience が指定されていなければ、依頼文の語（「新規参加�
 
 ## 5. 情報量を制御する
 
-1 つの view の主要要素がおよそ 5〜9 個を超えて読みにくくなる場合は、`Overview → Focused View` に分割する。この数は依頼仕様が示した認知負荷の目安であり、合否の閾値ではない。分割するかどうかは「問いに答えるために、その要素が今必要か」で判断する。
+1 つの view の主要要素がおよそ 5〜9 個を超えて読みにくくなる場合は、`Overview → Focused View` に分割する。この数は認知負荷を疑うための目安であり、合否の閾値ではない（validator は超えた figure に warning を出す）。分割するかどうかは「問いに答えるために、その要素が今必要か」で判断する。
 
 ## 6. First view
 
