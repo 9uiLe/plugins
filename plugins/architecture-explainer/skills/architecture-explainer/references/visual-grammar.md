@@ -57,7 +57,7 @@ Inferred と Unknown は要素の種類ではなく、要素や関係に重ね�
 | `.states` | State の遷移表 | `<table class="states">`（遷移元 / event [guard] / action / 遷移先） |
 | `.decision` | Decision / Trade-off | `<article class="decision">` に context / decision / rationale / trade-off / 根拠 |
 | `.impact` | Change Impact | 入れ子の `<ul class="impact">`、各 `<li data-impact="…">` |
-| `.codemap` | Code Map | `<table class="codemap">`。列は component / 責務 / file / symbol の順で、関連 claim は必要なら最後に足す（CSS は 3・4 列目を file / symbol として扱う）。各 `<td>` に列見出しと同じ `data-label` を付ける。狭い画面では行がラベル付きの縦並びになる |
+| `.codemap` | Code Map | `<table class="codemap">`。列は component / 責務 / source で、関連 claim は必要なら最後に足す。source セルには `<span class="src-file">` と `<span class="src-symbol">` を縦に並べる。各 `<td>` に列見出しと同じ `data-label` を付ける。狭い画面では行がラベル付きの縦並びになる |
 | `.annotated` | Annotated Code | `<pre class="annotated">` 内の `<mark data-note="1">` と、続く `<ol class="notes">` |
 
 図の要素は `class="node"` と `data-kind` を持つ。SVG でも `<g class="node" data-kind="component">` とする。validator はこの数で view の要素数を数える。

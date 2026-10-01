@@ -207,17 +207,15 @@ figcaption { margin-top: .75rem; color: var(--muted); font-size: .9rem; }
 table { border-collapse: collapse; width: 100%; font-size: .92rem; }
 th, td { text-align: left; vertical-align: top; padding: .5rem .6rem; border-bottom: 1px solid var(--border); }
 th { background: var(--surface); font-weight: 600; }
-/* Without a floor, table layout gives the wrapping prose column the width and
-   cuts paths into a few characters per line. 24ch fits most file and symbol
-   names whole (90th percentile of the eval fixture's Code Maps); longer ones
-   still wrap instead of forcing the table wider. */
-.codemap td:nth-child(3), .codemap td:nth-child(4) {
-  font-family: var(--mono); font-size: .85rem; overflow-wrap: anywhere; min-width: calc(24ch + 1.2rem);
-}
+/* The source cell stacks file over symbol. They wrap only at the <wbr> the
+   HTML puts after path and identifier separators: overflow-wrap: anywhere would
+   let table layout squeeze them to a few characters per line, and a min-width
+   cannot keep both whole names and the table inside the page. */
+.codemap .src-file, .codemap .src-symbol { display: block; font-family: var(--mono); font-size: .85rem; }
 .codemap tr:target, tr:target { background: var(--surface-strong); }
-/* On narrow screens a 4-5 column table squeezes file and symbol to a few
-   characters per line, so each row becomes a labelled block instead. The
-   header is not visible in this layout; data-label carries each column name. */
+/* On narrow screens a multi-column table leaves each column a few characters
+   wide, so each row becomes a labelled block instead. The header is not
+   visible in this layout; data-label carries each column name. */
 @media (max-width: 640px) {
   .codemap thead { display: none; }
   .codemap, .codemap tbody, .codemap tr, .codemap td { display: block; }

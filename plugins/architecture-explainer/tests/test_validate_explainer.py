@@ -176,16 +176,25 @@ class ValidateExplainerTests(unittest.TestCase):
         self.assertEqual(returncode, 0, output)
         self.assertEqual(self.codes(output['warnings']), {'svg-width', 'table-scroll'})
 
-    def test_code_map_cells_need_labels_for_narrow_screens(self):
-        codemap = ('<div class="table-wrap"><table class="codemap"><thead><tr><th>file</th><th>symbol</th></tr></thead>'
-                   '<tbody><tr><td{0}>app/token_manager.py</td><td{1}>TokenManager</td></tr></tbody></table></div>')
-        unlabelled = VALID_BODY.replace('</main>', codemap.format('', ' data-label="symbol"') + '</main>')
-        returncode, output = self.run_cli(page(unlabelled))
-        self.assertEqual(returncode, 0, output)
-        self.assertEqual(self.codes(output['warnings']), {'codemap-label'})
+    def test_code_map_markup_contract(self):
+        def codemap(cell, label=' data-label="source"'):
+            table = ('<div class="table-wrap"><table class="codemap"><thead><tr><th>component</th><th>source</th></tr></thead>'
+                     f'<tbody><tr><td data-label="component">TokenManager</td><td{label}>{cell}</td></tr></tbody></table></div>')
+            return page(VALID_BODY.replace('</main>', table + '</main>'))
 
-        labelled = VALID_BODY.replace('</main>', codemap.format(' data-label="file"', ' data-label="symbol"') + '</main>')
-        self.assertEqual(self.run_cli(page(labelled))[1]['warnings'], [])
+        source = ('<span class="src-file">app/<wbr>client/<wbr>token_manager.py</span>'
+                  '<span class="src-symbol">TokenManager.<wbr>_refresh_<wbr>once</span>')
+        cases = {
+            frozenset(): codemap(source),
+            frozenset({'codemap-label'}): codemap(source, label=''),
+            frozenset({'codemap-source'}): codemap('app/<wbr>client/<wbr>token_manager.py'),
+            frozenset({'codemap-break'}): codemap(source.replace('client/<wbr>', 'client/')),
+        }
+        for expected, html in cases.items():
+            with self.subTest(expected=sorted(expected)):
+                returncode, output = self.run_cli(html)
+                self.assertEqual(returncode, 0, output)
+                self.assertEqual(self.codes(output['warnings']), expected)
 
     def test_malformed_nesting_is_warned(self):
         body = VALID_BODY.replace('</main>', '<div><figure data-question="Q"><figcaption>C</figcaption></div></main></aside>')
