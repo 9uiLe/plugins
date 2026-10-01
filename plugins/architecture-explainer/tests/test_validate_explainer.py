@@ -15,7 +15,7 @@ VALID_BODY = '''
     <p>Client refreshes expired access tokens once per expiry.
       <span class="badge" data-evidence="inferred">推論</span></p>
     <figure class="view" data-question="Who talks to whom during refresh?">
-      <svg viewBox="0 0 100 40" role="img" aria-labelledby="ctx-title">
+      <svg viewBox="0 0 100 40" width="100" role="img" aria-labelledby="ctx-title">
         <title id="ctx-title">Refresh context</title>
         <g class="node" data-kind="component"><rect width="40" height="20"/></g>
       </svg>
@@ -26,7 +26,7 @@ VALID_BODY = '''
     <h2>Where it lives</h2>
     <a class="code-ref" href="#ev-refresh" data-file="app/token_manager.py"
        data-symbol="TokenManager._refresh_once" data-line="3">_refresh_once</a>
-    <table><tr id="ev-refresh"><td>app/token_manager.py</td></tr></table>
+    <div class="table-wrap"><table><tr id="ev-refresh"><td>app/token_manager.py</td></tr></table></div>
   </section>
 </main>
 '''
@@ -169,6 +169,29 @@ class ValidateExplainerTests(unittest.TestCase):
         self.assertEqual(returncode, 1)
         self.assertIn('non-interactive-handler', self.codes(output['errors']))
         self.assertEqual(self.run_cli(page(VALID_BODY.replace('</main>', '<button onclick="go()">open</button></main>')))[0], 0)
+
+    def test_overflow_prone_tables_and_svgs_are_warned(self):
+        body = VALID_BODY.replace(' width="100"', '').replace('<div class="table-wrap">', '<div>')
+        returncode, output = self.run_cli(page(body))
+        self.assertEqual(returncode, 0, output)
+        self.assertEqual(self.codes(output['warnings']), {'svg-width', 'table-scroll'})
+
+    def test_code_map_cells_need_labels_for_narrow_screens(self):
+        codemap = ('<div class="table-wrap"><table class="codemap"><thead><tr><th>file</th><th>symbol</th></tr></thead>'
+                   '<tbody><tr><td{0}>app/token_manager.py</td><td{1}>TokenManager</td></tr></tbody></table></div>')
+        unlabelled = VALID_BODY.replace('</main>', codemap.format('', ' data-label="symbol"') + '</main>')
+        returncode, output = self.run_cli(page(unlabelled))
+        self.assertEqual(returncode, 0, output)
+        self.assertEqual(self.codes(output['warnings']), {'codemap-label'})
+
+        labelled = VALID_BODY.replace('</main>', codemap.format(' data-label="file"', ' data-label="symbol"') + '</main>')
+        self.assertEqual(self.run_cli(page(labelled))[1]['warnings'], [])
+
+    def test_malformed_nesting_is_warned(self):
+        body = VALID_BODY.replace('</main>', '<div><figure data-question="Q"><figcaption>C</figcaption></div></main></aside>')
+        returncode, output = self.run_cli(page(body))
+        self.assertEqual(returncode, 0, output)
+        self.assertEqual(self.codes(output['warnings']), {'unclosed-element', 'stray-end-tag'})
 
     def test_document_metadata_is_required(self):
         html = f'<!doctype html><html><head></head><body>{VALID_BODY}</body></html>'

@@ -57,7 +57,7 @@ Inferred と Unknown は要素の種類ではなく、要素や関係に重ね�
 | `.states` | State の遷移表 | `<table class="states">`（遷移元 / event [guard] / action / 遷移先） |
 | `.decision` | Decision / Trade-off | `<article class="decision">` に context / decision / rationale / trade-off / 根拠 |
 | `.impact` | Change Impact | 入れ子の `<ul class="impact">`、各 `<li data-impact="…">` |
-| `.codemap` | Code Map | `<table class="codemap">`（component / 責務 / file / symbol / 関連 claim） |
+| `.codemap` | Code Map | `<table class="codemap">`（component / 責務 / file / symbol / 関連 claim の列順）。各 `<td>` に列見出しと同じ `data-label` を付ける。狭い画面では行がラベル付きの縦並びになる |
 | `.annotated` | Annotated Code | `<pre class="annotated">` 内の `<mark data-note="1">` と、続く `<ol class="notes">` |
 
 図の要素は `class="node"` と `data-kind` を持つ。SVG でも `<g class="node" data-kind="component">` とする。validator はこの数で view の要素数を数える。
@@ -65,7 +65,8 @@ Inferred と Unknown は要素の種類ではなく、要素や関係に重ね�
 ## SVG の規則
 
 - `<svg viewBox="…" role="img" aria-labelledby="…">` とし、最初の子に `<title>`、続けて図の要点を述べる `<desc>` を置く。
-- 幅は CSS で `width: 100%` にし、固定 px 幅にしない。
+- `width` 属性に viewBox と同じ幅を書く。広い画面では CSS が figure の幅に合わせ、狭い画面では縮小せず figure の中で横スクロールさせて、文字を読める大きさに保つ。
+- 狭い画面でも横スクロールなしで読ませたい少数要素の図（first view の文脈図など）は、SVG ではなく `.map` と `.boundary` で描くと折り返せる。
 - marker などの `id` は、ページ全体で一意にする（`arrow-ctx`、`arrow-deploy` のように view 名を付ける）。
 - 文字は `<text>` で書き、画像化しない。表示サイズで 13px 相当以上にする。
 - 色は CSS 変数（`var(--c-component)` など）を使い、SVG 内に独自の色を増やさない。

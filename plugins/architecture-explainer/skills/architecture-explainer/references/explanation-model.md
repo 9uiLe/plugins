@@ -13,12 +13,16 @@ Source Truth → Evidence → Explanation Model → Explanation Plan → HTML
 - すべての要素に安定した `id` を付ける。HTML の anchor（`id`）と同じ値を使うと、説明から model とコードへ辿れる。
 - 該当しない要素は空配列にする。セクションを埋めるために内容を作らない。
 - 各 claim は `status`（`observed` / `inferred` / `unknown`）と `evidence`（evidence id の配列）を持つ。分類規則は [evidence-rules.md](evidence-rules.md) に従う。
+- `status` が `unknown` の claim には、`unknowns` に `about` がその claim の `id` を指す行を置く。claim 自体の `evidence` は空にする。
+- decision は、判断の内容（`status`）と理由（`rationale.status`）を別々に分類する。実装から判断は確認できても、理由は Unknown であることが多い。
+- `source.revision` には、git 管理下なら commit SHA、そうでなければ資料名や取得日など版を識別できるものを書く。識別できなければ空にする。
 
 ## Schema
 
 ```json
 {
   "subject": {"title": "", "question": "この資料が答える問い", "scope": {"in": [], "out": []}},
+  "source": {"root": "", "revision": "", "materials": []},
   "audience": {"profile": "newcomer|implementer|reviewer|architect|debugger", "familiarity": "", "goal": "", "inferred_from": ""},
   "purpose": {"problem": "", "responsibility": "", "status": "", "evidence": []},
   "context": {
@@ -40,8 +44,9 @@ Source Truth → Evidence → Explanation Model → Explanation Plan → HTML
   "states": [{"id": "", "owner": "", "name": "", "transitions": [{"event": "", "guard": "", "to": "", "evidence": []}]}],
   "data": [{"id": "", "name": "", "stored_in": "", "written_by": [], "read_by": [], "evidence": []}],
   "decisions": [{
-    "id": "", "context": "", "decision": "", "rationale": "", "tradeoffs": [],
-    "alternatives": [], "status": "", "evidence": []
+    "id": "", "context": "", "decision": "", "status": "", "evidence": [],
+    "rationale": {"text": "", "status": "", "evidence": []},
+    "tradeoffs": [], "alternatives": []
   }],
   "invariants": [{"id": "", "description": "", "enforced_by": "", "status": "", "evidence": []}],
   "change_impacts": [{
@@ -51,7 +56,7 @@ Source Truth → Evidence → Explanation Model → Explanation Plan → HTML
     "requires_verification": [{"target": "", "reason": ""}]
   }],
   "glossary": [{"term": "", "meaning": "", "evidence": []}],
-  "unknowns": [{"id": "", "question": "", "reason": "", "how_to_resolve": ""}],
+  "unknowns": [{"id": "", "about": "", "question": "", "reason": "", "how_to_resolve": ""}],
   "evidence": [{"id": "", "kind": "code|test|doc|config|commit|issue", "file": "", "symbol": "", "line": 0, "note": ""}]
 }
 ```

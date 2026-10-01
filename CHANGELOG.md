@@ -7,7 +7,7 @@
 
 ### Added
 
-- **architecture-explainer** (v0.1.0): コードとアーキテクチャから、目的・構成・実行時の動き・コード・設計理由・変更影響を辿れる HTML 説明資料を作成し、既存資料をコードと照合して評価・改善するプラグインを Claude Code / Codex の両 marketplace に追加。HTML の前に Explanation Model を作り、claim を Observed / Inferred / Unknown に分けて file・symbol へ辿れるようにする。6 つの Hard Gate と評価次元による自己評価、構造・リンク・standalone・code ref を検査する validator を同梱。
+- **architecture-explainer** (v0.1.0): コードとアーキテクチャから、目的・構成・実行時の動き・コード・設計理由・変更影響を辿れる HTML 説明資料を作成し、既存資料をコードと照合して評価・改善するプラグインを Claude Code / Codex の両 marketplace に追加。HTML の前に Explanation Model を作り、claim を Observed / Inferred / Unknown に分けて file・symbol へ辿れるようにする。6 つの Hard Gate と評価次元による自己評価、構造・リンク・standalone・code ref を検査する validator を同梱。評価用の synthetic fixture と、その再構成・bug の再現を確かめる統合テスト、LLM 評価と表示確認の手順を追加。
 
 ### Removed
 

@@ -95,7 +95,7 @@ Overview（#context の node）
 ## Code linking
 
 - 主要 claim には `a.code-ref`（`data-file`、`data-symbol`）を付ける（[evidence-rules.md](evidence-rules.md)）。
-- `#code` の Code Map の各行に `id="ev-…"` を付け、code ref の `href` 先にする。
+- `#code` の Code Map の各行に `id="ev-…"` を付け、code ref の `href` 先にする。各セルには列見出しを `data-label` で付ける（`<td data-label="file">`）。
 - リポジトリの Web URL が分かる場合は、Code Map の行に外部リンクを追加する。分からない場合は相対パスの文字列にとどめる。
 
 ## Known unknowns
@@ -105,7 +105,7 @@ Overview（#context の node）
 ## Responsive と interaction
 
 - 本文の行長は約 72 文字幅に収め、図と表は横幅いっぱいまで使う。
-- 狭い画面では目次を本文の上へ移し、表は横スクロールさせる。SVG は viewBox で縮小する。
+- 狭い画面では目次を本文の上へ移す。表は `<div class="table-wrap">` か `figure.view` の中に置き、収まらない場合はその中で横スクロールさせる。SVG の幅は [visual-grammar.md](visual-grammar.md) の規則に従う。
 - interaction を作る場合は、`<button>` か `<a>` を使い、keyboard で操作でき、focus が見えるようにする。`div` に click handler を付けない。
 - `<details>` の中身は閉じたままでは印刷されない。印刷で読ませる必要がある情報は `<details>` の外に置く。
 
@@ -119,15 +119,3 @@ Overview（#context の node）
 - 読みやすい文字サイズと行長
 - 画面幅を変えたときに崩れない
 
-## Validator
-
-```bash
-python3 scripts/validate_explainer.py <html> [--source-root <repo>]
-```
-
-JSON を stdout に出力し、error があれば exit 1。検査するのは構造だけである。
-
-| 種別 | 内容 |
-| --- | --- |
-| error | `lang` / charset / viewport / `<title>` の欠落、`<h1>` が 1 つでない、重複 id、壊れた `#anchor`、外部・相対の script / stylesheet、`data-evidence` の不正値、`data-question` / `<figcaption>` のない figure、title も label もない SVG、alt のない img、click handler を持つ非操作要素、`--source-root` 指定時に存在しない `data-file` または file 内に現れない `data-symbol` |
-| warning | 見出し階層の飛び、`data-evidence` が 1 つもない、code ref が 1 つもない、主要要素が 9 個を超える figure、first view の figure が複数、正の `tabindex`、外部画像 |

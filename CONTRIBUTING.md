@@ -78,7 +78,7 @@ python3 -m unittest discover -s plugins/architecture-explainer/tests -v
 shellcheck -S warning -x scripts/*.sh scripts/lib/*.sh scripts/tests/*.sh
 ```
 
-マニフェストや配布対象の変更には `verify-versions.sh`、検証スクリプトの変更にはそのテスト、model-strategy の処理変更には Node.js のテスト、architecture-explainer の validator 変更には Python のテストを実行してください。CI の定義は [verify-versions.yml](./.github/workflows/verify-versions.yml) にあります。
+マニフェストや配布対象の変更には `verify-versions.sh`、検証スクリプトの変更にはそのテスト、model-strategy の処理変更には Node.js のテスト、architecture-explainer の validator・fixture 変更には Python のテストを実行してください。architecture-explainer の Skill 本文・reference・asset を変更した場合は、[LLM 評価の手順](./plugins/architecture-explainer/tests/eval/README.md) で Case を再実行してください。CI の定義は [verify-versions.yml](./.github/workflows/verify-versions.yml) にあります。
 
 ## Pull Request を送る
 

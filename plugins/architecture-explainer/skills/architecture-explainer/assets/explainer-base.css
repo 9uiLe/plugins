@@ -70,6 +70,7 @@ body {
   font-family: var(--font);
   font-size: 1rem;
   line-height: 1.7;
+  overflow-wrap: break-word;
 }
 
 a { color: var(--accent); text-underline-offset: 2px; }
@@ -80,7 +81,7 @@ a { color: var(--accent); text-underline-offset: 2px; }
 .skip:focus { left: .5rem; z-index: 10; }
 
 code, pre, kbd { font-family: var(--mono); font-size: .9em; }
-code { background: var(--surface); padding: .1em .3em; border-radius: 3px; overflow-wrap: anywhere; }
+code { background: var(--surface); padding: .1em .3em; border-radius: 3px; }
 
 /* ---------- page layout ---------- */
 
@@ -124,6 +125,11 @@ h4 { font-size: 1rem; margin: 1rem 0 .25rem; }
 
 figure.view { margin: 1.25rem 0; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); overflow-x: auto; }
 figure.view > svg { display: block; width: 100%; height: auto; max-height: 70vh; }
+/* Below this width a scaled-down SVG makes its labels unreadable, so it keeps
+   its own width attribute and the figure scrolls horizontally instead. */
+@media (max-width: 640px) {
+  figure.view > svg[width] { width: auto; max-width: none; max-height: none; }
+}
 figcaption { margin-top: .75rem; color: var(--muted); font-size: .9rem; }
 
 .legend { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; margin: .5rem 0 0; padding: 0; list-style: none; font-size: .85rem; color: var(--muted); }
@@ -199,10 +205,26 @@ figcaption { margin-top: .75rem; color: var(--muted); font-size: .9rem; }
 
 .table-wrap { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; font-size: .92rem; }
-th, td { text-align: left; vertical-align: top; padding: .5rem .6rem; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+th, td { text-align: left; vertical-align: top; padding: .5rem .6rem; border-bottom: 1px solid var(--border); }
 th { background: var(--surface); font-weight: 600; }
-.codemap td:nth-child(3), .codemap td:nth-child(4) { font-family: var(--mono); font-size: .85rem; overflow-wrap: anywhere; }
+/* Without a floor, table layout gives the wrapping prose column the width and
+   cuts paths into a few characters per line. 24ch fits most file and symbol
+   names whole (90th percentile of the eval fixture's Code Maps); longer ones
+   still wrap instead of forcing the table wider. */
+.codemap td:nth-child(3), .codemap td:nth-child(4) {
+  font-family: var(--mono); font-size: .85rem; overflow-wrap: anywhere; min-width: calc(24ch + 1.2rem);
+}
 .codemap tr:target, tr:target { background: var(--surface-strong); }
+/* On narrow screens a 4-5 column table squeezes file and symbol to a few
+   characters per line, so each row becomes a labelled block instead. The
+   header is not visible in this layout; data-label carries each column name. */
+@media (max-width: 640px) {
+  .codemap thead { display: none; }
+  .codemap, .codemap tbody, .codemap tr, .codemap td { display: block; }
+  .codemap tr { padding: .4rem 0; border-bottom: 1px solid var(--border); }
+  .codemap td { padding: .1rem .6rem; border: 0; }
+  .codemap td[data-label]::before { content: attr(data-label); display: block; font-family: var(--font); font-size: .75rem; color: var(--muted); }
+}
 
 /* ---------- decision / risk ---------- */
 
@@ -226,7 +248,8 @@ th { background: var(--surface); font-weight: 600; }
 .impact li[data-impact="unaffected"] { color: var(--muted); }
 .impact li[data-impact="unaffected"]::before { content: "影響なし"; color: var(--muted); }
 .impact li[data-impact="verify"]::before { content: "要確認"; color: var(--c-verify); border-style: dashed; }
-.impact .origin { font-weight: 700; }
+.impact li.origin { font-weight: 700; }
+.impact li.origin > ul { font-weight: 400; }
 
 /* ---------- evidence ---------- */
 
@@ -236,7 +259,7 @@ th { background: var(--surface); font-weight: 600; }
 .badge[data-evidence="unknown"] { color: var(--c-unknown); border-style: dotted; }
 .badge[data-evidence="unknown"]::after { content: " ?"; }
 
-.code-ref { font-family: var(--mono); font-size: .82rem; overflow-wrap: anywhere; padding: 0 .3rem; border: 1px solid var(--border); border-radius: 4px; text-decoration: none; background: var(--surface); }
+.code-ref { font-family: var(--mono); font-size: .82rem; padding: 0 .3rem; border: 1px solid var(--border); border-radius: 4px; text-decoration: none; background: var(--surface); }
 .code-ref:hover { text-decoration: underline; }
 
 /* ---------- progressive disclosure ---------- */

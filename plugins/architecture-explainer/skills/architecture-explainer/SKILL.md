@@ -1,6 +1,6 @@
 ---
 name: architecture-explainer
-description: Create, review, and improve evidence-backed HTML explanations of source code and software architecture that let readers build a correct mental model - purpose, context, structure, runtime behavior, code locations, design rationale, and change impact. Use when asked to explain a repository, subsystem, feature, or bug mechanism as a visual HTML document for newcomers, implementers, reviewers, architects, or debuggers; to evaluate an existing architecture or code explanation HTML against the actual code; or to redesign such an HTML explanation. Japanese triggers - アーキテクチャを HTML で説明, 新規参加者向けに仕組みを可視化, 不具合の原因と修正後の仕組みを図解, この architecture.html をコードと照合して評価, 説明資料を改善. Do not use for generic HTML rendering of provided content, requirement-to-design documents, data charts, PR code review without an explanation artifact, or a quick text answer about how code works.
+description: Create, review, and improve evidence-backed HTML explanations of source code and software architecture that let readers build a correct mental model - purpose, context, structure, runtime behavior, code locations, design rationale, and change impact. Use when asked to explain a repository, subsystem, feature, or bug mechanism as a visual HTML document for newcomers, implementers, reviewers, architects, or debuggers; to evaluate an existing architecture or code explanation HTML against the actual code; or to redesign such an HTML explanation. Japanese triggers - アーキテクチャを HTML で説明, 新規参加者向けに仕組みを可視化, 不具合の原因と修正後の仕組みを図解, この architecture.html をコードと照合して評価, 説明資料を改善. Do not use for generic HTML pages or web design, data charts, requirement-to-design documents, routine PR review, writing or changing code, or a plain summary of what code does.
 ---
 
 # Architecture Explainer
@@ -14,9 +14,9 @@ Source Truth → Evidence → Explanation Model → Explanation Plan（audience 
 ## 必須制約
 
 1. **HTML を直接書かない。** コードを読んだら、まず Explanation Model を作り `explanation-model.json` に保存する。HTML はその model から作る。
-2. **Evidence を分ける。** すべての claim を Observed / Inferred / Unknown に分類する。設計意図、導入理由、将来計画、business・performance・security requirement は、明示的な根拠がない限り Unknown とし、推測で埋めない。
-3. **1 view で 1 つの問いに答える。** 抽象度の異なる要素を同じ view に並べない。box には責務を、矢印には意味を書く。
-4. **standalone HTML にする。** CSS と SVG は inline で書き、外部 CDN を必須にしない。記法やライブラリの使用を目的にしない。
+2. **Evidence を分ける。** すべての claim を Observed / Inferred / Unknown に分類し、根拠のない設計意図や要件を推測で埋めない。分類規則は [evidence-rules.md](references/evidence-rules.md) が正本。
+3. **問いから view を選ぶ。** 1 view で 1 つの問いに答える。規則は [visualization-selection.md](references/visualization-selection.md) が正本。
+4. **standalone HTML にする。** 外部 CDN を必須にしない。技術方針は [html-structure.md](references/html-structure.md) が正本。
 5. **Hard Gate 違反があれば完了にしない。** 見た目が良くても、違反があれば受け入れない。
 6. **作業範囲を守る。** 対象リポジトリのコードは変更しない。既存 HTML は、上書きを依頼された場合だけ上書きする。外部への公開・送信は、別途その依頼がある場合だけ行う。
 
@@ -47,7 +47,7 @@ script のパスは、この `SKILL.md` があるディレクトリからの相�
 4. **Explanation Plan を作る。** [visualization-selection.md](references/visualization-selection.md) に従い、audience の問いを選び、問いごとに view を選ぶ。
 5. **HTML を作る。** [html-structure.md](references/html-structure.md) と [visual-grammar.md](references/visual-grammar.md) に従い、`assets/explainer-base.css` を `<style>` に inline する。first view は orientation だけにする。
 6. **構造を検証する。** `python3 scripts/validate_explainer.py <html> --source-root <repo>` を実行し、error をすべて直す。warning は理由を確認し、直すか、直さない理由を記録する。ブラウザを使える場合は、PC 幅と狭い幅で表示し、横にはみ出す要素や重なりがないことを確認する。
-7. **評価する。** [evaluation-rubric.md](references/evaluation-rubric.md) で Hard Gate と各次元を判定する。完了条件を満たさなければ、修正優先順位に従って直し、6 から繰り返す。繰り返しは最大 3 iteration とし、残った問題は報告する。
+7. **評価する。** [evaluation-rubric.md](references/evaluation-rubric.md) で Hard Gate と各次元を判定する。完了条件を満たさなければ、修正優先順位に従って直し、6 から繰り返す。繰り返しの止め方も rubric に従う。
 8. **報告する。** 下記「報告」の内容を返す。
 
 ### Review の手順
