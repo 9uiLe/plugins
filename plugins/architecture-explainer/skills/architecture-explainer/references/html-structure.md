@@ -1,0 +1,121 @@
+# HTML Structure
+
+HTML は Explanation Plan を描く最終形式である。1 ファイルで開けるようにし（standalone）、HTML、CSS、inline SVG、必要最小限の vanilla JavaScript で作る。
+
+## 技術方針
+
+- `assets/explainer-base.css` の内容を `<style>` に inline する。資料固有の調整は、その後ろに追記する。
+- 外部 CDN、外部 font、外部 script を読み込まない。React、D3、Mermaid などは、使わないと説明品質が明確に下がる場合だけ使い、その場合も inline で同梱し、理由を報告する。
+- 進行の制御（開閉、drill-down）は `<details>` と anchor link で作る。JavaScript は、静的な HTML では実現できない interaction が問いへの理解を助ける場合だけ追加する。
+
+## Information Architecture
+
+Explanation Plan の問いに対応する section だけを、次の順から選んで置く。番号と id は固定し、資料間で同じ id を同じ意味に使う。
+
+| Section id | 見出し | 答える問い |
+| --- | --- | --- |
+| `what` | What is this? | これは何か（first view） |
+| `context` | System Context | 誰・何と接続するか |
+| `responsibilities` | Responsibilities | 何が何を担当するか |
+| `how-it-works` | How it works | 実行時にどう動くか |
+| `state-data` | State / Data | 状態・データがどう変わるか |
+| `why` | Why it is designed this way | なぜこの設計か |
+| `code` | Where it lives in code | コードのどこにあるか |
+| `change` | What happens if I change X? | 変更すると何に影響するか |
+| `unknowns` | Known unknowns | 何が分からないか |
+
+見出しは日本語でもよい（「これは何か」など）。debugger 向けでは `what` を「症状と結論」とし、`how-it-works` を「問題の起きる経路」と「修正後の経路」に分けてよい。
+
+## ページ骨格
+
+```html
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>認証の仕組み — architecture explainer</title>
+  <style>/* explainer-base.css を inline */</style>
+</head>
+<body>
+  <a class="skip" href="#main">本文へ移動</a>
+  <header class="doc-header">
+    <p class="eyebrow">対象: auth / 読者: 新規参加者 / 根拠: commit 1a2b3c4</p>
+    <h1>認証の仕組み</h1>
+  </header>
+  <div class="page">
+    <nav class="toc" aria-label="目次">…</nav>
+    <main id="main">
+      <section id="what" class="first-view">
+        <p class="lede">2〜3 行の説明</p>
+        <figure class="view" data-question="…">…<figcaption>…</figcaption></figure>
+        <p class="takeaway"><strong>要点</strong> …</p>
+      </section>
+      <section id="context">…</section>
+    </main>
+  </div>
+</body>
+</html>
+```
+
+- header の `eyebrow` に subject、audience、Source Truth の版（commit SHA、branch、資料名）を書く。G5 の確認対象になる。
+- `<h1>` は 1 つだけにし、section は `<h2>`、その下は `<h3>` と、階層を飛ばさない。
+
+## First view
+
+`#what` には lede、primary visualization 1 つ、takeaway だけを置く。primary visualization は小さな Overview / System Context とし、主要要素を絞る。詳細な図は後続 section へ置く。
+
+## Overview と detail
+
+Overview の要素から、詳細へ drill-down できるようにする。
+
+```text
+Overview（#context の node）
+  → Component（#responsibilities の .node カード、id="cmp-…"）
+    → Runtime（#how-it-works の scenario、id="rt-…"）
+      → Code（#code の行、id="ev-…"）
+```
+
+- 各 component カードは `<details class="drill" id="cmp-…">` にし、`<summary>` に名前と責務、本文に Used by / Depends on / Relevant code / Relevant runtime flows / Important invariants を置く。該当がない項目は書かない。
+- 図の node から詳細へ移れるよう、SVG の node は `<a href="#cmp-…">` で囲む。HTML の図では node 内にリンクを置く。
+- Overview で `level` の異なる要素を見せたい場合は、Overview に置かず drill-down 先の view に置く。
+
+## Figure
+
+```html
+<figure class="view" id="view-refresh" data-question="access token の期限切れ時、どの順で refresh されるか">
+  …図…
+  <figcaption>access token の期限切れ時の refresh。矢印は呼ぶ側 → 呼ばれる側。</figcaption>
+</figure>
+```
+
+- すべての `<figure>` に、空でない `data-question` と `<figcaption>` を付ける。
+- 1 figure に 1 つの問いだけを書く（[visualization-selection.md](visualization-selection.md)）。
+
+## Code linking
+
+- 主要 claim には `a.code-ref`（`data-file`、`data-symbol`）を付ける（[evidence-rules.md](evidence-rules.md)）。
+- `#code` の Code Map の各行に `id="ev-…"` を付け、code ref の `href` 先にする。各セルには列見出しを `data-label` で付ける（`<td data-label="file">`）。
+- リポジトリの Web URL が分かる場合は、Code Map の行に外部リンクを追加する。分からない場合は相対パスの文字列にとどめる。
+
+## Known unknowns
+
+`#unknowns` には、Explanation Model の `unknowns` を問い / 判断できない理由 / 解消方法の表で置く。本文の `unknown` badge から、この表の行へリンクする。
+
+## Responsive と interaction
+
+- 本文の行長は約 72 文字幅に収め、図と表は横幅いっぱいまで使う。
+- 狭い画面では目次を本文の上へ移す。表は `<div class="table-wrap">` か `figure.view` の中に置き、収まらない場合はその中で横スクロールさせる。SVG の幅は [visual-grammar.md](visual-grammar.md) の規則に従う。
+- interaction を作る場合は、`<button>` か `<a>` を使い、keyboard で操作でき、focus が見えるようにする。`div` に click handler を付けない。
+- `<details>` の中身は閉じたままでは印刷されない。印刷で読ませる必要がある情報は `<details>` の外に置く。
+
+## Accessibility と usability の確認項目
+
+- heading hierarchy
+- 十分な文字コントラスト（CSS のトークンは本文 4.5:1 以上で定義済み。独自色を足した場合は確認する）
+- interaction がある箇所の keyboard 操作と focus の可視性
+- SVG の `<title>` / `<desc>`、または `aria-label`
+- 色だけで意味を区別しない（形・線種・文字ラベル）
+- 読みやすい文字サイズと行長
+- 画面幅を変えたときに崩れない
+

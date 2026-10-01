@@ -1,0 +1,4 @@
+interface:
+  display_name: "Architecture Explainer"
+  short_description: "コードとアーキテクチャを根拠つきの HTML 説明資料に変換・評価・改善"
+  default_prompt: "$architecture-explainer で、この Repository のアーキテクチャを新規参加者向けに、コードへ辿れる HTML 説明資料にしてください。"

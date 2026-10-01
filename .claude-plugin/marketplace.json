@@ -36,6 +36,20 @@
         "html",
         "visualization"
       ]
+    },
+    {
+      "name": "architecture-explainer",
+      "source": "./plugins/architecture-explainer",
+      "description": "Create, review, and improve evidence-backed HTML explanations of code and architecture so readers can trace purpose, structure, runtime, code, rationale, and change impact.",
+      "version": "0.1.0",
+      "category": "development",
+      "tags": [
+        "architecture",
+        "code-comprehension",
+        "onboarding",
+        "html",
+        "visualization"
+      ]
     }
   ]
 }

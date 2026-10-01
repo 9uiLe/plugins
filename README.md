@@ -7,7 +7,7 @@
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Marketplace-8A6FE8)](https://claude.com/claude-code)
 [![Codex](https://img.shields.io/badge/Codex-Plugin-111827)](https://openai.com/codex)
 
-Claude Code / Codex で使う、AI エージェントの利用量管理、スライドからの実務知識抽出のためのプラグイン集です。Marketplace 名は `9uile-plugins` です。必要なプラグインを個別にインストールできます。
+Claude Code / Codex で使う、AI エージェントの利用量管理、スライドからの実務知識抽出、コードとアーキテクチャの説明資料作成のためのプラグイン集です。Marketplace 名は `9uile-plugins` です。必要なプラグインを個別にインストールできます。
 
 ## プラグインを選ぶ
 
@@ -15,12 +15,13 @@ Claude Code / Codex で使う、AI エージェントの利用量管理、スラ
 | --- | --- | --- |
 | [model-strategy](./plugins/model-strategy/README.md) | 送信コンテキスト量、会話の往復回数、モデルの推論設定（effort）、他エージェントへの委譲を考慮した利用方針の選択 | `model-effort-guide` |
 | [speakerdeck-knowledge](./plugins/speakerdeck-knowledge/README.md) | SpeakerDeck から実務知識を抽出し、AI 向け Markdown とチーム共有用の図解 HTML を作成 | `speakerdeck-knowledge` |
+| [architecture-explainer](./plugins/architecture-explainer/README.md) | コードとアーキテクチャを、根拠つきで目的・構成・実行時の動き・コード・設計理由・変更影響を辿れる HTML 説明資料にし、既存資料の評価・改善も行う | `architecture-explainer` |
 
 スキルは、AI エージェントが依頼に応じて読み込む手順書です。`model-effort-guide` は、モデル選択・利用量・委譲方針を明示的に相談するときに使います。
 
 ## インストール
 
-`<plugin-name>` を `model-strategy`、`speakerdeck-knowledge` のいずれかに置き換えてください。
+`<plugin-name>` を `model-strategy`、`speakerdeck-knowledge`、`architecture-explainer` のいずれかに置き換えてください。
 
 ### Claude Code
 
@@ -48,6 +49,7 @@ codex plugin add <plugin-name>@9uile-plugins
 | --- | --- |
 | モデル・委譲方針の選択 | 「このタスクの利用量を抑えるモデル・effort・委譲方針を決めて」 |
 | スライドから知識を抽出 | 「この SpeakerDeck URL から実装に使える知識と、共有用の図解 HTML を作成して」 |
+| アーキテクチャの説明資料 | 「この Repository の認証アーキテクチャを、新規参加者向けに HTML で説明して」 |
 
 出力内容、必要なツール、任意機能の設定は各プラグインの README を参照してください。
 
@@ -58,6 +60,12 @@ codex plugin add <plugin-name>@9uile-plugins
 ├── .claude-plugin/marketplace.json   ← Claude Code Marketplace
 ├── .agents/plugins/marketplace.json ← Codex Marketplace
 ├── plugins/
+│   ├── architecture-explainer/
+│   │   ├── .claude-plugin/plugin.json
+│   │   ├── .codex-plugin/plugin.json
+│   │   ├── skills/                  ← architecture-explainer と validator・説明資料用 CSS
+│   │   ├── tests/
+│   │   └── README.md
 │   ├── speakerdeck-knowledge/
 │   │   ├── .claude-plugin/plugin.json
 │   │   ├── .codex-plugin/plugin.json
