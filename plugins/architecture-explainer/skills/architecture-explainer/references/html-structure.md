@@ -95,7 +95,12 @@ Overview（#context の node）
 ## Code linking
 
 - 主要 claim には `a.code-ref`（`data-file`、`data-symbol`）を付ける（[evidence-rules.md](evidence-rules.md)）。
-- `#code` の Code Map の各行に `id="ev-…"` を付け、code ref の `href` 先にする。各セルには列見出しを `data-label` で付ける（`<td data-label="file">`）。
+- `#code` の Code Map の各行に `id="ev-…"` を付け、code ref の `href` 先にする。各セルには列見出しを `data-label` で付ける（`<td data-label="source">`）。
+- Code Map の source セルでは、file と symbol の意味の区切りの後にだけ `<wbr>` を入れる。file は `/` の後、symbol は `.`・`::` の後と、英数字に続く `_` の後。`<wbr>` は文字を足さないので、表示上の折り返し位置だけが変わり、コピー・検索・`data-symbol` の値には影響しない。
+
+  ```html
+  <td data-label="source"><span class="src-file">app/<wbr>auth/<wbr>session_store.py</span><span class="src-symbol">SessionStore.<wbr>rotate</span></td>
+  ```
 - リポジトリの Web URL が分かる場合は、Code Map の行に外部リンクを追加する。分からない場合は相対パスの文字列にとどめる。
 
 ## Known unknowns

@@ -1,5 +1,6 @@
 // Render an explainer HTML file at several viewport widths through the Chrome
-// DevTools Protocol; print overflow findings as JSON and save screenshots.
+// DevTools Protocol; print overflow and Code Map identifier-wrap findings as JSON
+// and save one screenshot per section.
 //
 // Usage: node visual_check.mjs <html> <out-dir> [width ...]   (default widths: 390 500 1280)
 // Requires Chrome (set CHROME to its binary if it is not in the default macOS location) and
@@ -21,8 +22,34 @@ const chromePath = process.env.CHROME ?? '/Applications/Google Chrome.app/Conten
 const outDir = resolve(outArg);
 mkdirSync(outDir, { recursive: true });
 
+// Code Map identifiers should wrap only after a separator, never leaving a
+// one- or two-character line; the probe reads line boxes character by character.
 const OVERFLOW_PROBE = `(() => {
   const viewport = document.documentElement.clientWidth;
+  const identifierWrap = { cells: 0, wrapped: 0, nonSemanticBreaks: 0, orphanLines: 0, examples: [] };
+  for (const cell of document.querySelectorAll('.codemap .src-file, .codemap .src-symbol')) {
+    const lines = [];
+    let top = null;
+    const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      for (let i = 0; i < node.length; i++) {
+        const range = document.createRange();
+        range.setStart(node, i);
+        range.setEnd(node, i + 1);
+        const rect = range.getClientRects()[0];
+        if (!rect) continue;
+        if (top === null || Math.abs(rect.top - top) > 2) { lines.push(''); top = rect.top; }
+        lines[lines.length - 1] += node.data[i];
+      }
+    }
+    identifierWrap.cells++;
+    if (lines.length > 1) identifierWrap.wrapped++;
+    for (let i = 1; i < lines.length; i++) {
+      if (!'/.:_-, '.includes(lines[i - 1].slice(-1))) identifierWrap.nonSemanticBreaks++;
+      if (lines[i].trim().length <= 2) identifierWrap.orphanLines++;
+    }
+    if (lines.length > 1 && identifierWrap.examples.length < 5) identifierWrap.examples.push(lines.join(' | '));
+  }
   const describe = (el) => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') +
     (el.classList.length ? '.' + [...el.classList].join('.') : '');
   const scrollsWithin = (el) => {
@@ -44,7 +71,7 @@ const OVERFLOW_PROBE = `(() => {
     const r = s.getBoundingClientRect();
     return { id: s.id, y: Math.round(r.top + scrollY), height: Math.round(r.height) };
   });
-  return { viewport, documentScrollWidth: document.documentElement.scrollWidth, overflow: overflow.slice(0, 20),
+  return { identifierWrap, viewport, documentScrollWidth: document.documentElement.scrollWidth, overflow: overflow.slice(0, 20),
            overflowCount: overflow.length, scrollers, sections };
 })()`;
 

@@ -26,6 +26,9 @@ MAX_FIGURE_NODES = 9
 EXTERNAL_URL = re.compile(r"^(?:[a-z][a-z0-9+.-]*:)?//", re.IGNORECASE)
 CSS_URL = re.compile(r"""(?:@import\s+(?:url\()?|url\()\s*['"]?([^'")\s]+)""", re.IGNORECASE)
 SYMBOL_SEPARATORS = re.compile(r"\.|::|#|/")
+# A separator followed by more text in the same text run has no <wbr> after it.
+MISSING_BREAK = {"file": re.compile(r"/(?=\S)"), "symbol": re.compile(r"(?:::|\.|(?<=[A-Za-z0-9])_)(?=\S)")}
+SOURCE_PARTS = {"src-file": "file", "src-symbol": "symbol"}
 
 
 @dataclass
@@ -53,12 +56,21 @@ class CodeRef:
 
 
 @dataclass
+class CodeMap:
+    line: int
+    unlabelled_cell: bool = False
+    has_source: bool = False
+    missing_break: bool = False
+
+
+@dataclass
 class OpenElement:
     tag: str
     line: int
     first_view: bool
     scrolls_horizontally: bool
-    codemap: bool
+    codemap: CodeMap | None = None
+    source_part: str | None = None
     figure: Figure | None = None
     svg: SvgScope | None = None
 
@@ -93,7 +105,7 @@ class ExplainerParser(HTMLParser):
         self.in_title = False
         self.in_style = False
         self.stack = []
-        self.unlabelled_codemaps = set()
+        self.codemaps = []
 
     @property
     def line(self):
@@ -131,10 +143,12 @@ class ExplainerParser(HTMLParser):
             parent_figure.has_caption = True
         if "node" in classes and parent_figure:
             parent_figure.nodes += 1
-        if tag == "td" and not attr.get("data-label", "").strip():
-            codemap = next((element for element in reversed(self.stack) if element.codemap), None)
-            if codemap:
-                self.unlabelled_codemaps.add(codemap.line)
+        parent_codemap = self.innermost("codemap")
+        if parent_codemap and tag == "td" and not attr.get("data-label", "").strip():
+            parent_codemap.unlabelled_cell = True
+        source_part = next((SOURCE_PARTS[name] for name in classes if name in SOURCE_PARTS), None)
+        if parent_codemap and source_part == "file":
+            parent_codemap.has_source = True
         if tag == "table" and not any(element.scrolls_horizontally for element in self.stack):
             self.findings.warn("table-scroll", "<table> is outside .table-wrap or <figure>; narrow screens overflow",
                                self.line)
@@ -151,8 +165,10 @@ class ExplainerParser(HTMLParser):
         if tag not in VOID_TAGS:
             first_view = attr.get("id") == "what" or "first-view" in classes
             scrolls = tag == "figure" or "table-wrap" in classes
-            codemap = tag == "table" and "codemap" in classes
-            self.stack.append(OpenElement(tag, self.line, first_view, scrolls, codemap, figure, svg))
+            codemap = CodeMap(self.line) if tag == "table" and "codemap" in classes else None
+            if codemap:
+                self.codemaps.append(codemap)
+            self.stack.append(OpenElement(tag, self.line, first_view, scrolls, codemap, source_part, figure, svg))
 
     def record_document_metadata(self, tag, attr):
         if tag == "html":
@@ -224,6 +240,10 @@ class ExplainerParser(HTMLParser):
         self.stack.clear()
 
     def handle_data(self, data):
+        source_part = self.innermost("source_part")
+        codemap = self.innermost("codemap")
+        if source_part and codemap and MISSING_BREAK[source_part].search(data):
+            codemap.missing_break = True
         if self.in_title:
             self.title_text += data
         if self.in_style:
@@ -339,6 +359,18 @@ def check_figures(figures, findings):
                       f"first view has {first_view_figures} figures; keep one primary visualization")
 
 
+def check_codemaps(codemaps, findings):
+    for codemap in codemaps:
+        if codemap.unlabelled_cell:
+            findings.warn("codemap-label", "Code Map cells need data-label; narrow screens show them instead of the header",
+                          codemap.line)
+        if not codemap.has_source:
+            findings.warn("codemap-source", "Code Map has no .src-file / .src-symbol source cell", codemap.line)
+        if codemap.missing_break:
+            findings.warn("codemap-break", "Code Map source text needs <wbr> after / in files and . :: _ in symbols",
+                          codemap.line)
+
+
 def validate(html, source_root=None):
     findings = Findings()
     parser = ExplainerParser(findings)
@@ -347,9 +379,7 @@ def validate(html, source_root=None):
 
     check_document(parser, findings)
     check_figures(parser.figures, findings)
-    for line in sorted(parser.unlabelled_codemaps):
-        findings.warn("codemap-label", "Code Map cells need data-label; narrow screens show them instead of the header",
-                      line)
+    check_codemaps(parser.codemaps, findings)
     if not any(parser.evidence.values()):
         findings.warn("no-evidence-markers", "no data-evidence markers; inferred and unknown claims must be marked")
     if not parser.code_refs:
