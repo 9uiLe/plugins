@@ -1,6 +1,6 @@
 # コントリビューションガイド
 
-このリポジトリでは、Claude Code / Codex 用の `model-strategy`、`speakerdeck-knowledge` を配布しています。プラグインの用途と構成は [README](./README.md) を参照してください。
+このリポジトリでは、Claude Code / Codex 用の `model-strategy`、`speakerdeck-knowledge`、`architecture-explainer` を配布しています。プラグインの用途と構成は [README](./README.md) を参照してください。
 
 ## 不具合・改善提案・質問
 
@@ -74,10 +74,11 @@ CI の検証コマンドはリポジトリのルートで実行できます。�
 bash scripts/verify-versions.sh
 bash scripts/tests/verify-versions-completeness.test.sh
 node --test plugins/model-strategy/tests/*.test.mjs
+python3 -m unittest discover -s plugins/architecture-explainer/tests -v
 shellcheck -S warning -x scripts/*.sh scripts/lib/*.sh scripts/tests/*.sh
 ```
 
-マニフェストや配布対象の変更には `verify-versions.sh`、検証スクリプトの変更にはそのテスト、model-strategy の処理変更には Node.js のテストを実行してください。CI の定義は [verify-versions.yml](./.github/workflows/verify-versions.yml) にあります。
+マニフェストや配布対象の変更には `verify-versions.sh`、検証スクリプトの変更にはそのテスト、model-strategy の処理変更には Node.js のテスト、architecture-explainer の validator 変更には Python のテストを実行してください。CI の定義は [verify-versions.yml](./.github/workflows/verify-versions.yml) にあります。
 
 ## Pull Request を送る
 

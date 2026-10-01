@@ -1,0 +1,34 @@
+{
+  "name": "architecture-explainer",
+  "version": "0.1.0",
+  "description": "Create, review, and improve evidence-backed HTML explanations of code and architecture so readers can trace purpose, structure, runtime, code, rationale, and change impact.",
+  "author": {
+    "name": "9uiLe",
+    "url": "https://github.com/9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins/tree/master/plugins/architecture-explainer",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": [
+    "architecture",
+    "code-comprehension",
+    "onboarding",
+    "html",
+    "visualization"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Architecture Explainer",
+    "shortDescription": "Explain code and architecture as evidence-backed HTML",
+    "longDescription": "Create, review, and improve evidence-backed HTML explanations of code and architecture so readers can trace purpose, structure, runtime, code, rationale, and change impact.",
+    "developerName": "9uiLe",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Explain this repository's architecture as an evidence-backed HTML document for new team members"
+    ]
+  }
+}
