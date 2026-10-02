@@ -6,7 +6,13 @@
 
 対象は、package / module の public API や export、component 間の interface、library API、domain / service boundary、application 内部の module 間 API、framework / SDK API など、別の利用者（以下 consumer）が依存する contract boundary 全般である。
 
-判断の単位は言語の可視性修飾子ではなく、boundary の内側と独立に変更される consumer がいるかどうかである。public でも呼び出し側が一つで常に同時に変更されるなら、contract を変えるコストは小さい。internal でも多くの module が依存していれば contract として扱う。外部へ配布した API は consumer を把握も同時変更もできないため、変更コストが最も高い。
+contract を変えるコストは、言語の可視性修飾子や、Repository 内で現在見つかる caller の数では判断しない。独立した consumer がいるか、producer と consumer の変更を協調できるかで判断する。
+
+- consumer set は既知で、閉じているか
+- producer と consumer を同じ変更・release 単位で更新できるか
+- 外部の consumer や、独立に release される consumer が存在しうるか
+
+consumer set が閉じていて同じ変更で更新できるなら、public でも互換性のコストは比較的小さい。外部へ配布した API は、Repository 内の caller が現在一つでも、把握できない consumer がいるため互換性のコストが高い。internal でも、独立に変更・release される複数の module が依存していれば contract として慎重に扱う。
 
 ## 目標
 
@@ -22,7 +28,7 @@ consumer が依存できるものはすべて contract になる: 名前と sign
 - consumer は何を知る必要があるか
 - consumer が知らなくてよい情報は何か
 
-新しい capability は、新しい public な型・関数・abstraction を必要とするとは限らない。追加する前に次を確認する。
+新しい capability は、新しい public な型・関数・abstraction を必要とするとは限らない。surface を追加する前に、また Review では追加された surface について、次を確認する。
 
 - 本当に新しい public capability か
 - 既存 contract の組み合わせや既存の型の再利用で、自然に表現できないか

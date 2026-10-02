@@ -1,6 +1,6 @@
 ---
 name: maintainable-code
-description: Design, review, or improve code, tests, and docs for long-term maintainability - tests express What, code expresses How, docs carry Context, and the repository alone explains the current spec. Use for implementing, refactoring, or reviewing code involving state modeling (Optional / Boolean / enum), test responsibility across unit / integration / UI, redundant comments or tests, separation of concerns, coupling, public API / component boundary contracts, or code-test-doc coherence after a change (stale docs, conversation-only assumptions). Japanese triggers - maintainable-code を使って実装・レビュー・改善して, 責務分離を確認して, 状態の持ち方を見直して, Test の保証責任を整理して, 公開 API や component 境界の設計を確認して, 保守性の観点でレビューして, コードとドキュメントの整合性も確認して, 実装と設計ドキュメントの齟齬を直して, この変更を新規参加者が理解できる状態にして, 会話にしか残っていない前提がないか確認して, このリポジトリだけで現在仕様を理解できるようにして. Do not use for syntax questions, isolated bug explanations, formatting, proofreading, general doc writing, README wording-only edits, correctness-only diff review, or architecture explainer documents.
+description: Implement, review, or improve code, tests, and docs for long-term maintainability: tests express What, code expresses How, docs carry Context, and the repository alone explains the current spec. Use for state modeling (Optional / Boolean / enum), test responsibility across unit / integration / UI, redundant comments or tests, responsibility and coupling, public API / component boundary contracts, or code-test-doc coherence after a change (stale docs, conversation-only assumptions). Japanese triggers - maintainable-code で実装・レビュー・改善して, 保守性の観点でレビューして, 責務分離や状態の持ち方を見直して, Test の保証責任を整理して, 公開 API や component 境界の設計を確認して, コードとドキュメントの整合性を確認して, 会話にしか残っていない前提がないか確認して, このリポジトリだけで現在仕様を理解できるようにして. Not for syntax questions, isolated bug explanations, formatting, proofreading, general doc writing, README wording-only edits, correctness-only diff review, or architecture explainer documents.
 ---
 
 # Maintainable Code
@@ -36,7 +36,7 @@ description: Design, review, or improve code, tests, and docs for long-term main
 3. **Test responsibility** — 各仕様を保証する最も小さい適切な Test Layer を決める。重複は整理し、不足している場合だけ追加する。
 4. **Responsibility** — 各型・関数・モジュールが何を知り、何を決め、何が変わると変更されるかを確認する。異なる変更理由が混在していれば分離を検討する。
 5. **Coupling** — import だけでなく、状態・順序・内部表現・仕様知識・Test の結合を見て、その知識を本来どこが所有すべきかを考える。
-6. **API boundary** — 別の利用者・component が依存する contract を追加・変更する場合だけ確認する。consumer が依存するものが必要な capability に限られ、call site・failure・cost が contract として表されているかを見る。[api-design.md](references/api-design.md) を読んでから行う。
+6. **API boundary** — 別の利用者・component が依存する contract を追加・変更する場合だけ確認する。追加する surface が既存 contract では表せない capability に対応しているか、consumer が依存するものが必要な capability に限られているか、call site・failure・cost が contract として表されているかを見る。[api-design.md](references/api-design.md) を読んでから行う。
 7. **How** — コメントで補う前に、型・名前・API・State・制御構造・境界で How を表現する。
 8. **Repository coherence** — 変更箇所と、その仕様・状態・責務・使い方・public contract・設計意図に意味的に依存する Test・Comment・Documentation・Example・Configuration を確認し、矛盾・stale・重複・会話への依存を直す。省略可能な後処理ではない。Documentation の変更が不要なら変更しない。[repository-coherence.md](references/repository-coherence.md) を読んでから行う。
 9. **Simplification & validation** — 不要な abstraction、comment、重複 Test、state、branch、dependency を取り除き、Test と既存の検証を実行する。
