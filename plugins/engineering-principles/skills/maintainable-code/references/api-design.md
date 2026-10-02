@@ -42,7 +42,7 @@ consumer が依存できるものはすべて contract になる: 名前と sign
 
 ### Public surface
 
-公開した symbol・export・interface・具体型は、consumer が依存した時点で、互換性を壊さずには取り除けなくなる。判断するのは symbol の数ではなく、consumer が依存しなければならない contract の量と、その変更コストである。必要な capability を不自然に隠す、または一つの万能 API に押し込めることも、consumer が意味の異なる引数や option を理解する必要を生み、同じく変更コストを上げる。
+公開した symbol・export・interface・具体型は、consumer が依存した時点で、互換性を壊さずには取り除けなくなる。何を評価するかは [principles.md](principles.md) の「公開した How は What になる」にある。必要な capability を不自然に隠す、または一つの万能 API に押し込めることも、consumer が意味の異なる引数や option を理解する必要を生み、変更コストを上げる。
 
 ### Representation を contract にしない
 

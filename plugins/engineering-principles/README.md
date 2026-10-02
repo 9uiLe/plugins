@@ -37,7 +37,7 @@ codex plugin add engineering-principles@9uile-plugins
 3. **Test responsibility** — 各仕様を Unit / Integration / UI のどの Layer が保証するか。重複を整理し、不足だけを補います。
 4. **Responsibility** — 異なる変更理由を持つ関心が混在していないか。
 5. **Coupling** — 状態・順序・内部表現・仕様知識・Test による結合。
-6. **API boundary** — 別の利用者・component が依存する contract を追加・変更する場合に、consumer が依存するものが必要な capability に限られ、call site・failure・cost が contract として表されているか。公開した How は consumer にとっての What になるため、implementation の変更が consumer へ波及しないようにします。
+6. **API boundary** — 別の利用者・component が依存する contract を追加・変更・レビューする場合に、consumer が依存するものが必要な capability に限られ、call site・failure・cost が contract として表されているか。公開した How は consumer にとっての What になるため、implementation の変更が consumer へ波及しないようにします。
 7. **How** — コメントの前に、型・名前・API・制御構造でコードの意図を表せるか。
 8. **Repository coherence** — 変更に意味的に依存する Test・コメント・Documentation・Example・Configuration に、矛盾、古い記述、重複、会話への依存が残っていないか。Code と Documentation が食い違うとき、実装を自動的に正本とはしません。
 9. **Simplification & validation** — 不要な abstraction、コメント、重複 Test、状態、分岐、依存の除去と、Test・既存の検証の実行。
