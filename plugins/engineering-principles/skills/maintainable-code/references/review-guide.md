@@ -40,7 +40,7 @@ severity は Impact から判定する。Impact を具体的な仕様変更・�
 - 契約として必要な呼び出し回数の検証を、実装詳細 Test とみなすこと
 - 外部制約・既知不具合・非自明な契約を説明しているコメントの削除
 - プロジェクトの既存の規約に従っている箇所への style の指摘
-- public symbol・具体型の戻り値・String・外部 dependency・getter があること、独自 error type がないこと、declaration が複雑であること、public type の数が多いこと、のいずれかだけを理由にした API boundary の指摘。consumer がその contract に依存する必要があるか（具体型自体が Domain contract である、本質的に文字列の値である、相互運用のためにその library の型を共有する、consumer が failure を区別しない、declaration の複雑さが call site を単純にしている、など）を [api-design.md](api-design.md) の判断基準で確認し、consumer への具体的な影響を示せる場合だけ報告する
+- public symbol・具体型の戻り値・String・外部 dependency・getter があること、独自 error type がないこと、declaration が複雑であること、public type の数が多いこと、のいずれかだけを理由にした API boundary の指摘。consumer がその contract に依存する必要があるかを [api-design.md](api-design.md) の判断基準で確認し、consumer への具体的な影響を示せる場合だけ報告する
 - 「README を更新すると親切」程度の Documentation の追記。Repository coherence の Finding の条件は [repository-coherence.md](repository-coherence.md) にある
 
 指摘する前に、そのコードがその形になっている理由（コメント、commit message、Test、呼び出し側の要求）を確認する。理由が妥当なら指摘しない。
