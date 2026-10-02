@@ -1,6 +1,6 @@
 # 原則
 
-Workflow の各 Step で使う判断基準。Test Layer の詳細は [testing-boundaries.md](testing-boundaries.md)、状態の表現は [state-modeling.md](state-modeling.md)、Code・Test・Documentation の整合性は [repository-coherence.md](repository-coherence.md) が正本。
+Workflow の各 Step で使う判断基準。Test Layer の詳細は [testing-boundaries.md](testing-boundaries.md)、状態の表現は [state-modeling.md](state-modeling.md)、API と component boundary は [api-design.md](api-design.md)、Code・Test・Documentation の整合性は [repository-coherence.md](repository-coherence.md) が正本。
 
 知識はそれを最もよく表せる一か所に置く。Test は What、Code は How、Documentation は Code と Test から復元できない Context、Comment は将来の変更で事故を防ぐ情報を受け持つ。Repository は作業時の会話に依存せず、会話を知らない新規参加者が現在の仕様・設計意図・使い方を理解できる状態に保つ。
 
@@ -83,6 +83,12 @@ import や依存の数だけを結合度とみなさない。次の knowledge co
 
 検出したら、その知識を本来どのコンポーネントが所有すべきかを考える。Temporal coupling は、順序を型や API で強制する（前段の戻り値を後段の引数にする、状態ごとに呼べる操作を変える）ことで解消できる場合が多い。
 
+## 公開した How は What になる
+
+Component の内部の How（具体型、データ構造、依存ライブラリ、error の形）を boundary の外へ公開すると、consumer はそれに依存でき、以後は consumer にとっての What、つまり contract になる。内部では自由に変えられた implementation が、公開した後は consumer の変更なしには変えられなくなる。
+
+そのため boundary では、consumer が必要とする capability だけを公開する。評価するのは公開している symbol の数ではなく、consumer が依存しなければならない contract の量と、それを変える時に consumer 側で必要になる変更である。判断基準は [api-design.md](api-design.md) にある。
+
 ## Overengineering を避ける
 
 この Skill は抽象化を増やすためのものではない。次の理由だけで abstraction を追加しない。
@@ -97,6 +103,6 @@ import や依存の数だけを結合度とみなさない。次の knowledge co
 
 ## 非目標
 
-次を目的としない: 特定 Architecture の強制、SOLID 原則の機械的適用、Clean Architecture の導入、Protocol / Interface の増加、Test coverage の最大化、コメント・Optional・Boolean の完全禁止、ファイルサイズの最小化、Class 数の増加、DRY の機械的適用、Documentation の充実そのもの。
+次を目的としない: 特定 Architecture の強制、SOLID 原則の機械的適用、Clean Architecture の導入、Protocol / Interface の増加、public symbol 数の最小化、Test coverage の最大化、コメント・Optional・Boolean の完全禁止、具体型・dependency・String・getter の禁止、独自 error type の強制、特定言語の API design guideline の移植、ファイルサイズの最小化、Class 数の増加、DRY の機械的適用、Documentation の充実そのもの。
 
-評価軸は Specification clarity、State correctness、Responsibility ownership、Change locality、Repository self-containedness の 5 つである。
+評価軸は Specification clarity、State correctness、Responsibility ownership、Change locality、Repository self-containedness の 5 つである。Change locality には、implementation を変えた時に boundary の外の consumer まで変更が波及しないことを含む。
