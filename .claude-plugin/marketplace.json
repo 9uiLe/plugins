@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins by 9uiLe.",
-    "version": "0.8.1"
+    "version": "0.8.2"
   },
   "plugins": [
     {
@@ -55,7 +55,7 @@
       "name": "engineering-principles",
       "source": "./plugins/engineering-principles",
       "description": "Design, review, and improve code, tests, and documentation for long-term maintainability: tests express What, code expresses How, documentation carries Context, and the repository alone explains the current specification.",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "category": "development",
       "tags": [
         "maintainability",

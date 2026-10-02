@@ -1,6 +1,6 @@
 {
   "name": "engineering-principles",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Design, review, and improve code, tests, and documentation for long-term maintainability: tests express What, code expresses How, documentation carries Context, and the repository alone explains the current specification.",
   "author": {
     "name": "9uiLe",
