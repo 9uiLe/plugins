@@ -5,10 +5,11 @@
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-02
+
 ### Changed
 
 - **engineering-principles**: `maintainable-code` に、別の利用者・component が依存する contract boundary（public API、module の export、component 間 interface、library API、domain / service boundary）の変更容易性を扱う `references/api-design.md` を追加。Workflow の Coupling と How の間に API boundary の Step を置き、boundary を追加・変更・レビューする場合だけ reference を読む。公開した How は consumer にとっての What になるという原則を `principles.md` に置き、Client API first、必要な capability だけの公開、representation と dependency を consumer へ伝播させないこと、call site の最適化、progressive disclosure、stringly-typed API、failure と cost semantics を言語に依存しない判断基準として定義。Review の Category に `API boundary` を追加し、具体型・String・dependency・getter・public symbol の有無だけを理由にした指摘を false positive として除外する。評価軸は増やさず、consumer への波及を Change locality に含めた。
-
 ## [0.8.0] - 2026-10-02
 
 ### Added
@@ -232,7 +233,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/9uiLe/plugins/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/9uiLe/plugins/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/9uiLe/plugins/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/9uiLe/plugins/compare/v0.7.0...v0.7.1
