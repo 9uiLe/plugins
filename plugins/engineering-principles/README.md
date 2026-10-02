@@ -39,7 +39,7 @@ codex plugin add engineering-principles@9uile-plugins
 5. **Coupling** — 状態・順序・内部表現・仕様知識・Test による結合。
 6. **API boundary** — 別の利用者・component が依存する contract を追加・変更・レビューする場合に、consumer が依存するものが必要な capability に限られ、call site・failure・cost が contract として表されているか。公開した How は consumer にとっての What になるため、implementation の変更が consumer へ波及しないようにします。
 7. **How** — コメントの前に、型・名前・API・制御構造でコードの意図を表せるか。
-8. **Repository coherence** — 変更に意味的に依存する Test・コメント・Documentation・Example・Configuration に、矛盾、古い記述、重複、会話への依存が残っていないか。Code と Documentation が食い違うとき、実装を自動的に正本とはしません。
+8. **Repository coherence** — 変更に意味的に依存する Test・コメント・Documentation・Example・Configuration に、矛盾、古い記述、重複、会話への依存が残っていないか。追加・変更する文章が、比喩や評価語ではなく技術的な意味を直接書いているか。Code と Documentation が食い違うとき、実装を自動的に正本とはしません。
 9. **Simplification & validation** — 不要な abstraction、コメント、重複 Test、状態、分岐、依存の除去と、Test・既存の検証の実行。
 
 Implement と Improve は、作業の会話履歴を失っても Repository から変更後の現在仕様を正しく理解・利用・変更できる状態を完了条件にします。Documentation の変更が不要なら変更しません。
@@ -53,12 +53,12 @@ Test の数、型や abstraction の数、public symbol の数、コメントの
 | ファイル | 責務 |
 | --- | --- |
 | `SKILL.md` | 必須制約、mode 判定、workflow、Finding の形式、報告内容 |
-| `references/principles.md` | What / How の分離、コメント、責務、結合、公開した How が contract になること、overengineering の判断基準 |
+| `references/principles.md` | What / How の分離、コメント、Documentation が表す Context、責務、結合、公開した How が contract になること、overengineering の判断基準 |
 | `references/testing-boundaries.md` | Test Layer の責務、Contract Test、実装詳細 Test、削除・統合の基準 |
 | `references/state-modeling.md` | Optional・Boolean・enum による状態表現、状態遷移、Invariant |
 | `references/api-design.md` | 別の利用者が依存する contract boundary の設計: Client API first、公開範囲、representation と dependency の露出、call site、progressive disclosure、stringly-typed API、failure と cost semantics |
 | `references/review-guide.md` | Finding の採否、severity、false positive の回避、範囲の制御 |
-| `references/repository-coherence.md` | Code・Test・Documentation の役割、会話への依存の除去、source of truth の判断、Documentation の変更判断 |
+| `references/repository-coherence.md` | Code・Test・Documentation の役割、会話への依存の除去、Documentation・Comment の直接性、source of truth の判断、Documentation の変更判断 |
 
 ## 検証
 

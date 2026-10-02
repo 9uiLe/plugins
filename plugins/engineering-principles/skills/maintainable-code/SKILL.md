@@ -38,7 +38,7 @@ description: Implement, review, or improve code, tests, and docs for long-term m
 5. **Coupling** — import だけでなく、状態・順序・内部表現・仕様知識・Test の結合を見て、その知識を本来どこが所有すべきかを考える。
 6. **API boundary** — 別の利用者・component が依存する contract を追加・変更・レビューする場合だけ確認する。追加する surface が既存 contract では表せない capability に対応しているか、consumer が依存するものが必要な capability に限られているか、call site・failure・cost が contract として表されているかを見る。[api-design.md](references/api-design.md) を読んでから行う。
 7. **How** — コメントで補う前に、型・名前・API・State・制御構造・境界で How を表現する。
-8. **Repository coherence** — 変更箇所と、その仕様・状態・責務・使い方・public contract・設計意図に意味的に依存する Test・Comment・Documentation・Example・Configuration を確認し、矛盾・stale・重複・会話への依存を直す。省略可能な後処理ではない。Documentation の変更が不要なら変更しない。[repository-coherence.md](references/repository-coherence.md) を読んでから行う。
+8. **Repository coherence** — 変更箇所と、その仕様・状態・責務・使い方・public contract・設計意図に意味的に依存する Test・Comment・Documentation・Example・Configuration を確認し、矛盾・stale・重複・会話への依存を直す。省略可能な後処理ではない。追加・変更する Documentation と Comment は、比喩や評価語に置き換えず技術的な意味を直接書く。Documentation の変更が不要なら変更しない。[repository-coherence.md](references/repository-coherence.md) を読んでから行う。
 9. **Simplification & validation** — 不要な abstraction、comment、重複 Test、state、branch、dependency を取り除き、Test と既存の検証を実行する。
 
 ### Implement

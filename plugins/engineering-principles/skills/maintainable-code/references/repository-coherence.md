@@ -6,7 +6,7 @@ Workflow Step 8 と、Review で Code・Test・Documentation の整合性を判�
 
 読者は常に、この作業の会話を一切知らない新規参加者である。その読者が Repository だけを読んで、現在の仕様、Domain State と Invariant、主要な設計意図、責務と ownership、public contract、利用方法、setup / configuration、非自明な制約、正本となる Documentation の場所を理解できる状態を保つ。
 
-目標は Documentation を増やすことではない。知識を適切な場所に一つずつ置き、重複・矛盾・会話への依存を残さないことである。Documentation の変更が不要なら、変更しないことが正しい結果である。
+目標は Documentation を増やすことではない。知識を適切な場所に一つずつ置き、重複・矛盾・会話への依存を残さず、読者が比喩を解釈しなくても意味が分かる文章で書くことである。Documentation の変更が不要なら、変更しないことが正しい結果である。
 
 ## 知識の置き場所
 
@@ -26,7 +26,7 @@ Documentation に置く情報の例: Component / Module の責務境界、Domain
 
 探し方: 変更したシンボル名・概念名・設定キー・旧名で Repository を検索し、該当箇所がその変更の意味を説明・利用しているかを確認する。
 
-次は範囲外とし、必要なら「関連する改善候補」として報告する: 無関係な refactoring、style の統一、整合している Documentation の書き直し、新しい architecture の導入、新しい仕様の追加、Documentation を充実させること自体を目的とした追記、Test 数の増減自体を目的とした変更。
+次は範囲外とし、必要なら「関連する改善候補」として報告する: 無関係な refactoring、style の統一、整合している Documentation の書き直し、変更していない段落の言い回しの書き換え、新しい architecture の導入、新しい仕様の追加、Documentation を充実させること自体を目的とした追記、Test 数の増減自体を目的とした変更。
 
 ## Conversation context
 
@@ -51,6 +51,42 @@ Conversation context
 ```
 
 採用しなかった案は、それを知らないと将来同じ誤りをする場合だけ、現在の制約として残す。それ以外の意思決定の経緯は残さない（経緯は commit message や PR に置く）。
+
+## Documentation の直接性
+
+追加・変更する Documentation と Comment では、技術的な意味を文字どおり具体的に書く。判断基準は、その比喩・擬人化・評価語が直接の記述では表せない技術的意味を持つか、直接書ける内容を置き換えているだけか、である。後者なら、何をするか・何を保証するか・なぜ必要か・何が変わるかを書く。英語と日本語に同じ基準を適用し、単語のリストでは判定しない。
+
+| 種類 | 例 | 代わりに書く内容 |
+| --- | --- | --- |
+| 装飾的な比喩 | 橋渡しする、背骨になる、土台を築く、a dial to turn | 変換・定義・保証している処理 |
+| 不要な擬人化 | 役目を果たす、責任を背負う、問題に立ち向かう | 何を判定・変換・防止するか |
+| 根拠のない評価語 | robust、flexible、clean、強力、柔軟 | 何が可能になるか、何を変えずに済むか |
+| 内容のない修辞 | 重要な役割を果たす、注目すべき点は、言うまでもなく | 削除するか、具体的な情報に置き換える |
+| 曖昧な因果 | これにより保守性が向上する | 何を変更した時に、変更がどこまで及ぶか |
+
+```text
+Before: This layer acts as a bridge between the domain and the API.
+After:  This layer converts Domain models to API requests and API responses to Domain models.
+
+Before: このチェックは今も重要な役目を果たしている。
+After:  このチェックは、署名のない request が handler に届くことを防ぐ。
+
+Before: This abstraction provides a robust foundation for future extensions.
+After:  New providers can be added without changing existing callers.
+
+Before: Retry count is a useful dial to turn when tuning reliability.
+After:  Increase retry count when transient failures are common, at the cost of longer failure latency.
+
+Before: この分離により保守性が向上する。
+After:  Repository が Vendor SDK の型を公開しないため、SDK を置き換えても caller を変更しなくてよい。
+```
+
+次は書き換えない。
+
+- 意味が確立した技術用語（pipeline、boundary、gate、branch、layer、tree、graph など）。語源が比喩であることは理由にならない。
+- 責務分析の語彙（「UserSession が認証 state を所有する」「module が知識を持つ」）。この Skill でも ownership と knowledge の定義に使っている。
+- Domain やプロダクトが正式に採用した用語。外部仕様・RFC・ユーザー文言の引用。
+- 告知、blog、README の紹介文など、技術仕様の説明を目的としない文章。ただし対象 Repository の規約が plain style を求めていれば、その規約に従う。
 
 ## Source of truth の判断
 
@@ -102,6 +138,8 @@ How を Documentation に複製しない。README が内部の処理手順を詳
 ## Review の Finding
 
 Repository coherence の Finding は、次のような具体的な Impact を説明できる場合だけ出す: 誤った実装につながる、誤った使い方につながる、責務が再び分散する、仕様の判断を誤らせる、変更箇所の判断を誤らせる、同じ知識の二重管理で stale になりやすい。「README を更新すると親切」程度のものは Finding にしない。
+
+「Documentation の直接性」に関する Finding も、文章のせいで次のどれかが起きる場合だけ出す: 具体的な責務や処理が分からない、評価語だけで設計上の性質が分からない、含意が複数あり変更判断を誤る、原因と効果が曖昧で設計理由を復元できない、新規参加者が何をすべきか判断できない。「気取っている」「不自然」「もっと自然に書ける」だけでは Finding にしない。
 
 ```text
 Severity:  Medium

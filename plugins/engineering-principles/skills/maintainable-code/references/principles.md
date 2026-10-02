@@ -49,9 +49,11 @@ Documentation には、Code と Test から合理的に復元できない、現�
 
 会話で決まった仕様や制約は、作業の evidence として使ってよいが、完成した Repository がその会話を必要としてはならない。現在も有効なものだけを Code・Test・Comment・Documentation に反映し、「今回」「先ほど決めた」のような会話への依存を残さない。Documentation を増やすこと自体は改善ではなく、変更が不要なら変更しない。
 
-## Test は仕様であり、在庫ではない
+Documentation と Comment は、技術的な意味を比喩・擬人化・評価語に置き換えず、何をするか・なぜ必要かを直接書く。読者が比喩を解釈しないと責務や理由が分からない文章は、Context を正確に伝えない。判断基準と例外は [repository-coherence.md](repository-coherence.md) にある。
 
-Test の数を増やすこと自体を品質としない。同じ仕様を複数の Layer で重複して検証せず、各 Layer に保証責任を持たせる。新しい Test を書く前に「この仕様を保証する最も小さい適切な Test Layer はどこか」を判断する。削除・統合の基準は [testing-boundaries.md](testing-boundaries.md) にある。
+## Test の数を品質としない
+
+同じ仕様を複数の Layer で重複して検証せず、各 Layer に保証責任を持たせる。新しい Test を書く前に「この仕様を保証する最も小さい適切な Test Layer はどこか」を判断する。削除・統合の基準は [testing-boundaries.md](testing-boundaries.md) にある。
 
 ## 状態を明示する
 
