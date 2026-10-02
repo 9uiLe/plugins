@@ -7,7 +7,7 @@ Review / Improve mode で、Finding の採否、severity、範囲を判断する
 次をすべて満たすものだけを報告する。
 
 1. 対象コードで実際に起きている（file:line で示せる）。
-2. 変更容易性、仕様表現、State correctness、Testability のいずれかへの具体的な影響を説明できる。
+2. 変更容易性、仕様表現、State correctness、Testability のいずれかへの具体的な影響を説明できる。API boundary では、implementation の変更が consumer へ波及すること（contract stability）と、contract が有効な使い方・failure・cost を表さず consumer が誤用すること（usability）も含む。
 3. 依頼された範囲に含まれる。範囲外のものは「関連する改善候補」に分ける。
 
 チェックリストの項目を一つずつ埋めるように報告しない。問題がない観点は報告に含めない。
@@ -17,10 +17,10 @@ Review / Improve mode で、Finding の採否、severity、範囲を判断する
 | Severity | 基準 | 例 |
 | --- | --- | --- |
 | High | 仕様との不一致、または不正な状態が表現可能で、現実の入力で不具合につながる | Test が仕様と逆の振る舞いを保証している。`loaded` と `failed` が同時に成立しうる |
-| Medium | 次の仕様変更で、波及や分岐漏れが起きやすい構造 | nil が複数の意味を持つ。一つの型に異なる変更理由が混在している。Temporal coupling。README が旧 owner を案内している |
+| Medium | 次の仕様変更で、波及や分岐漏れが起きやすい構造 | nil が複数の意味を持つ。一つの型に異なる変更理由が混在している。Temporal coupling。public API が外部 SDK の response 型を返し、caller がその representation を直接使っているため、SDK の置き換えで全 caller が変わる。README が旧 owner を案内している |
 | Low | 具体的な保守コストはあるが、影響が小さい冗長性 | 同じ分岐を 2 つの Layer で検証しており、規則の変更時に両方を直す必要がある Test。読み手を誤らせる What コメント |
 
-severity は Impact から判定する。Impact を具体的な仕様変更・状態追加・Test 保守の作業として説明できなければ、Low にもせず Finding 自体を出さない。style、好み、一般論、「より綺麗に見える」だけを理由にした Finding は出さない。
+severity は Impact から判定する。Impact を具体的な仕様変更・状態追加・implementation の変更・Test 保守の作業、または consumer の具体的な誤用として説明できなければ、Low にもせず Finding 自体を出さない。style、好み、一般論、「より綺麗に見える」だけを理由にした Finding は出さない。
 
 報告は severity 順、同じ severity 内では SKILL.md の Review の「Category と優先順位」に従う。
 
@@ -40,6 +40,7 @@ severity は Impact から判定する。Impact を具体的な仕様変更・�
 - 契約として必要な呼び出し回数の検証を、実装詳細 Test とみなすこと
 - 外部制約・既知不具合・非自明な契約を説明しているコメントの削除
 - プロジェクトの既存の規約に従っている箇所への style の指摘
+- public symbol・具体型の戻り値・String・外部 dependency・getter があること、独自 error type がないこと、declaration が複雑であること、public type の数が多いこと、のいずれかだけを理由にした API boundary の指摘。consumer がその contract に依存する必要があるか（具体型自体が Domain contract である、本質的に文字列の値である、相互運用のためにその library の型を共有する、consumer が failure を区別しない、declaration の複雑さが call site を単純にしている、など）を [api-design.md](api-design.md) の判断基準で確認し、consumer への具体的な影響を示せる場合だけ報告する
 - 「README を更新すると親切」程度の Documentation の追記。Repository coherence の Finding の条件は [repository-coherence.md](repository-coherence.md) にある
 
 指摘する前に、そのコードがその形になっている理由（コメント、commit message、Test、呼び出し側の要求）を確認する。理由が妥当なら指摘しない。

@@ -1,6 +1,6 @@
 # Repository coherence
 
-Workflow Step 7 と、Review で Code・Test・Documentation の整合性を判断する時に読む。
+Workflow Step 8 と、Review で Code・Test・Documentation の整合性を判断する時に読む。
 
 ## 想定読者と目標
 
