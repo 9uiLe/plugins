@@ -53,7 +53,7 @@ Documentation と Comment は、技術的な意味を比喩・擬人化・評価
 
 ## Test の数を品質としない
 
-Test の数を増やすこと自体を品質としない。同じ仕様を複数の Layer で重複して検証せず、各 Layer に保証責任を持たせる。新しい Test を書く前に「この仕様を保証する最も小さい適切な Test Layer はどこか」を判断する。削除・統合の基準は [testing-boundaries.md](testing-boundaries.md) にある。
+同じ仕様を複数の Layer で重複して検証せず、各 Layer に保証責任を持たせる。新しい Test を書く前に「この仕様を保証する最も小さい適切な Test Layer はどこか」を判断する。削除・統合の基準は [testing-boundaries.md](testing-boundaries.md) にある。
 
 ## 状態を明示する
 
