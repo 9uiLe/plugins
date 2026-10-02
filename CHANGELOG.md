@@ -5,10 +5,11 @@
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-10-02
+
 ### Changed
 
 - **engineering-principles**: `maintainable-code` の Documentation / Comment に、技術的な意味を比喩・擬人化・評価語へ置き換えず直接書く原則を追加。`principles.md` の「Documentation は Context を表す」に原則を置き、`repository-coherence.md` に判断基準（その表現が直接の記述で表せない技術的意味を持つか）、対象（装飾的な比喩、不要な擬人化、根拠のない評価語、内容のない修辞、曖昧な因果）、英語・日本語の before / after、例外（確立した技術用語、責務分析の語彙、Domain 用語、引用、技術仕様の説明を目的としない文章）を定義。Step 8 は追加・変更する文章だけに適用し、変更していない段落の書き換えは範囲外とする。Review では、責務・設計上の性質・設計理由が分からない、変更判断を誤る、などの Impact を示せる場合だけ Finding にし、語調の好みは false positive として除外する。`principles.md` の見出し「Test は仕様であり、在庫ではない」を「Test の数を品質としない」に変更。
-
 ## [0.8.1] - 2026-10-02
 
 ### Changed
@@ -237,7 +238,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.8.2...HEAD
+[0.8.2]: https://github.com/9uiLe/plugins/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/9uiLe/plugins/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/9uiLe/plugins/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/9uiLe/plugins/compare/v0.7.1...v0.7.2
