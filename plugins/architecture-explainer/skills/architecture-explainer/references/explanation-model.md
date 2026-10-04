@@ -22,7 +22,7 @@ Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Q
 ```json
 {
   "subject": {"title": "", "question": "この資料が答える問い", "scope": {"in": [], "out": []}},
-  "source": {"root": "", "revision": "", "materials": []},
+  "source": {"root": "", "revision": "", "base_revision": "", "materials": []},
   "audience": {"profile": "newcomer|implementer|reviewer|architect|debugger", "familiarity": "", "goal": "", "inferred_from": ""},
   "purpose": {"problem": "", "responsibility": "", "status": "", "evidence": []},
   "context": {
@@ -59,7 +59,7 @@ Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Q
   }],
   "glossary": [{"id": "", "concept": "", "preferred": "", "code_terms": [], "aliases": [], "avoid": [], "meaning": "", "evidence": []}],
   "unknowns": [{"id": "", "about": "", "question": "", "reason": "", "how_to_resolve": ""}],
-  "evidence": [{"id": "", "kind": "code|test|doc|config|commit|issue", "file": "", "symbol": "", "line": 0, "note": ""}]
+  "evidence": [{"id": "", "kind": "code|test|doc|config|commit|diff|issue", "revision": "", "file": "", "symbol": "", "line": 0, "note": ""}]
 }
 ```
 
@@ -85,17 +85,17 @@ Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Q
 
 `depends_on.meaning` には、依存の意味（「認証済み user id を要求」「refresh token を保存」）を書く。HTML の矢印ラベルはここから作る。
 
-既存コードを変更した場合は、`change_impacts.before` と `after` に利用者から見える振る舞いと条件を claim として記録する。`unaffected` は変わらないこと、`requires_verification` は人間の確認点に使う。差分の行ごとの説明に置き換えず、変更前の挙動も旧版のコード・テスト・commit で裏付ける。確認できない変更前の挙動は Unknown とし、作らない。
+既存コードを変更した場合は、`change_impacts.before` と `after` に利用者から見える振る舞いと条件を別々の claim として記録する。両方に Evidence Rules を適用する。`source.base_revision` と `source.revision`、または `source.materials` で旧版と新版の Source Truth を識別し、各 `evidence.revision` に根拠が属する版を記録する。変更前の Observed は旧版のコード・テスト・commit・diff・ユーザー提供の旧実装で、変更後の Observed は新版の根拠で裏付ける。`unaffected` は変わらないこと、`requires_verification` は人間の確認点に使う。差分の行順を説明しない。旧版の Source Truth がない場合は `before.status` を `unknown`、`before.evidence` を空にし、`unknowns` で対応する `before.id` を指す。表示は「変更前のbehaviorは、現在提供されているSource Truthからは確認できません」とする。
 
 ## Controlled terminology
 
-既存の `glossary` を用語の正本にする。表示する主要 concept ごとに行を作る。`concept` は `components`、`context.actors`、`data` などの安定した id を指す。`preferred` は本文・図・表・caption で使う名称、`code_terms` は変更しない source identifier、`aliases` は初出の対応付けや文脈上許容する既知の別名、`avoid` は別 concept と誤認させる名称である。`meaning` は名称の言い換えではなく責務や意味を示す。`evidence` は concept と identifier の対応を支える。
+`explanation-model.json` の `glossary` だけを canonical terminology の正本にする。表示する主要 concept ごとに行を作る。`concept` は `components`、`context.actors`、`data` などの安定した id を指す。`preferred` は本文・図・表・caption・矢印で使う名称、`code_terms` は変更しない source identifier、`aliases` は初出の対応付けや文脈上許容する既知の別名、`avoid` は別 concept と誤認させる名称である。`meaning` は名称の言い換えではなく責務や意味を示す。`evidence` は concept と identifier の対応を支える。HTML や validator に concept ごとの別の用語表を持たせない。
 
 ```json
 {"id":"term-session-store","concept":"cmp-session-store","preferred":"セッションストア","code_terms":["SessionStore"],"aliases":[],"avoid":["セッション管理機構"],"meaning":"ユーザーのセッションを保存する component","evidence":["ev-session-store"]}
 ```
 
-HTML では主要 concept の表示名に `data-concept="cmp-session-store"` を付ける。初出の「セッションストア（`SessionStore`）」は preferred term と code identifier を別々の要素にし、それぞれに同じ `data-concept` を付ける。validator の `--model` は、この明示された表示名を glossary と照合する。未注釈の文章や言い換えの意味までは保証しない。日本語の文面は [language-clarity.md](language-clarity.md) に従って確認する。
+HTML を model から作るとき、concept id を使って `glossary.preferred` を引き、主要な表示名に `data-concept="cmp-session-store"` を付ける。初出の「セッションストア（`SessionStore`）」は preferred term と code identifier を別々の要素にし、それぞれに同じ `data-concept` を付ける。本文・図・caption・表・矢印ごとに名称を考え直さない。validator の `--model` は、この明示された表示名を同じ glossary と照合する。未注釈の文章や言い換えの意味までは保証しない。日本語の文面は [language-clarity.md](language-clarity.md) に従って確認する。
 
 ## 構築手順
 

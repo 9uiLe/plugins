@@ -4,7 +4,7 @@
 
 ## 用語を統制する
 
-- 同じ code concept には `glossary.preferred` の名称を使う。自然に見せるためだけに言い換えない。本文、図の node、矢印、表、caption で同じ名称を使う。
+- `explanation-model.json` の `glossary` を唯一の用語の正本とする。同じ code concept にはそこにある `preferred` の名称を使う。自然に見せるためだけに言い換えない。本文、図の node、矢印、表、caption へ model から名称を反映する。
 - 初出で必要なら「認証サービス（`AuthService`）」のように人間向け名称と code identifier を対応付ける。その後は preferred term を使う。既知の別名や identifier は `aliases` / `code_terms` に明示する。
 - class、function、method、module、API endpoint、設定キー、event、table、field、protocol の identifier は改変しない。人間向け名称を付けても Code Map から元の綴りへ辿れるようにする。
 - `avoid` は紛らわしい名称の校正用である。既存コード・引用・変更前の説明に現れる文字列まで機械的に禁止しない。
@@ -30,4 +30,4 @@
 
 ## 作成・評価時の確認
 
-Reader Questions を決めた後、表示する主要 concept の preferred term と code identifier を model で確定する。Explanation Plan の図・本文・表へ同じ語を投影する。HTML の作成後、各主要 concept の表示を追い、文の主要 claim、actor、条件、結果、指示先、status を読み直す。validator の LANG warning は校正の手がかりであり、人間による意味の判定を置き換えない。
+Reader Questions を決めた後、表示する主要 concept の preferred term と code identifier を model で確定する。Explanation Plan の図・本文・表へ同じ語を投影する。HTML の作成後、各主要 concept の表示を追い、文の主要 claim、actor、条件、結果、指示先、status を読み直す。language lint は architecture explanation の mental model を壊す不一致を優先する。順序は用語不一致 → 曖昧な entity / 指示先 → 意味の薄い関係ラベル → 複雑な責務文 → 読みやすさの目安。heuristic は warning にとどめる。文意や根拠の妥当性は [evaluation-rubric.md](evaluation-rubric.md) で判断する。

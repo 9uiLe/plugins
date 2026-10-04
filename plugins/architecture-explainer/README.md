@@ -35,11 +35,15 @@ codex plugin add architecture-explainer@9uile-plugins
 - first view は、何を実装し、何を解決するかを短い文と図 1 つで示します。変更の説明では主要フロー、振る舞いの差、確認点へすぐ辿れるようにします。詳細は drill-down で開きます。
 - ASD-STE100 の controlled-language principles を参考に、日本語の技術説明でも概念ごとの名称と文の構造を一貫させます。日本語の説明を ASD-STE100 準拠とは扱いません。
 - 主要 concept の preferred term、code identifier、許容する alias を model に記録し、本文・図・表・caption でそろえます。動作には actor、条件、結果を明示します。
+- canonical terminology の正本は `explanation-model.json` だけです。HTML の表示名は model から取り、validator も同じ model と照合します。
 - 主要な claim から file と symbol へ辿れます。
 - 設計意図、採用理由、要件などは、コメント・設計資料・commit などの明示的な根拠がなければ Unknown とし、解消方法を添えます。コードから推測した理由を事実として書きません。
+- Before / After は旧版・新版それぞれの Source Truth と結びます。旧版がない場合、変更前の behavior は Unknown と表示します。
 - HTML は CSS と SVG を inline した単体ファイルです。外部 CDN を必須にしません。
 
 Review と Improve は、見た目より先に、コードとの一致と根拠を評価します。7 つの Hard Gate（事実の捏造、主要 claim の根拠、図の問い、抽象度、対象・読者の明示、コードとの対応、重大な用語混同）に違反がある場合は、見た目に関係なく受け入れ不可とします。
+
+plugin 自体の改善では `plugins/architecture-explainer/**` を変更します。この skill が説明対象として読むリポジトリの source code は read-only です。
 
 ## 既知の制限
 

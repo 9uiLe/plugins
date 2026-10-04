@@ -51,6 +51,8 @@ audience が必要としない次元（newcomer 向け資料の Change Understan
 
 Linguistic Cognitive Load は `pass` / `weak` / `fail` で判定する。`weak` は追えるが再読や頭の中での名称変換が要る状態、`fail` は主要フローや条件を読み違える状態とする。validator の LANG warning の数だけで判定しない。用語不一致が mental model を壊す場合だけ G7 blocker とし、それ以外はこの次元の改善点にする。
 
+AI 実装の Orientation では、Source Truth に該当情報がある場合、first view だけで「実装・変更内容」「解く問題」「主要 runtime flow」「behavior の主要な変化」「reviewer の最初の確認点」を答えられるか確認する。約 30 秒は設計目標で、時間の機械的な gate ではない。詳細な file 一覧や全 component を first view に足して合格にしない。必要な詳細は後続 section へ置く。
+
 ## Severity
 
 | Severity | 意味 |
@@ -85,6 +87,7 @@ Create と Improve の自己評価ループは、次をすべて満たした時�
 - Accuracy に major 以上の問題がない
 - Explanation Plan の主要な問いすべてに、対応する view が答えている
 - 問いに必要のない section、view、要素がない
+- AI 実装の説明では、該当する Orientation の五つの問いに first view だけから答えられる（該当しない問いは Explanation Plan に理由がある）
 
 繰り返しは 3 iteration を目安とする。そこで条件を満たさない場合は、残った問題を severity つきで報告して止めるか、続ける価値がある具体的な理由（次の修正で解消する blocker が特定できている）を示して続ける。
 

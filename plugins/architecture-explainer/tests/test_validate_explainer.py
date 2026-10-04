@@ -56,13 +56,15 @@ class ValidateExplainerTests(unittest.TestCase):
     def codes(self, findings):
         return {finding['code'] for finding in findings}
 
-    def model_path(self):
+    def model_path(self, model=None):
         path = self.root / 'explanation-model.json'
-        path.write_text(json.dumps({'glossary': [
+        if model is None:
+            model = {'glossary': [
             {'concept': 'cmp-store', 'preferred': 'セッションストア', 'code_terms': ['SessionStore'],
              'aliases': ['保存先']},
             {'concept': 'cmp-auth', 'preferred': '認証サービス', 'code_terms': ['AuthService'], 'aliases': []},
-        ]}), encoding='utf-8')
+            ]}
+        path.write_text(json.dumps(model), encoding='utf-8')
         return path
 
     def test_terminology_consistency_and_valid_alias(self):
@@ -107,6 +109,37 @@ class ValidateExplainerTests(unittest.TestCase):
         code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path()))
         self.assertEqual(code, 0, output)
         self.assertIn('LANG004', self.codes(output['warnings']))
+
+    def test_before_and_after_require_separate_evidence_or_explicit_unknown(self):
+        change = {'before': {'id': 'before-login', 'behavior': '旧動作', 'status': 'observed', 'evidence': []},
+                  'after': {'id': 'after-login', 'behavior': '新動作', 'status': 'observed',
+                            'evidence': ['ev-new']}}
+        model = {'glossary': [], 'change_impacts': [change],
+                 'evidence': [{'id': 'ev-new', 'kind': 'code', 'revision': 'head'}], 'unknowns': []}
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
+        self.assertEqual(code, 1)
+        self.assertIn('change-evidence', self.codes(output['errors']))
+
+        change['before'] = {'id': 'before-login', 'behavior': '変更前のbehaviorは、現在提供されているSource Truthからは確認できません',
+                            'status': 'unknown', 'evidence': []}
+        model['unknowns'] = [{'about': 'before-login', 'question': '旧動作は何か'}]
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
+        self.assertEqual(code, 0, output)
+        self.assertNotIn('change-evidence', self.codes(output['errors']))
+
+        change['before'] = {'id': 'before-login', 'behavior': '旧動作', 'status': 'observed', 'evidence': ['ev-old']}
+        model['evidence'].append({'id': 'ev-old', 'kind': 'commit', 'revision': 'base'})
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
+        self.assertEqual(code, 0, output)
+        self.assertNotIn('change-evidence', self.codes(output['errors']))
+
+    def test_complex_responsibility_is_only_a_warning(self):
+        body = VALID_BODY.replace('</main>',
+                                  '<p data-responsibility>ストアは取得します。ストアは保存します。ストアは削除します。</p>'
+                                  '</main>')
+        code, output = self.run_cli(page(body))
+        self.assertEqual(code, 0, output)
+        self.assertIn('LANG005', self.codes(output['warnings']))
 
     def test_valid_explainer_passes_with_code_refs_resolved_against_source(self):
         returncode, output = self.run_cli(page(VALID_BODY), '--source-root', str(self.root / 'repo'))

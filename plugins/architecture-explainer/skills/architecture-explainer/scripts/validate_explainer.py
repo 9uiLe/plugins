@@ -80,6 +80,7 @@ class OpenElement:
     concept: str | None = None
     arrow_label: bool = False
     prose: bool = False
+    responsibility: bool = False
     text: list = field(default_factory=list)
 
 
@@ -117,6 +118,7 @@ class ExplainerParser(HTMLParser):
         self.concept_labels = []
         self.arrow_labels = []
         self.prose_blocks = []
+        self.responsibilities = []
 
     @property
     def line(self):
@@ -182,7 +184,7 @@ class ExplainerParser(HTMLParser):
             concept = attr.get("data-concept")
             arrow_label = "arrow-label" in classes
             self.stack.append(OpenElement(tag, self.line, first_view, scrolls, codemap, source_part, figure, svg,
-                                          concept, arrow_label, tag in PROSE_TAGS))
+                                          concept, arrow_label, tag in PROSE_TAGS, "data-responsibility" in attr))
         if "data-arrow-label" in attr:
             self.arrow_labels.append((attr["data-arrow-label"].strip(), self.line))
 
@@ -252,6 +254,8 @@ class ExplainerParser(HTMLParser):
             self.arrow_labels.append((label, element.line))
         if element.prose and label:
             self.prose_blocks.append((label, element.line))
+        if element.responsibility and label:
+            self.responsibilities.append((label, element.line))
 
     def finish(self):
         self.close()
@@ -264,7 +268,7 @@ class ExplainerParser(HTMLParser):
 
     def handle_data(self, data):
         for element in self.stack:
-            if element.concept or element.arrow_label:
+            if element.concept or element.arrow_label or element.responsibility:
                 element.text.append(data)
         for element in reversed(self.stack):
             if element.prose:
@@ -402,41 +406,70 @@ def check_codemaps(codemaps, findings):
 
 
 def check_language(parser, findings, model=None):
-    for label, line in parser.arrow_labels:
-        if label in ABSTRACT_ARROW_LABELS:
-            findings.warn("LANG006", f"arrow label '{label}' does not say what is exchanged or done", line)
+    # Order mirrors the review priority: entity identity, references, relations,
+    # responsibility, then a conservative readability hint.
+    if model is not None:
+        entries = model.get("glossary", [])
+        if entries and not parser.concept_labels:
+            findings.warn("LANG004", "model defines terms but HTML has no data-concept labels")
+        by_concept = {entry.get("concept"): entry for entry in entries if entry.get("concept")}
+        owners = {}
+        for concept, entry in by_concept.items():
+            for term in [entry.get("preferred", ""), *entry.get("code_terms", []), *entry.get("aliases", [])]:
+                if term:
+                    owners.setdefault(term, set()).add(concept)
+        for concept, label, line in parser.concept_labels:
+            entry = by_concept.get(concept)
+            if entry is None:
+                findings.warn("LANG004", f"data-concept '{concept}' has no glossary entry", line)
+                continue
+            allowed = {entry.get("preferred", ""), *entry.get("code_terms", []), *entry.get("aliases", [])}
+            if label in allowed:
+                continue
+            if owners.get(label, set()) - {concept}:
+                findings.error("LANG004", f"'{label}' is annotated as '{concept}' but names another concept", line)
+            else:
+                findings.warn("LANG004", f"'{label}' differs from preferred term '{entry.get('preferred', '')}'", line)
 
     for block, line in parser.prose_blocks:
         sentences = [part.strip() for part in re.split(r"(?<=[。！？])", block) if part.strip()]
         for sentence in sentences:
             if AMBIGUOUS_START.match(sentence):
                 findings.warn("LANG003", f"possible ambiguous reference: '{sentence[:24]}'", line)
+
+    for label, line in parser.arrow_labels:
+        if label in ABSTRACT_ARROW_LABELS:
+            findings.warn("LANG006", f"arrow label '{label}' does not say what is exchanged or done", line)
+
+    for statement, line in parser.responsibilities:
+        if len(re.findall(r"[。！？]", statement)) >= 3:
+            findings.warn("LANG005", "component responsibility has several claims; consider a single clear role", line)
+
+    for block, line in parser.prose_blocks:
+        sentences = [part.strip() for part in re.split(r"(?<=[。！？])", block) if part.strip()]
+        for sentence in sentences:
             if len(sentence) > 120 and (sentence.count("、") >= 3 or sentence.count("場合") >= 2):
                 findings.warn("LANG001", "sentence may contain too many claims; review actor and conditions", line)
 
-    if model is None:
-        return
-    entries = model.get("glossary", [])
-    if entries and not parser.concept_labels:
-        findings.warn("LANG004", "model defines terms but HTML has no data-concept labels")
-    by_concept = {entry.get("concept"): entry for entry in entries if entry.get("concept")}
-    owners = {}
-    for concept, entry in by_concept.items():
-        for term in [entry.get("preferred", ""), *entry.get("code_terms", []), *entry.get("aliases", [])]:
-            if term:
-                owners.setdefault(term, set()).add(concept)
-    for concept, label, line in parser.concept_labels:
-        entry = by_concept.get(concept)
-        if entry is None:
-            findings.warn("LANG004", f"data-concept '{concept}' has no glossary entry", line)
-            continue
-        allowed = {entry.get("preferred", ""), *entry.get("code_terms", []), *entry.get("aliases", [])}
-        if label in allowed:
-            continue
-        if owners.get(label, set()) - {concept}:
-            findings.error("LANG004", f"'{label}' is annotated as '{concept}' but names another concept", line)
-        else:
-            findings.warn("LANG004", f"'{label}' differs from preferred term '{entry.get('preferred', '')}'", line)
+
+def check_change_evidence(model, findings):
+    evidence_ids = {item.get("id") for item in model.get("evidence", [])}
+    unknowns = {item.get("about") for item in model.get("unknowns", [])}
+    for change in model.get("change_impacts", []):
+        for phase in ("before", "after"):
+            claim = change.get(phase, {})
+            if not claim or not claim.get("behavior"):
+                continue
+            status = claim.get("status")
+            refs = claim.get("evidence", [])
+            if status not in EVIDENCE_VALUES:
+                findings.error("change-evidence", f"{phase} behavior needs observed, inferred or unknown status")
+            elif status in {"observed", "inferred"} and (not refs or any(ref not in evidence_ids for ref in refs)):
+                findings.error("change-evidence", f"{phase} behavior needs resolvable evidence IDs")
+            elif status == "unknown" and refs:
+                findings.warn("change-evidence", f"{phase} is unknown but still has evidence IDs")
+            if status == "unknown" and claim.get("id") not in unknowns:
+                findings.error("change-evidence", f"{phase} unknown needs a matching unknowns.about entry")
 
 
 def validate(html, source_root=None, model=None):
@@ -449,6 +482,8 @@ def validate(html, source_root=None, model=None):
     check_figures(parser.figures, findings)
     check_codemaps(parser.codemaps, findings)
     check_language(parser, findings, model)
+    if model is not None:
+        check_change_evidence(model, findings)
     if not any(parser.evidence.values()):
         findings.warn("no-evidence-markers", "no data-evidence markers; inferred and unknown claims must be marked")
     if not parser.code_refs:

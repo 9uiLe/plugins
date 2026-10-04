@@ -59,14 +59,22 @@ audience が指定されていなければ、依頼文の語（「新規参加�
 
 ## 6. First view
 
-ページを開いた直後は orientation だけを与える。AI が実装・変更した機能を reviewer が読む場合は、約 30 秒で「何を実装したか、何を解決するか、主要フロー、振る舞いの変化、人間の確認点」のうち依頼に必要なものを言える構成にする。
+ページを開いた直後は orientation だけを与える。AI が実装・変更した機能を reviewer が読む場合、「約 30 秒で理解できる」は設計目標であり、時間を測る機械的な合否基準ではない。該当する情報が Source Truth にあるとき、first view だけから次に答えられるかを確認する。
+
+1. 何を実装または変更したか。
+2. 何を解決するか。
+3. 主要な runtime flow は何か。
+4. behavior 上の主要な変更は何か。
+5. reviewer が最初に確認すべき点は何か。
+
+該当しない問いは無理に埋めず、省いた理由を Explanation Plan に記録する。Unknown は推測で埋めない。
 
 - タイトル
 - この仕組みが何かを 2〜3 行で説明する文
 - primary visualization を 1 つ（通常は小さな Overview / System Context）
 - Key takeaway
 
-変更前後や確認点が主要な問いなら、短い要点または後続 section へのリンクで示す。first view に diff、全 component、詳細な code path は置かない。
+変更前後や確認点が主要な問いなら、first view に短い要点を置き、後続 section へのリンクを添える。リンク先だけを読まなければ答えられない状態にはしない。first view に diff、詳細な file 一覧、全 component、詳細な code path は置かない。
 
 詳細な component map、全 scenario、全 class の図を最初に置かない。
 

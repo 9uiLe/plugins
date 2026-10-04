@@ -19,7 +19,7 @@ Source Truth → Evidence → Explanation Model → Reader Questions → Termino
 4. **日本語で明確に書く。** ユーザー向け文章は原則日本語にし、identifier 等の原文は維持する。主要 concept の名称と文の明確さは [language-clarity.md](references/language-clarity.md) に従う。
 5. **standalone HTML にする。** 外部 CDN を必須にしない。技術方針は [html-structure.md](references/html-structure.md) が正本。
 6. **Hard Gate 違反があれば完了にしない。** 見た目が良くても、違反があれば受け入れない。
-7. **作業範囲を守る。** 対象リポジトリのコードは変更しない。既存 HTML は、上書きを依頼された場合だけ上書きする。外部への公開・送信は、別途その依頼がある場合だけ行う。
+7. **作業範囲を守る。** この skill を使って explainer を作るとき、解析する対象リポジトリは read-only の Source Truth であり、その source code は変更しない。この plugin 自体の改善依頼では `plugins/architecture-explainer/**` が変更対象となる。既存 HTML は、上書きを依頼された場合だけ上書きする。外部への公開・送信は、別途その依頼がある場合だけ行う。
 
 ## Mode を判定する
 
@@ -45,11 +45,11 @@ script のパスは、この `SKILL.md` があるディレクトリからの相�
 1. **Mode、audience、goal、scope を決める。** audience が指定されていなければ、依頼文と対象から推定し、推定理由を記録する。成果を左右する不明点（対象 subsystem の候補が複数あるなど）は質問し、回答に依存しない調査は先に進める。
 2. **Evidence を集める。** [evidence-rules.md](references/evidence-rules.md) に従い、entry point、境界、代表 scenario の呼び出し経路、テスト、設定、関連 commit を読む。読むのは subject に関係する範囲だけにする。
 3. **Explanation Model を作る。** [explanation-model.md](references/explanation-model.md) の schema で `explanation-model.json` を保存する。
-4. **Reader Questions と用語を確定する。** audience の問いを選び、表示する主要 concept の preferred term、code identifier、alias を model の `glossary` に記録する（[language-clarity.md](references/language-clarity.md)）。
+4. **Reader Questions と用語を確定する。** audience の問いを選び、表示する主要 concept の preferred term、code identifier、alias を model の `glossary` に記録する。用語の正本はここだけに置く（[language-clarity.md](references/language-clarity.md)）。
 5. **Explanation Plan を作る。** [visualization-selection.md](references/visualization-selection.md) に従い、問いごとに view を選ぶ。
-6. **文章を整えて HTML を作る。** claim と根拠を保ったまま、用語、actor、条件、結果を明確にする。[html-structure.md](references/html-structure.md) と [visual-grammar.md](references/visual-grammar.md) に従い、`assets/explainer-base.css` を `<style>` に inline する。
+6. **文章を整えて HTML を作る。** model の `glossary` から表示名を取り、本文・図・caption・表・矢印へ反映する。claim と根拠を保ったまま、actor、条件、結果を明確にする。[html-structure.md](references/html-structure.md) と [visual-grammar.md](references/visual-grammar.md) に従い、`assets/explainer-base.css` を `<style>` に inline する。
 7. **構造と言語を検証する。** `python3 scripts/validate_explainer.py <html> --source-root <repo> --model <explanation-model.json>` を実行し、error をすべて直す。warning は理由を確認し、直すか、直さない理由を記録する。ブラウザを使える場合は、PC 幅と狭い幅で表示し、横にはみ出す要素や重なりがないことを確認する。
-8. **評価する。** [evaluation-rubric.md](references/evaluation-rubric.md) で Hard Gate と各次元を判定する。完了条件を満たさなければ、修正優先順位に従って直し、7 から繰り返す。繰り返しの止め方も rubric に従う。
+8. **評価する。** [evaluation-rubric.md](references/evaluation-rubric.md) で Hard Gate と各次元を判定する。AI 実装の説明では、該当する five reader questions に first view だけで答えられるか確認する。完了条件を満たさなければ、修正優先順位に従って直し、7 から繰り返す。繰り返しの止め方も rubric に従う。
 9. **報告する。** 下記「報告」の内容を返す。
 
 ### Review の手順
