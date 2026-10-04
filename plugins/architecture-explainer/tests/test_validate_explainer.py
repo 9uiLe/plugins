@@ -56,6 +56,58 @@ class ValidateExplainerTests(unittest.TestCase):
     def codes(self, findings):
         return {finding['code'] for finding in findings}
 
+    def model_path(self):
+        path = self.root / 'explanation-model.json'
+        path.write_text(json.dumps({'glossary': [
+            {'concept': 'cmp-store', 'preferred': 'セッションストア', 'code_terms': ['SessionStore'],
+             'aliases': ['保存先']},
+            {'concept': 'cmp-auth', 'preferred': '認証サービス', 'code_terms': ['AuthService'], 'aliases': []},
+        ]}), encoding='utf-8')
+        return path
+
+    def test_terminology_consistency_and_valid_alias(self):
+        additions = ('<p><span data-concept="cmp-store">セッションストア</span>が保存します。'
+                     '<span data-concept="cmp-store">保存先</span>を確認します。'
+                     '<span data-concept="cmp-store">SessionStore</span>を実装で確認します。</p>')
+        html = page(VALID_BODY.replace('</main>', additions + '</main>'))
+        code, output = self.run_cli(html, '--model', str(self.model_path()))
+        self.assertEqual(code, 0, output)
+        self.assertNotIn('LANG004', self.codes(output['warnings']))
+
+        inconsistent = html.replace('>保存先</span>', '>セッション管理サービス</span>')
+        code, output = self.run_cli(inconsistent, '--model', str(self.model_path()))
+        self.assertEqual(code, 0, output)
+        self.assertIn('LANG004', self.codes(output['warnings']))
+
+        collision = html.replace('>保存先</span>', '>認証サービス</span>')
+        code, output = self.run_cli(collision, '--model', str(self.model_path()))
+        self.assertEqual(code, 1, output)
+        self.assertIn('LANG004', self.codes(output['errors']))
+
+    def test_ambiguous_wording_and_abstract_arrow_are_warnings(self):
+        additions = ('<p>この処理は確認します。</p>'
+                     '<figure data-question="何を渡すか"><span class="arrow-label">呼び出し</span>'
+                     '<figcaption>関係</figcaption></figure>')
+        code, output = self.run_cli(page(VALID_BODY.replace('</main>', additions + '</main>')))
+        self.assertEqual(code, 0, output)
+        self.assertLessEqual({'LANG003', 'LANG006'}, self.codes(output['warnings']))
+
+    def test_clear_japanese_prose_has_no_language_warnings(self):
+        additions = ('<p><span data-concept="cmp-auth">認証サービス</span>が認証情報を確認します。'
+                     'トークンが期限切れの場合、認証サービスが新しいトークンを発行します。</p>'
+                     '<figure data-question="認証情報を誰が確認するか">'
+                     '<span class="arrow-label">認証を要求</span>'
+                     '<figcaption>認証サービスが認証情報を確認する。</figcaption></figure>')
+        code, output = self.run_cli(page(VALID_BODY.replace('</main>', additions + '</main>')),
+                                    '--model', str(self.model_path()))
+        self.assertEqual(code, 0, output)
+        self.assertFalse(any(item['code'].startswith('LANG') for item in output['warnings']))
+
+    def test_model_terms_without_html_annotations_are_reported(self):
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path()))
+        self.assertEqual(code, 0, output)
+        self.assertIn('LANG004', self.codes(output['warnings']))
+
     def test_valid_explainer_passes_with_code_refs_resolved_against_source(self):
         returncode, output = self.run_cli(page(VALID_BODY), '--source-root', str(self.root / 'repo'))
         self.assertEqual(returncode, 0, output)

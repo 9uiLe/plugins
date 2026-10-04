@@ -1,9 +1,10 @@
-"""Check the structure of an architecture explainer HTML file; print JSON findings.
+"""Check an architecture explainer HTML file; print JSON findings.
 
-Checks structure only: standalone dependencies, anchors, ids, headings, figure
+Checks structure: standalone dependencies, anchors, ids, headings, figure
 contracts, evidence markers, element nesting, overflow-prone tables, SVGs and
-Code Maps, simple accessibility, and (with --source-root) that code references
-point at existing files and symbols. It does not judge whether claims are true. Exit codes: 0 no errors, 1 errors found
+Code Maps, simple accessibility, limited Japanese language hints, and (with
+--source-root) code references. --model checks annotated concept names.
+It does not judge whether claims are true. Exit codes: 0 no errors, 1 errors found
 or file unreadable, 2 argument parsing error.
 """
 import argparse
@@ -29,6 +30,9 @@ SYMBOL_SEPARATORS = re.compile(r"\.|::|#|/")
 # A separator followed by more text in the same text run has no <wbr> after it.
 MISSING_BREAK = {"file": re.compile(r"/(?=\S)"), "symbol": re.compile(r"(?:::|\.|(?<=[A-Za-z0-9])_)(?=\S)")}
 SOURCE_PARTS = {"src-file": "file", "src-symbol": "symbol"}
+ABSTRACT_ARROW_LABELS = {"使用", "呼び出し", "依存", "通信", "連携", "参照", "利用"}
+AMBIGUOUS_START = re.compile(r"^(?:これ|それ|この処理|その値|該当するもの|前述のもの)(?:は|が|を|に|で|も|について|、)")
+PROSE_TAGS = {"p", "li"}
 
 
 @dataclass
@@ -73,6 +77,10 @@ class OpenElement:
     source_part: str | None = None
     figure: Figure | None = None
     svg: SvgScope | None = None
+    concept: str | None = None
+    arrow_label: bool = False
+    prose: bool = False
+    text: list = field(default_factory=list)
 
 
 @dataclass
@@ -106,6 +114,9 @@ class ExplainerParser(HTMLParser):
         self.in_style = False
         self.stack = []
         self.codemaps = []
+        self.concept_labels = []
+        self.arrow_labels = []
+        self.prose_blocks = []
 
     @property
     def line(self):
@@ -168,7 +179,12 @@ class ExplainerParser(HTMLParser):
             codemap = CodeMap(self.line) if tag == "table" and "codemap" in classes else None
             if codemap:
                 self.codemaps.append(codemap)
-            self.stack.append(OpenElement(tag, self.line, first_view, scrolls, codemap, source_part, figure, svg))
+            concept = attr.get("data-concept")
+            arrow_label = "arrow-label" in classes
+            self.stack.append(OpenElement(tag, self.line, first_view, scrolls, codemap, source_part, figure, svg,
+                                          concept, arrow_label, tag in PROSE_TAGS))
+        if "data-arrow-label" in attr:
+            self.arrow_labels.append((attr["data-arrow-label"].strip(), self.line))
 
     def record_document_metadata(self, tag, attr):
         if tag == "html":
@@ -229,6 +245,13 @@ class ExplainerParser(HTMLParser):
             self.findings.error("svg-label",
                                 '<svg> needs a <title> child, aria-label or aria-labelledby (or aria-hidden="true")',
                                 element.svg.line)
+        label = " ".join(" ".join(element.text).split())
+        if element.concept and label:
+            self.concept_labels.append((element.concept, label, element.line))
+        if element.arrow_label:
+            self.arrow_labels.append((label, element.line))
+        if element.prose and label:
+            self.prose_blocks.append((label, element.line))
 
     def finish(self):
         self.close()
@@ -240,6 +263,13 @@ class ExplainerParser(HTMLParser):
         self.stack.clear()
 
     def handle_data(self, data):
+        for element in self.stack:
+            if element.concept or element.arrow_label:
+                element.text.append(data)
+        for element in reversed(self.stack):
+            if element.prose:
+                element.text.append(data)
+                break
         source_part = self.innermost("source_part")
         codemap = self.innermost("codemap")
         if source_part and codemap and MISSING_BREAK[source_part].search(data):
@@ -371,7 +401,45 @@ def check_codemaps(codemaps, findings):
                           codemap.line)
 
 
-def validate(html, source_root=None):
+def check_language(parser, findings, model=None):
+    for label, line in parser.arrow_labels:
+        if label in ABSTRACT_ARROW_LABELS:
+            findings.warn("LANG006", f"arrow label '{label}' does not say what is exchanged or done", line)
+
+    for block, line in parser.prose_blocks:
+        sentences = [part.strip() for part in re.split(r"(?<=[。！？])", block) if part.strip()]
+        for sentence in sentences:
+            if AMBIGUOUS_START.match(sentence):
+                findings.warn("LANG003", f"possible ambiguous reference: '{sentence[:24]}'", line)
+            if len(sentence) > 120 and (sentence.count("、") >= 3 or sentence.count("場合") >= 2):
+                findings.warn("LANG001", "sentence may contain too many claims; review actor and conditions", line)
+
+    if model is None:
+        return
+    entries = model.get("glossary", [])
+    if entries and not parser.concept_labels:
+        findings.warn("LANG004", "model defines terms but HTML has no data-concept labels")
+    by_concept = {entry.get("concept"): entry for entry in entries if entry.get("concept")}
+    owners = {}
+    for concept, entry in by_concept.items():
+        for term in [entry.get("preferred", ""), *entry.get("code_terms", []), *entry.get("aliases", [])]:
+            if term:
+                owners.setdefault(term, set()).add(concept)
+    for concept, label, line in parser.concept_labels:
+        entry = by_concept.get(concept)
+        if entry is None:
+            findings.warn("LANG004", f"data-concept '{concept}' has no glossary entry", line)
+            continue
+        allowed = {entry.get("preferred", ""), *entry.get("code_terms", []), *entry.get("aliases", [])}
+        if label in allowed:
+            continue
+        if owners.get(label, set()) - {concept}:
+            findings.error("LANG004", f"'{label}' is annotated as '{concept}' but names another concept", line)
+        else:
+            findings.warn("LANG004", f"'{label}' differs from preferred term '{entry.get('preferred', '')}'", line)
+
+
+def validate(html, source_root=None, model=None):
     findings = Findings()
     parser = ExplainerParser(findings)
     parser.feed(html)
@@ -380,6 +448,7 @@ def validate(html, source_root=None):
     check_document(parser, findings)
     check_figures(parser.figures, findings)
     check_codemaps(parser.codemaps, findings)
+    check_language(parser, findings, model)
     if not any(parser.evidence.values()):
         findings.warn("no-evidence-markers", "no data-evidence markers; inferred and unknown claims must be marked")
     if not parser.code_refs:
@@ -403,12 +472,16 @@ def main():
     parser.add_argument("html", type=Path, help="Explainer HTML file")
     parser.add_argument("--source-root", type=Path,
                         help="Repository root; verifies data-file / data-symbol / data-line code references")
+    parser.add_argument("--model", type=Path, help="Explanation Model JSON; checks annotated concept names")
     args = parser.parse_args()
     try:
         if args.source_root is not None and not args.source_root.is_dir():
             raise ValueError(f"--source-root is not a directory: {args.source_root}")
-        result = validate(args.html.read_text(encoding="utf-8"), args.source_root)
-    except (ValueError, OSError, UnicodeDecodeError) as exc:
+        model = json.loads(args.model.read_text(encoding="utf-8")) if args.model else None
+        if model is not None and not isinstance(model, dict):
+            raise ValueError("--model must contain a JSON object")
+        result = validate(args.html.read_text(encoding="utf-8"), args.source_root, model)
+    except (ValueError, OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
     print(json.dumps({"file": str(args.html), **result}, ensure_ascii=False, indent=2))

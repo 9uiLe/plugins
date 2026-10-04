@@ -8,7 +8,7 @@ description: Create, review, and improve evidence-backed HTML explanations of so
 ソースコードとアーキテクチャを、読者が正しい mental model を作れる HTML 説明資料にする。目的は図を描くことではなく、読者が「何のために存在するか → どう構成されているか → 実行時にどう動くか → コードのどこにあるか → なぜその設計か → 変更すると何に影響するか」を辿れるようにすることである。HTML は最終的な表示形式にすぎない。
 
 ```text
-Source Truth → Evidence → Explanation Model → Explanation Plan（audience × 問い × view）→ HTML → Evaluation → Improvement
+Source Truth → Evidence → Explanation Model → Reader Questions → Terminology Control → Explanation Plan → Language Simplification → HTML → Evaluation → Improvement
 ```
 
 ## 必須制約
@@ -16,9 +16,10 @@ Source Truth → Evidence → Explanation Model → Explanation Plan（audience 
 1. **HTML を直接書かない。** コードを読んだら、まず Explanation Model を作り `explanation-model.json` に保存する。HTML はその model から作る。
 2. **Evidence を分ける。** すべての claim を Observed / Inferred / Unknown に分類し、根拠のない設計意図や要件を推測で埋めない。分類規則は [evidence-rules.md](references/evidence-rules.md) が正本。
 3. **問いから view を選ぶ。** 1 view で 1 つの問いに答える。規則は [visualization-selection.md](references/visualization-selection.md) が正本。
-4. **standalone HTML にする。** 外部 CDN を必須にしない。技術方針は [html-structure.md](references/html-structure.md) が正本。
-5. **Hard Gate 違反があれば完了にしない。** 見た目が良くても、違反があれば受け入れない。
-6. **作業範囲を守る。** 対象リポジトリのコードは変更しない。既存 HTML は、上書きを依頼された場合だけ上書きする。外部への公開・送信は、別途その依頼がある場合だけ行う。
+4. **日本語で明確に書く。** ユーザー向け文章は原則日本語にし、identifier 等の原文は維持する。主要 concept の名称と文の明確さは [language-clarity.md](references/language-clarity.md) に従う。
+5. **standalone HTML にする。** 外部 CDN を必須にしない。技術方針は [html-structure.md](references/html-structure.md) が正本。
+6. **Hard Gate 違反があれば完了にしない。** 見た目が良くても、違反があれば受け入れない。
+7. **作業範囲を守る。** 対象リポジトリのコードは変更しない。既存 HTML は、上書きを依頼された場合だけ上書きする。外部への公開・送信は、別途その依頼がある場合だけ行う。
 
 ## Mode を判定する
 
@@ -44,11 +45,12 @@ script のパスは、この `SKILL.md` があるディレクトリからの相�
 1. **Mode、audience、goal、scope を決める。** audience が指定されていなければ、依頼文と対象から推定し、推定理由を記録する。成果を左右する不明点（対象 subsystem の候補が複数あるなど）は質問し、回答に依存しない調査は先に進める。
 2. **Evidence を集める。** [evidence-rules.md](references/evidence-rules.md) に従い、entry point、境界、代表 scenario の呼び出し経路、テスト、設定、関連 commit を読む。読むのは subject に関係する範囲だけにする。
 3. **Explanation Model を作る。** [explanation-model.md](references/explanation-model.md) の schema で `explanation-model.json` を保存する。
-4. **Explanation Plan を作る。** [visualization-selection.md](references/visualization-selection.md) に従い、audience の問いを選び、問いごとに view を選ぶ。
-5. **HTML を作る。** [html-structure.md](references/html-structure.md) と [visual-grammar.md](references/visual-grammar.md) に従い、`assets/explainer-base.css` を `<style>` に inline する。first view は orientation だけにする。
-6. **構造を検証する。** `python3 scripts/validate_explainer.py <html> --source-root <repo>` を実行し、error をすべて直す。warning は理由を確認し、直すか、直さない理由を記録する。ブラウザを使える場合は、PC 幅と狭い幅で表示し、横にはみ出す要素や重なりがないことを確認する。
-7. **評価する。** [evaluation-rubric.md](references/evaluation-rubric.md) で Hard Gate と各次元を判定する。完了条件を満たさなければ、修正優先順位に従って直し、6 から繰り返す。繰り返しの止め方も rubric に従う。
-8. **報告する。** 下記「報告」の内容を返す。
+4. **Reader Questions と用語を確定する。** audience の問いを選び、表示する主要 concept の preferred term、code identifier、alias を model の `glossary` に記録する（[language-clarity.md](references/language-clarity.md)）。
+5. **Explanation Plan を作る。** [visualization-selection.md](references/visualization-selection.md) に従い、問いごとに view を選ぶ。
+6. **文章を整えて HTML を作る。** claim と根拠を保ったまま、用語、actor、条件、結果を明確にする。[html-structure.md](references/html-structure.md) と [visual-grammar.md](references/visual-grammar.md) に従い、`assets/explainer-base.css` を `<style>` に inline する。
+7. **構造と言語を検証する。** `python3 scripts/validate_explainer.py <html> --source-root <repo> --model <explanation-model.json>` を実行し、error をすべて直す。warning は理由を確認し、直すか、直さない理由を記録する。ブラウザを使える場合は、PC 幅と狭い幅で表示し、横にはみ出す要素や重なりがないことを確認する。
+8. **評価する。** [evaluation-rubric.md](references/evaluation-rubric.md) で Hard Gate と各次元を判定する。完了条件を満たさなければ、修正優先順位に従って直し、7 から繰り返す。繰り返しの止め方も rubric に従う。
+9. **報告する。** 下記「報告」の内容を返す。
 
 ### Review の手順
 
@@ -62,7 +64,7 @@ script のパスは、この `SKILL.md` があるディレクトリからの相�
 
 1. Review の手順をすべて行い、理解上の gap を特定する。
 2. 既存のページ構造を前提にしない。Source Truth から作った model と audience から Explanation Plan を作り直し、section と view を選び直す。図の分割、view type の変更、section の削除を行ってよい。
-3. HTML を作り直し、Workflow の 6〜7 で検証・再評価する。
+3. HTML を作り直し、Workflow の 7〜8 で検証・再評価する。
 4. 改善前後の Hard Gate と主要次元の判定、構造の変更点（section・view の追加、分割、削除とその理由）を報告する。
 
 CSS や配色の変更だけでは Improve にならない。内容・説明構造・可視化の gap を確認した結果、見た目だけが問題だった場合は、そのことを根拠つきで報告してから見た目を直す。
@@ -77,6 +79,7 @@ CSS や配色の変更だけでは Improve にならない。内容・説明構�
 | [html-structure.md](references/html-structure.md) | HTML を書く時。Review で構造を評価する時 |
 | [visual-grammar.md](references/visual-grammar.md) | 図を描く時。Review で視覚表現の一貫性を評価する時 |
 | [evaluation-rubric.md](references/evaluation-rubric.md) | すべての mode。評価と report 作成時 |
+| [language-clarity.md](references/language-clarity.md) | すべての mode。主要 concept の用語選択、日本語の作成・評価時 |
 
 ## 報告
 

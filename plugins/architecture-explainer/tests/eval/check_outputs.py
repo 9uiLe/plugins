@@ -30,7 +30,13 @@ REVIEW_FINDINGS = {
 
 
 def validate(html, root):
-    result = subprocess.run([sys.executable, str(VALIDATOR), str(html), '--source-root', str(root)],
+    model = html.with_name('explanation-model.json')
+    if not model.exists():
+        model = html.with_suffix('.explanation-model.json')
+    command = [sys.executable, str(VALIDATOR), str(html), '--source-root', str(root)]
+    if model.exists():
+        command.extend(['--model', str(model)])
+    result = subprocess.run(command,
                             capture_output=True, text=True)
     data = json.loads(result.stdout)
     return {'errors': [e['code'] for e in data['errors']], 'warnings': [w['code'] for w in data['warnings']],
@@ -90,7 +96,7 @@ def main():
     report['c'] = {
         'source_changes': changed_source(run / 'case-c'),
         'review_found': {name: bool(re.search(pattern, text)) for name, pattern in REVIEW_FINDINGS.items()},
-        'hard_gates_listed': all(f'G{i}' in text for i in range(1, 7)),
+        'hard_gates_listed': all(f'G{i}' in text for i in range(1, 8)),
         'prioritized_fixes': 'blocker' in text,
         'cited_source_files': sorted(set(re.findall(r'app/[\w/]+\.py', text))),
     }
