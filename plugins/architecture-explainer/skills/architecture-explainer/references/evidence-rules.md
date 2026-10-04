@@ -48,7 +48,7 @@ Unknown には `question`、`reason`（なぜ判断できないか）、`how_to_
 - `line` は分かる場合だけ書く。行番号は変わりやすいため、symbol を主な参照にする。
 - `note` には、その evidence が claim のどこを支えるかを書く。コードの全文は写さない。
 - 変更の説明では commit を evidence にできる（`kind: "commit"`、`symbol` に short SHA）。
-- `revision` は変更前後の根拠を区別できる版（commit SHA、旧実装の資料名など）にする。git diff は `kind: "diff"` とし、`note` に比較した base / head を記録する。旧実装をユーザーが提供した場合は `kind: "doc"` でその資料名を記録してよい。
+- `revision` は変更前後の根拠を区別できる版（commit SHA、旧実装の資料名など）にする。Before / After では `source.base_revision` / `source.revision` と対応させる。git diff は `kind: "diff"` とし、`note` に比較した base / head を記録する。両側の claim に使う場合は、同じ diff を指す旧側・新側の evidence 行を分ける。旧実装をユーザーが提供した場合は `kind: "doc"` でその資料名を記録してよい。
 
 ## Before / After の根拠
 

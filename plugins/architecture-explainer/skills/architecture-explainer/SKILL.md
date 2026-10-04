@@ -35,7 +35,7 @@ Source Truth → Evidence → Explanation Model → Reader Questions → Termino
 
 - **Source Truth**: 対象リポジトリ（指定がなければ作業ディレクトリ）、指定された設計資料、diff、commit。git 管理下なら `git rev-parse --short HEAD` の値を `explanation-model.json` の `source.revision` に記録する。
 - **Create の保存先**: 指定された場所。指定がなければ、作業ディレクトリの `explainers/<topic-slug>/index.html` と、同じディレクトリの `explanation-model.json`。
-- **Improve の保存先**: 上書きの依頼がなければ、元ファイルと同じディレクトリに `<元の名前>.improved.html` と `<元の名前>.explanation-model.json` を作る。
+- **Improve の保存先**: 上書きの依頼がなければ、元ファイルと同じディレクトリに `<元の stem>.improved.html` と `<元の stem>.explanation-model.json` を作る。`architecture.html` なら `architecture.improved.html` と `architecture.explanation-model.json`。
 - **Review**: report を回答として返す。保存先を指定された場合だけファイルに書く。
 
 ## Workflow

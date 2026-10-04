@@ -16,6 +16,7 @@ Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Q
 - `status` が `unknown` の claim には、`unknowns` に `about` がその claim の `id` を指す行を置く。claim 自体の `evidence` は空にする。
 - decision は、判断の内容（`status`）と理由（`rationale.status`）を別々に分類する。実装から判断は確認できても、理由は Unknown であることが多い。
 - `source.revision` には、git 管理下なら commit SHA、そうでなければ資料名や取得日など版を識別できるものを書く。識別できなければ空にする。
+- `components`・`context.actors`・`context.external_systems`・`data` の `name` は Source Truth に現れる識別子または正式名称を記録する。人間向け表示名は `glossary.preferred` から取得する。両者が異なる場合、`name` を `glossary.code_terms` または `aliases` にも記録し、同じ concept の名称であることを明示する。
 
 ## Schema
 
@@ -85,7 +86,7 @@ Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Q
 
 `depends_on.meaning` には、依存の意味（「認証済み user id を要求」「refresh token を保存」）を書く。HTML の矢印ラベルはここから作る。
 
-既存コードを変更した場合は、`change_impacts.before` と `after` に利用者から見える振る舞いと条件を別々の claim として記録する。両方に Evidence Rules を適用する。`source.base_revision` と `source.revision`、または `source.materials` で旧版と新版の Source Truth を識別し、各 `evidence.revision` に根拠が属する版を記録する。変更前の Observed は旧版のコード・テスト・commit・diff・ユーザー提供の旧実装で、変更後の Observed は新版の根拠で裏付ける。`unaffected` は変わらないこと、`requires_verification` は人間の確認点に使う。差分の行順を説明しない。旧版の Source Truth がない場合は `before.status` を `unknown`、`before.evidence` を空にし、`unknowns` で対応する `before.id` を指す。表示は「変更前のbehaviorは、現在提供されているSource Truthからは確認できません」とする。
+既存コードを変更した場合は、`change_impacts.before` と `after` に利用者から見える振る舞いと条件を別々の claim として記録する。両方に Evidence Rules を適用する。`source.base_revision` に旧版、`source.revision` に新版を識別できる値を記録する。git では base / head SHA、旧実装をユーザーが提供した場合は旧資料名も版の識別子としてよい。各 `evidence.revision` は、その根拠が支える側の版に合わせる。diff は旧版と新版に対応する evidence 行を分け、同じ diff を参照する場合も `revision` で旧側・新側を区別する。`source.materials` は参照資料の一覧として併記できるが、版の識別子の代わりにはしない。変更前の Observed は旧版のコード・テスト・commit・diff・ユーザー提供の旧実装で、変更後の Observed は新版の根拠で裏付ける。`unaffected` は変わらないこと、`requires_verification` は人間の確認点に使う。差分の行順を説明しない。旧版の Source Truth がない場合は `before.status` を `unknown`、`before.evidence` を空にし、`unknowns` で対応する `before.id` を指す。表示は「変更前のbehaviorは、現在提供されているSource Truthからは確認できません」とする。
 
 ## Controlled terminology
 

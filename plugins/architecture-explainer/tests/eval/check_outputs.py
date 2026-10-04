@@ -29,15 +29,22 @@ REVIEW_FINDINGS = {
 }
 
 
+def model_for_html(html):
+    suffix = '.improved.html'
+    if html.name.endswith(suffix):
+        stem = html.name[:-len(suffix)]
+        return html.with_name(f'{stem}.explanation-model.json')
+    return html.with_name('explanation-model.json')
+
+
 def validate(html, root):
-    model = html.with_name('explanation-model.json')
-    if not model.exists():
-        model = html.with_suffix('.explanation-model.json')
-    command = [sys.executable, str(VALIDATOR), str(html), '--source-root', str(root)]
-    if model.exists():
-        command.extend(['--model', str(model)])
-    result = subprocess.run(command,
-                            capture_output=True, text=True)
+    model = model_for_html(html)
+    if not model.is_file():
+        return {'errors': ['missing-model'], 'warnings': [], 'stats': {}, 'detail': str(model)}
+    command = [sys.executable, str(VALIDATOR), str(html), '--source-root', str(root), '--model', str(model)]
+    result = subprocess.run(command, capture_output=True, text=True)
+    if not result.stdout:
+        return {'errors': ['validator-failed'], 'warnings': [], 'stats': {}, 'detail': result.stderr.strip()}
     data = json.loads(result.stdout)
     return {'errors': [e['code'] for e in data['errors']], 'warnings': [w['code'] for w in data['warnings']],
             'stats': data['stats']}

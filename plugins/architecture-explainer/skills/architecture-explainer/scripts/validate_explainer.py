@@ -3,7 +3,7 @@
 Checks structure: standalone dependencies, anchors, ids, headings, figure
 contracts, evidence markers, element nesting, overflow-prone tables, SVGs and
 Code Maps, simple accessibility, limited Japanese language hints, and (with
---source-root) code references. --model checks annotated concept names.
+--source-root) code references. --model checks terminology and change evidence.
 It does not judge whether claims are true. Exit codes: 0 no errors, 1 errors found
 or file unreadable, 2 argument parsing error.
 """
@@ -405,6 +405,61 @@ def check_codemaps(codemaps, findings):
                           codemap.line)
 
 
+def model_object_list(parent, key, path):
+    items = parent.get(key, [])
+    if not isinstance(items, list) or any(not isinstance(item, dict) for item in items):
+        raise ValueError(f"--model {path} must be an array of objects")
+    return items
+
+
+def model_string_list(parent, key, path):
+    items = parent.get(key, [])
+    if not isinstance(items, list) or any(not isinstance(item, str) for item in items):
+        raise ValueError(f"--model {path} must be an array of strings")
+    return items
+
+
+def check_model_shape(model):
+    if not isinstance(model, dict):
+        raise ValueError("--model must contain a JSON object")
+    source = model.get("source", {})
+    context = model.get("context", {})
+    if not isinstance(source, dict) or not isinstance(context, dict):
+        raise ValueError("--model source and context must be objects")
+    for key in ("revision", "base_revision"):
+        if not isinstance(source.get(key, ""), str):
+            raise ValueError(f"--model source.{key} must be a string")
+    for key in ("actors", "external_systems"):
+        model_object_list(context, key, f"context.{key}")
+    for key in ("components", "data", "glossary", "change_impacts", "evidence", "unknowns"):
+        model_object_list(model, key, key)
+    for collection in (model.get("components", []), context.get("actors", []),
+                       context.get("external_systems", []), model.get("data", [])):
+        for entity in collection:
+            if not isinstance(entity.get("id", ""), str) or not isinstance(entity.get("name", ""), str):
+                raise ValueError("--model entity id and name must be strings")
+    for entry in model.get("glossary", []):
+        for key in ("preferred", "concept"):
+            if not isinstance(entry.get(key, ""), str):
+                raise ValueError(f"--model glossary.{key} must be a string")
+        for key in ("code_terms", "aliases"):
+            model_string_list(entry, key, f"glossary.{key}")
+    for change in model.get("change_impacts", []):
+        for phase in ("before", "after"):
+            claim = change.get(phase, {})
+            if not isinstance(claim, dict):
+                raise ValueError(f"--model change_impacts.{phase} must be an object")
+            for key in ("id", "behavior", "status"):
+                if not isinstance(claim.get(key, ""), str):
+                    raise ValueError(f"--model change_impacts.{phase}.{key} must be a string")
+            model_string_list(claim, "evidence", f"change_impacts.{phase}.evidence")
+    for key, fields in (("evidence", ("id", "revision")), ("unknowns", ("about",))):
+        for item in model.get(key, []):
+            for field_name in fields:
+                if not isinstance(item.get(field_name, ""), str):
+                    raise ValueError(f"--model {key}.{field_name} must be a string")
+
+
 def check_language(parser, findings, model=None):
     # Order mirrors the review priority: entity identity, references, relations,
     # responsibility, then a conservative readability hint.
@@ -413,6 +468,16 @@ def check_language(parser, findings, model=None):
         if entries and not parser.concept_labels:
             findings.warn("LANG004", "model defines terms but HTML has no data-concept labels")
         by_concept = {entry.get("concept"): entry for entry in entries if entry.get("concept")}
+        for collection in (model.get("components", []), model.get("context", {}).get("actors", []),
+                           model.get("context", {}).get("external_systems", []), model.get("data", [])):
+            for entity in collection:
+                entry = by_concept.get(entity.get("id"))
+                source_name = entity.get("name", "")
+                if entry and source_name:
+                    allowed = {entry.get("preferred", ""), *entry.get("code_terms", []), *entry.get("aliases", [])}
+                    if source_name not in allowed:
+                        findings.error("model-terminology",
+                                       f"source name '{source_name}' for '{entity['id']}' is not mapped in glossary")
         owners = {}
         for concept, entry in by_concept.items():
             for term in [entry.get("preferred", ""), *entry.get("code_terms", []), *entry.get("aliases", [])]:
@@ -453,19 +518,32 @@ def check_language(parser, findings, model=None):
 
 
 def check_change_evidence(model, findings):
-    evidence_ids = {item.get("id") for item in model.get("evidence", [])}
+    evidence_by_id = {item.get("id"): item for item in model.get("evidence", [])}
     unknowns = {item.get("about") for item in model.get("unknowns", [])}
+    source = model.get("source", {})
     for change in model.get("change_impacts", []):
+        before = change.get("before", {})
+        after = change.get("after", {})
+        if (before.get("behavior") and after.get("behavior")
+                and before.get("status") in {"observed", "inferred"}
+                and after.get("status") in {"observed", "inferred"}
+                and source.get("base_revision") == source.get("revision")):
+            findings.error("change-evidence", "before and after need distinct source revisions")
         for phase in ("before", "after"):
             claim = change.get(phase, {})
             if not claim or not claim.get("behavior"):
                 continue
             status = claim.get("status")
             refs = claim.get("evidence", [])
+            expected_revision = source.get("base_revision" if phase == "before" else "revision", "")
             if status not in EVIDENCE_VALUES:
                 findings.error("change-evidence", f"{phase} behavior needs observed, inferred or unknown status")
-            elif status in {"observed", "inferred"} and (not refs or any(ref not in evidence_ids for ref in refs)):
-                findings.error("change-evidence", f"{phase} behavior needs resolvable evidence IDs")
+            elif status in {"observed", "inferred"}:
+                if not refs or any(ref not in evidence_by_id for ref in refs):
+                    findings.error("change-evidence", f"{phase} behavior needs resolvable evidence IDs")
+                elif not expected_revision or not any(evidence_by_id[ref].get("revision") == expected_revision
+                                                      for ref in refs):
+                    findings.error("change-evidence", f"{phase} behavior needs evidence from its source revision")
             elif status == "unknown" and refs:
                 findings.warn("change-evidence", f"{phase} is unknown but still has evidence IDs")
             if status == "unknown" and claim.get("id") not in unknowns:
@@ -473,6 +551,8 @@ def check_change_evidence(model, findings):
 
 
 def validate(html, source_root=None, model=None):
+    if model is not None:
+        check_model_shape(model)
     findings = Findings()
     parser = ExplainerParser(findings)
     parser.feed(html)
@@ -507,14 +587,12 @@ def main():
     parser.add_argument("html", type=Path, help="Explainer HTML file")
     parser.add_argument("--source-root", type=Path,
                         help="Repository root; verifies data-file / data-symbol / data-line code references")
-    parser.add_argument("--model", type=Path, help="Explanation Model JSON; checks annotated concept names")
+    parser.add_argument("--model", type=Path, help="Explanation Model JSON; checks terminology and change evidence")
     args = parser.parse_args()
     try:
         if args.source_root is not None and not args.source_root.is_dir():
             raise ValueError(f"--source-root is not a directory: {args.source_root}")
         model = json.loads(args.model.read_text(encoding="utf-8")) if args.model else None
-        if model is not None and not isinstance(model, dict):
-            raise ValueError("--model must contain a JSON object")
         result = validate(args.html.read_text(encoding="utf-8"), args.source_root, model)
     except (ValueError, OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         print(f"Error: {exc}", file=sys.stderr)

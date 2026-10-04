@@ -114,7 +114,7 @@ class ValidateExplainerTests(unittest.TestCase):
         change = {'before': {'id': 'before-login', 'behavior': '旧動作', 'status': 'observed', 'evidence': []},
                   'after': {'id': 'after-login', 'behavior': '新動作', 'status': 'observed',
                             'evidence': ['ev-new']}}
-        model = {'glossary': [], 'change_impacts': [change],
+        model = {'glossary': [], 'source': {'revision': 'head', 'base_revision': ''}, 'change_impacts': [change],
                  'evidence': [{'id': 'ev-new', 'kind': 'code', 'revision': 'head'}], 'unknowns': []}
         code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
         self.assertEqual(code, 1)
@@ -129,9 +129,45 @@ class ValidateExplainerTests(unittest.TestCase):
 
         change['before'] = {'id': 'before-login', 'behavior': '旧動作', 'status': 'observed', 'evidence': ['ev-old']}
         model['evidence'].append({'id': 'ev-old', 'kind': 'commit', 'revision': 'base'})
+        model['source']['base_revision'] = 'base'
         code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
         self.assertEqual(code, 0, output)
         self.assertNotIn('change-evidence', self.codes(output['errors']))
+
+        change['before']['evidence'] = ['ev-new']
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
+        self.assertEqual(code, 1)
+        self.assertIn('change-evidence', self.codes(output['errors']))
+
+        change['before']['evidence'] = ['ev-old']
+        model['source']['base_revision'] = 'head'
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
+        self.assertEqual(code, 1)
+        self.assertIn('change-evidence', self.codes(output['errors']))
+
+    def test_entity_source_name_must_be_mapped_to_canonical_term(self):
+        model = {'glossary': [{'concept': 'cmp-store', 'preferred': 'セッションストア',
+                               'code_terms': ['SessionStore'], 'aliases': []}],
+                 'components': [{'id': 'cmp-store', 'name': 'SessionStore'}]}
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
+        self.assertEqual(code, 0, output)
+        model['components'][0]['name'] = 'セッション管理サービス'
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
+        self.assertEqual(code, 1)
+        self.assertIn('model-terminology', self.codes(output['errors']))
+
+    def test_malformed_model_reports_input_error_without_traceback(self):
+        for model in ({'glossary': None}, {'glossary': 'terms'},
+                      {'glossary': [{'concept': 'cmp-store', 'preferred': 'ストア', 'aliases': None}]}):
+            with self.subTest(model=model):
+                path = self.model_path(model)
+                html = self.root / 'explainer.html'
+                html.write_text(page(VALID_BODY))
+                result = subprocess.run([sys.executable, str(SCRIPT), str(html), '--model', str(path)],
+                                        capture_output=True, text=True)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn('Error: --model', result.stderr)
+                self.assertNotIn('Traceback', result.stderr)
 
     def test_complex_responsibility_is_only_a_warning(self):
         body = VALID_BODY.replace('</main>',
