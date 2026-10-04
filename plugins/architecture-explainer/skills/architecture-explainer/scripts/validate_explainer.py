@@ -1,9 +1,10 @@
-"""Check the structure of an architecture explainer HTML file; print JSON findings.
+"""Check an architecture explainer HTML file; print JSON findings.
 
-Checks structure only: standalone dependencies, anchors, ids, headings, figure
+Checks structure: standalone dependencies, anchors, ids, headings, figure
 contracts, evidence markers, element nesting, overflow-prone tables, SVGs and
-Code Maps, simple accessibility, and (with --source-root) that code references
-point at existing files and symbols. It does not judge whether claims are true. Exit codes: 0 no errors, 1 errors found
+Code Maps, simple accessibility, limited Japanese language hints, and (with
+--source-root) code references. --model checks terminology and change evidence.
+It does not judge whether claims are true. Exit codes: 0 no errors, 1 errors found
 or file unreadable, 2 argument parsing error.
 """
 import argparse
@@ -29,6 +30,9 @@ SYMBOL_SEPARATORS = re.compile(r"\.|::|#|/")
 # A separator followed by more text in the same text run has no <wbr> after it.
 MISSING_BREAK = {"file": re.compile(r"/(?=\S)"), "symbol": re.compile(r"(?:::|\.|(?<=[A-Za-z0-9])_)(?=\S)")}
 SOURCE_PARTS = {"src-file": "file", "src-symbol": "symbol"}
+ABSTRACT_ARROW_LABELS = {"使用", "呼び出し", "依存", "通信", "連携", "参照", "利用"}
+AMBIGUOUS_START = re.compile(r"^(?:これ|それ|この処理|その値|該当するもの|前述のもの)(?:は|が|を|に|で|も|について|、)")
+PROSE_TAGS = {"p", "li"}
 
 
 @dataclass
@@ -73,6 +77,11 @@ class OpenElement:
     source_part: str | None = None
     figure: Figure | None = None
     svg: SvgScope | None = None
+    concept: str | None = None
+    arrow_label: bool = False
+    prose: bool = False
+    responsibility: bool = False
+    text: list = field(default_factory=list)
 
 
 @dataclass
@@ -106,6 +115,10 @@ class ExplainerParser(HTMLParser):
         self.in_style = False
         self.stack = []
         self.codemaps = []
+        self.concept_labels = []
+        self.arrow_labels = []
+        self.prose_blocks = []
+        self.responsibilities = []
 
     @property
     def line(self):
@@ -168,7 +181,12 @@ class ExplainerParser(HTMLParser):
             codemap = CodeMap(self.line) if tag == "table" and "codemap" in classes else None
             if codemap:
                 self.codemaps.append(codemap)
-            self.stack.append(OpenElement(tag, self.line, first_view, scrolls, codemap, source_part, figure, svg))
+            concept = attr.get("data-concept")
+            arrow_label = "arrow-label" in classes
+            self.stack.append(OpenElement(tag, self.line, first_view, scrolls, codemap, source_part, figure, svg,
+                                          concept, arrow_label, tag in PROSE_TAGS, "data-responsibility" in attr))
+        if "data-arrow-label" in attr:
+            self.arrow_labels.append((attr["data-arrow-label"].strip(), self.line))
 
     def record_document_metadata(self, tag, attr):
         if tag == "html":
@@ -229,6 +247,15 @@ class ExplainerParser(HTMLParser):
             self.findings.error("svg-label",
                                 '<svg> needs a <title> child, aria-label or aria-labelledby (or aria-hidden="true")',
                                 element.svg.line)
+        label = " ".join(" ".join(element.text).split())
+        if element.concept and label:
+            self.concept_labels.append((element.concept, label, element.line))
+        if element.arrow_label:
+            self.arrow_labels.append((label, element.line))
+        if element.prose and label:
+            self.prose_blocks.append((label, element.line))
+        if element.responsibility and label:
+            self.responsibilities.append((label, element.line))
 
     def finish(self):
         self.close()
@@ -240,6 +267,13 @@ class ExplainerParser(HTMLParser):
         self.stack.clear()
 
     def handle_data(self, data):
+        for element in self.stack:
+            if element.concept or element.arrow_label or element.responsibility:
+                element.text.append(data)
+        for element in reversed(self.stack):
+            if element.prose:
+                element.text.append(data)
+                break
         source_part = self.innermost("source_part")
         codemap = self.innermost("codemap")
         if source_part and codemap and MISSING_BREAK[source_part].search(data):
@@ -371,7 +405,154 @@ def check_codemaps(codemaps, findings):
                           codemap.line)
 
 
-def validate(html, source_root=None):
+def model_object_list(parent, key, path):
+    items = parent.get(key, [])
+    if not isinstance(items, list) or any(not isinstance(item, dict) for item in items):
+        raise ValueError(f"--model {path} must be an array of objects")
+    return items
+
+
+def model_string_list(parent, key, path):
+    items = parent.get(key, [])
+    if not isinstance(items, list) or any(not isinstance(item, str) for item in items):
+        raise ValueError(f"--model {path} must be an array of strings")
+    return items
+
+
+def check_model_shape(model):
+    if not isinstance(model, dict):
+        raise ValueError("--model must contain a JSON object")
+    source = model.get("source", {})
+    context = model.get("context", {})
+    if not isinstance(source, dict) or not isinstance(context, dict):
+        raise ValueError("--model source and context must be objects")
+    for key in ("revision", "base_revision"):
+        if not isinstance(source.get(key, ""), str):
+            raise ValueError(f"--model source.{key} must be a string")
+    for key in ("actors", "external_systems"):
+        model_object_list(context, key, f"context.{key}")
+    for key in ("components", "data", "glossary", "change_impacts", "evidence", "unknowns"):
+        model_object_list(model, key, key)
+    for collection in (model.get("components", []), context.get("actors", []),
+                       context.get("external_systems", []), model.get("data", [])):
+        for entity in collection:
+            if not isinstance(entity.get("id", ""), str) or not isinstance(entity.get("name", ""), str):
+                raise ValueError("--model entity id and name must be strings")
+    for entry in model.get("glossary", []):
+        for key in ("preferred", "concept"):
+            if not isinstance(entry.get(key, ""), str):
+                raise ValueError(f"--model glossary.{key} must be a string")
+        for key in ("code_terms", "aliases"):
+            model_string_list(entry, key, f"glossary.{key}")
+    for change in model.get("change_impacts", []):
+        for phase in ("before", "after"):
+            claim = change.get(phase, {})
+            if not isinstance(claim, dict):
+                raise ValueError(f"--model change_impacts.{phase} must be an object")
+            for key in ("id", "behavior", "status"):
+                if not isinstance(claim.get(key, ""), str):
+                    raise ValueError(f"--model change_impacts.{phase}.{key} must be a string")
+            model_string_list(claim, "evidence", f"change_impacts.{phase}.evidence")
+    for key, fields in (("evidence", ("id", "revision")), ("unknowns", ("about",))):
+        for item in model.get(key, []):
+            for field_name in fields:
+                if not isinstance(item.get(field_name, ""), str):
+                    raise ValueError(f"--model {key}.{field_name} must be a string")
+
+
+def check_language(parser, findings, model=None):
+    # Order mirrors the review priority: entity identity, references, relations,
+    # responsibility, then a conservative readability hint.
+    if model is not None:
+        entries = model.get("glossary", [])
+        if entries and not parser.concept_labels:
+            findings.warn("LANG004", "model defines terms but HTML has no data-concept labels")
+        by_concept = {entry.get("concept"): entry for entry in entries if entry.get("concept")}
+        for collection in (model.get("components", []), model.get("context", {}).get("actors", []),
+                           model.get("context", {}).get("external_systems", []), model.get("data", [])):
+            for entity in collection:
+                entry = by_concept.get(entity.get("id"))
+                source_name = entity.get("name", "")
+                if entry and source_name:
+                    allowed = {entry.get("preferred", ""), *entry.get("code_terms", []), *entry.get("aliases", [])}
+                    if source_name not in allowed:
+                        findings.error("model-terminology",
+                                       f"source name '{source_name}' for '{entity['id']}' is not mapped in glossary")
+        owners = {}
+        for concept, entry in by_concept.items():
+            for term in [entry.get("preferred", ""), *entry.get("code_terms", []), *entry.get("aliases", [])]:
+                if term:
+                    owners.setdefault(term, set()).add(concept)
+        for concept, label, line in parser.concept_labels:
+            entry = by_concept.get(concept)
+            if entry is None:
+                findings.warn("LANG004", f"data-concept '{concept}' has no glossary entry", line)
+                continue
+            allowed = {entry.get("preferred", ""), *entry.get("code_terms", []), *entry.get("aliases", [])}
+            if label in allowed:
+                continue
+            if owners.get(label, set()) - {concept}:
+                findings.error("LANG004", f"'{label}' is annotated as '{concept}' but names another concept", line)
+            else:
+                findings.warn("LANG004", f"'{label}' differs from preferred term '{entry.get('preferred', '')}'", line)
+
+    for block, line in parser.prose_blocks:
+        sentences = [part.strip() for part in re.split(r"(?<=[。！？])", block) if part.strip()]
+        for sentence in sentences:
+            if AMBIGUOUS_START.match(sentence):
+                findings.warn("LANG003", f"possible ambiguous reference: '{sentence[:24]}'", line)
+
+    for label, line in parser.arrow_labels:
+        if label in ABSTRACT_ARROW_LABELS:
+            findings.warn("LANG006", f"arrow label '{label}' does not say what is exchanged or done", line)
+
+    for statement, line in parser.responsibilities:
+        if len(re.findall(r"[。！？]", statement)) >= 3:
+            findings.warn("LANG005", "component responsibility has several claims; consider a single clear role", line)
+
+    for block, line in parser.prose_blocks:
+        sentences = [part.strip() for part in re.split(r"(?<=[。！？])", block) if part.strip()]
+        for sentence in sentences:
+            if len(sentence) > 120 and (sentence.count("、") >= 3 or sentence.count("場合") >= 2):
+                findings.warn("LANG001", "sentence may contain too many claims; review actor and conditions", line)
+
+
+def check_change_evidence(model, findings):
+    evidence_by_id = {item.get("id"): item for item in model.get("evidence", [])}
+    unknowns = {item.get("about") for item in model.get("unknowns", [])}
+    source = model.get("source", {})
+    for change in model.get("change_impacts", []):
+        before = change.get("before", {})
+        after = change.get("after", {})
+        if (before.get("behavior") and after.get("behavior")
+                and before.get("status") in {"observed", "inferred"}
+                and after.get("status") in {"observed", "inferred"}
+                and source.get("base_revision") == source.get("revision")):
+            findings.error("change-evidence", "before and after need distinct source revisions")
+        for phase in ("before", "after"):
+            claim = change.get(phase, {})
+            if not claim or not claim.get("behavior"):
+                continue
+            status = claim.get("status")
+            refs = claim.get("evidence", [])
+            expected_revision = source.get("base_revision" if phase == "before" else "revision", "")
+            if status not in EVIDENCE_VALUES:
+                findings.error("change-evidence", f"{phase} behavior needs observed, inferred or unknown status")
+            elif status in {"observed", "inferred"}:
+                if not refs or any(ref not in evidence_by_id for ref in refs):
+                    findings.error("change-evidence", f"{phase} behavior needs resolvable evidence IDs")
+                elif not expected_revision or not any(evidence_by_id[ref].get("revision") == expected_revision
+                                                      for ref in refs):
+                    findings.error("change-evidence", f"{phase} behavior needs evidence from its source revision")
+            elif status == "unknown" and refs:
+                findings.warn("change-evidence", f"{phase} is unknown but still has evidence IDs")
+            if status == "unknown" and claim.get("id") not in unknowns:
+                findings.error("change-evidence", f"{phase} unknown needs a matching unknowns.about entry")
+
+
+def validate(html, source_root=None, model=None):
+    if model is not None:
+        check_model_shape(model)
     findings = Findings()
     parser = ExplainerParser(findings)
     parser.feed(html)
@@ -380,6 +561,9 @@ def validate(html, source_root=None):
     check_document(parser, findings)
     check_figures(parser.figures, findings)
     check_codemaps(parser.codemaps, findings)
+    check_language(parser, findings, model)
+    if model is not None:
+        check_change_evidence(model, findings)
     if not any(parser.evidence.values()):
         findings.warn("no-evidence-markers", "no data-evidence markers; inferred and unknown claims must be marked")
     if not parser.code_refs:
@@ -403,12 +587,14 @@ def main():
     parser.add_argument("html", type=Path, help="Explainer HTML file")
     parser.add_argument("--source-root", type=Path,
                         help="Repository root; verifies data-file / data-symbol / data-line code references")
+    parser.add_argument("--model", type=Path, help="Explanation Model JSON; checks terminology and change evidence")
     args = parser.parse_args()
     try:
         if args.source_root is not None and not args.source_root.is_dir():
             raise ValueError(f"--source-root is not a directory: {args.source_root}")
-        result = validate(args.html.read_text(encoding="utf-8"), args.source_root)
-    except (ValueError, OSError, UnicodeDecodeError) as exc:
+        model = json.loads(args.model.read_text(encoding="utf-8")) if args.model else None
+        result = validate(args.html.read_text(encoding="utf-8"), args.source_root, model)
+    except (ValueError, OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
     print(json.dumps({"file": str(args.html), **result}, ensure_ascii=False, indent=2))

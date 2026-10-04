@@ -18,7 +18,7 @@ audience が指定されていなければ、依頼文の語（「新規参加�
 | architect | Wide + Medium | context と制約 / 構成と品質特性 / 設計判断と trade-off / risk |
 | debugger | Narrow + Very Deep | 観測された症状 / 問題の起きる runtime sequence / 状態の変化 / code path / 破られた invariant / 失敗点 |
 
-依頼の目的に必要な問いだけを選び、Explanation Plan として順序を付ける。順序は原則 `Purpose → Context → Structure → Runtime → Code → Rationale → Change Impact` とし、audience が必要としない段は省く。debugger では症状から入り、関係しない system 全体の説明を置かない。
+依頼の目的に必要な問いだけを選び、Explanation Plan として順序を付ける。基本の情報階層は Level 1 Orientation（何か、解く問題、主な component / flow）→ Level 2 Runtime（trigger、step、条件、例外）→ Level 3 Implementation（file、symbol、test、設定）→ Level 4 Reasoning（判断、trade-off、変更影響、Unknown）。各 level は必要な問いがある場合だけ表示する。debugger では症状から入り、関係しない system 全体の説明を置かない。
 
 ## 2. 問いから view を選ぶ
 
@@ -33,6 +33,7 @@ audience が指定されていなければ、依頼文の語（「新規参加�
 | なぜこの設計なのか | Decision / Trade-off View | decisions, unknowns | `.decision` カード。context / decision / rationale / trade-off / 根拠 |
 | コードのどこに存在するか | Code Map | components.code_locations, evidence | `.codemap` の表。component → file → symbol → 関連 claim |
 | 変更すると何に影響するか | Change Impact Map | change_impacts, invariants | `.impact` の木。affected / unaffected / requires verification を文字と線種で区別 |
+| 実装変更で振る舞いがどう変わったか | Before / After | change_impacts, runtime_scenarios, invariants, evidence | 変更前 → 変更後 → 変わらないこと → 確認が必要なこと。該当項目だけ表示 |
 | どこへ配置されるか | Deployment View | boundaries（process / node） | SVG。node と process の境界 |
 | アルゴリズムの内部を知りたい | Annotated Code / Step View | runtime_scenarios.steps, invariants | 抜粋コード + 番号付き注釈 |
 
@@ -58,12 +59,22 @@ audience が指定されていなければ、依頼文の語（「新規参加�
 
 ## 6. First view
 
-ページを開いた直後は orientation だけを与える。
+ページを開いた直後は orientation だけを与える。AI が実装・変更した機能を reviewer が読む場合、「約 30 秒で理解できる」は設計目標であり、時間を測る機械的な合否基準ではない。該当する情報が Source Truth にあるとき、first view だけから次に答えられるかを確認する。
+
+1. 何を実装または変更したか。
+2. 何を解決するか。
+3. 主要な runtime flow は何か。
+4. behavior 上の主要な変更は何か。
+5. reviewer が最初に確認すべき点は何か。
+
+該当しない問いは無理に埋めず、省いた理由を Explanation Plan に記録する。Unknown は推測で埋めない。
 
 - タイトル
 - この仕組みが何かを 2〜3 行で説明する文
 - primary visualization を 1 つ（通常は小さな Overview / System Context）
 - Key takeaway
+
+変更前後や確認点が主要な問いなら、first view に短い要点を置き、後続 section へのリンクを添える。リンク先だけを読まなければ答えられない状態にはしない。first view に diff、詳細な file 一覧、全 component、詳細な code path は置かない。
 
 詳細な component map、全 scenario、全 class の図を最初に置かない。
 

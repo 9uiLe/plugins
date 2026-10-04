@@ -56,6 +56,127 @@ class ValidateExplainerTests(unittest.TestCase):
     def codes(self, findings):
         return {finding['code'] for finding in findings}
 
+    def model_path(self, model=None):
+        path = self.root / 'explanation-model.json'
+        if model is None:
+            model = {'glossary': [
+            {'concept': 'cmp-store', 'preferred': 'セッションストア', 'code_terms': ['SessionStore'],
+             'aliases': ['保存先']},
+            {'concept': 'cmp-auth', 'preferred': '認証サービス', 'code_terms': ['AuthService'], 'aliases': []},
+            ]}
+        path.write_text(json.dumps(model), encoding='utf-8')
+        return path
+
+    def test_terminology_consistency_and_valid_alias(self):
+        additions = ('<p><span data-concept="cmp-store">セッションストア</span>が保存します。'
+                     '<span data-concept="cmp-store">保存先</span>を確認します。'
+                     '<span data-concept="cmp-store">SessionStore</span>を実装で確認します。</p>')
+        html = page(VALID_BODY.replace('</main>', additions + '</main>'))
+        code, output = self.run_cli(html, '--model', str(self.model_path()))
+        self.assertEqual(code, 0, output)
+        self.assertNotIn('LANG004', self.codes(output['warnings']))
+
+        inconsistent = html.replace('>保存先</span>', '>セッション管理サービス</span>')
+        code, output = self.run_cli(inconsistent, '--model', str(self.model_path()))
+        self.assertEqual(code, 0, output)
+        self.assertIn('LANG004', self.codes(output['warnings']))
+
+        collision = html.replace('>保存先</span>', '>認証サービス</span>')
+        code, output = self.run_cli(collision, '--model', str(self.model_path()))
+        self.assertEqual(code, 1, output)
+        self.assertIn('LANG004', self.codes(output['errors']))
+
+    def test_ambiguous_wording_and_abstract_arrow_are_warnings(self):
+        additions = ('<p>この処理は確認します。</p>'
+                     '<figure data-question="何を渡すか"><span class="arrow-label">呼び出し</span>'
+                     '<figcaption>関係</figcaption></figure>')
+        code, output = self.run_cli(page(VALID_BODY.replace('</main>', additions + '</main>')))
+        self.assertEqual(code, 0, output)
+        self.assertLessEqual({'LANG003', 'LANG006'}, self.codes(output['warnings']))
+
+    def test_clear_japanese_prose_has_no_language_warnings(self):
+        additions = ('<p><span data-concept="cmp-auth">認証サービス</span>が認証情報を確認します。'
+                     'トークンが期限切れの場合、認証サービスが新しいトークンを発行します。</p>'
+                     '<figure data-question="認証情報を誰が確認するか">'
+                     '<span class="arrow-label">認証を要求</span>'
+                     '<figcaption>認証サービスが認証情報を確認する。</figcaption></figure>')
+        code, output = self.run_cli(page(VALID_BODY.replace('</main>', additions + '</main>')),
+                                    '--model', str(self.model_path()))
+        self.assertEqual(code, 0, output)
+        self.assertFalse(any(item['code'].startswith('LANG') for item in output['warnings']))
+
+    def test_model_terms_without_html_annotations_are_reported(self):
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path()))
+        self.assertEqual(code, 0, output)
+        self.assertIn('LANG004', self.codes(output['warnings']))
+
+    def test_before_and_after_require_separate_evidence_or_explicit_unknown(self):
+        change = {'before': {'id': 'before-login', 'behavior': '旧動作', 'status': 'observed', 'evidence': []},
+                  'after': {'id': 'after-login', 'behavior': '新動作', 'status': 'observed',
+                            'evidence': ['ev-new']}}
+        model = {'glossary': [], 'source': {'revision': 'head', 'base_revision': ''}, 'change_impacts': [change],
+                 'evidence': [{'id': 'ev-new', 'kind': 'code', 'revision': 'head'}], 'unknowns': []}
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
+        self.assertEqual(code, 1)
+        self.assertIn('change-evidence', self.codes(output['errors']))
+
+        change['before'] = {'id': 'before-login', 'behavior': '変更前のbehaviorは、現在提供されているSource Truthからは確認できません',
+                            'status': 'unknown', 'evidence': []}
+        model['unknowns'] = [{'about': 'before-login', 'question': '旧動作は何か'}]
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
+        self.assertEqual(code, 0, output)
+        self.assertNotIn('change-evidence', self.codes(output['errors']))
+
+        change['before'] = {'id': 'before-login', 'behavior': '旧動作', 'status': 'observed', 'evidence': ['ev-old']}
+        model['evidence'].append({'id': 'ev-old', 'kind': 'commit', 'revision': 'base'})
+        model['source']['base_revision'] = 'base'
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
+        self.assertEqual(code, 0, output)
+        self.assertNotIn('change-evidence', self.codes(output['errors']))
+
+        change['before']['evidence'] = ['ev-new']
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
+        self.assertEqual(code, 1)
+        self.assertIn('change-evidence', self.codes(output['errors']))
+
+        change['before']['evidence'] = ['ev-old']
+        model['source']['base_revision'] = 'head'
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
+        self.assertEqual(code, 1)
+        self.assertIn('change-evidence', self.codes(output['errors']))
+
+    def test_entity_source_name_must_be_mapped_to_canonical_term(self):
+        model = {'glossary': [{'concept': 'cmp-store', 'preferred': 'セッションストア',
+                               'code_terms': ['SessionStore'], 'aliases': []}],
+                 'components': [{'id': 'cmp-store', 'name': 'SessionStore'}]}
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
+        self.assertEqual(code, 0, output)
+        model['components'][0]['name'] = 'セッション管理サービス'
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
+        self.assertEqual(code, 1)
+        self.assertIn('model-terminology', self.codes(output['errors']))
+
+    def test_malformed_model_reports_input_error_without_traceback(self):
+        for model in ({'glossary': None}, {'glossary': 'terms'},
+                      {'glossary': [{'concept': 'cmp-store', 'preferred': 'ストア', 'aliases': None}]}):
+            with self.subTest(model=model):
+                path = self.model_path(model)
+                html = self.root / 'explainer.html'
+                html.write_text(page(VALID_BODY))
+                result = subprocess.run([sys.executable, str(SCRIPT), str(html), '--model', str(path)],
+                                        capture_output=True, text=True)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn('Error: --model', result.stderr)
+                self.assertNotIn('Traceback', result.stderr)
+
+    def test_complex_responsibility_is_only_a_warning(self):
+        body = VALID_BODY.replace('</main>',
+                                  '<p data-responsibility>ストアは取得します。ストアは保存します。ストアは削除します。</p>'
+                                  '</main>')
+        code, output = self.run_cli(page(body))
+        self.assertEqual(code, 0, output)
+        self.assertIn('LANG005', self.codes(output['warnings']))
+
     def test_valid_explainer_passes_with_code_refs_resolved_against_source(self):
         returncode, output = self.run_cli(page(VALID_BODY), '--source-root', str(self.root / 'repo'))
         self.assertEqual(returncode, 0, output)

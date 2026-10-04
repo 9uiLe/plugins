@@ -40,7 +40,7 @@ Unknown には `question`、`reason`（なぜ判断できないか）、`how_to_
 ## Evidence の記録
 
 ```json
-{"id": "ev-token-rotate", "kind": "code", "file": "app/auth/session_store.py", "symbol": "SessionStore.rotate", "line": 41, "note": "古い refresh token を失効させてから新しい token を保存"}
+{"id": "ev-token-rotate", "kind": "code", "revision": "<commit SHA>", "file": "app/auth/session_store.py", "symbol": "SessionStore.rotate", "line": 41, "note": "古い refresh token を失効させてから新しい token を保存"}
 ```
 
 - `file` は対象リポジトリのルートからの相対パスにする。
@@ -48,6 +48,11 @@ Unknown には `question`、`reason`（なぜ判断できないか）、`how_to_
 - `line` は分かる場合だけ書く。行番号は変わりやすいため、symbol を主な参照にする。
 - `note` には、その evidence が claim のどこを支えるかを書く。コードの全文は写さない。
 - 変更の説明では commit を evidence にできる（`kind: "commit"`、`symbol` に short SHA）。
+- `revision` は変更前後の根拠を区別できる版（commit SHA、旧実装の資料名など）にする。Before / After では `source.base_revision` / `source.revision` と対応させる。git diff は `kind: "diff"` とし、`note` に比較した base / head を記録する。両側の claim に使う場合は、同じ diff を指す旧側・新側の evidence 行を分ける。旧実装をユーザーが提供した場合は `kind: "doc"` でその資料名を記録してよい。
+
+## Before / After の根拠
+
+`change_impacts.before` と `after` は独立した claim として分類する。Observed として表示するなら各 claim の `evidence` に実在する根拠 ID を入れ、旧版・新版それぞれの Source Truth を指す。Inferred は元となる Observed と導出理由を示す。変更前の Source Truth がないときは旧 behavior を推測せず、`before.status: "unknown"` として「変更前のbehaviorは、現在提供されているSource Truthからは確認できません」と表示し、解消方法を `unknowns` に書く。変更後も根拠のない断定はしない。diff の存在だけで設計意図や未実行の runtime 結果を Observed にしない。
 
 ## HTML での traceability
 

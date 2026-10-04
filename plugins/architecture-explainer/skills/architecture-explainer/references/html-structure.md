@@ -24,7 +24,7 @@ Explanation Plan の問いに対応する section だけを、次の順から選
 | `change` | What happens if I change X? | 変更すると何に影響するか |
 | `unknowns` | Known unknowns | 何が分からないか |
 
-見出しは日本語でもよい（「これは何か」など）。debugger 向けでは `what` を「症状と結論」とし、`how-it-works` を「問題の起きる経路」と「修正後の経路」に分けてよい。
+ユーザー向け見出しと文章は原則日本語にする。code identifier、API 名、protocol 名、event 名、設定キー、規格・製品名は原文を維持してよい。debugger 向けでは `what` を「症状と結論」とし、`how-it-works` を「問題の起きる経路」と「修正後の経路」に分けてよい。
 
 ## ページ骨格
 
@@ -63,7 +63,11 @@ Explanation Plan の問いに対応する section だけを、次の順から選
 
 ## First view
 
-`#what` には lede、primary visualization 1 つ、takeaway だけを置く。primary visualization は小さな Overview / System Context とし、主要要素を絞る。詳細な図は後続 section へ置く。
+`#what` には lede、primary visualization 1 つ、takeaway を基本として置く。primary visualization は小さな Overview / System Context または変更理解に必要な短い flow とし、主要要素を絞る。AI 実装レビューでは [visualization-selection.md](visualization-selection.md) の該当する五つの問いに first view だけで答えられるか確認する。詳細な図、diff、file 一覧、全 component は後続 section へ置く。
+
+## 変更前後の説明
+
+既存コードの変更が主要な問いなら、`#change` に変更前 → 変更後 → 変わらないこと → 確認が必要なことを、該当する項目だけ置く。diff の行順ではなく、利用者が観測する振る舞いと条件を示す。たとえば「変更前: 認証の通信エラーを直ちに返す」「変更後: 一時的な通信エラーの場合だけ最大 3 回再試行する」「変わらないこと: 認証情報が不正な場合は再試行しない」。変更前・変更後の各 claim を別々の evidence と status に結び、旧版がなければ変更前を Unknown と表示する（[evidence-rules.md](evidence-rules.md)）。
 
 ## Overview と detail
 
@@ -76,7 +80,7 @@ Overview（#context の node）
       → Code（#code の行、id="ev-…"）
 ```
 
-- 各 component カードは `<details class="drill" id="cmp-…">` にし、`<summary>` に名前と責務、本文に Used by / Depends on / Relevant code / Relevant runtime flows / Important invariants を置く。該当がない項目は書かない。
+- 各 component カードは `<details class="drill" id="cmp-…">` にし、`<summary>` に名前と責務、本文に Used by / Depends on / Relevant code / Relevant runtime flows / Important invariants を置く。該当がない項目は書かない。責務文を独立した要素にするときは `data-responsibility` を付けると、validator が過度に複雑な責務文を限定的に検査できる。
 - 図の node から詳細へ移れるよう、SVG の node は `<a href="#cmp-…">` で囲む。HTML の図では node 内にリンクを置く。
 - Overview で `level` の異なる要素を見せたい場合は、Overview に置かず drill-down 先の view に置く。
 
@@ -95,6 +99,7 @@ Overview（#context の node）
 ## Code linking
 
 - 主要 claim には `a.code-ref`（`data-file`、`data-symbol`）を付ける（[evidence-rules.md](evidence-rules.md)）。
+- 主要 concept の表示名には `data-concept` を付け、model の `glossary.concept` と対応させる（[explanation-model.md](explanation-model.md)）。本文、図、表、caption、矢印の表示名は model から取得する。HTML に別の用語表を作らない。alias と code identifier は初出で対応を示す。
 - `#code` の Code Map の各行に `id="ev-…"` を付け、code ref の `href` 先にする。各セルには列見出しを `data-label` で付ける（`<td data-label="source">`）。
 - Code Map の source セルでは、file と symbol の意味の区切りの後にだけ `<wbr>` を入れる。file は `/` の後、symbol は `.`・`::` の後と、英数字に続く `_` の後。`<wbr>` は文字を足さないので、表示上の折り返し位置だけが変わり、コピー・検索・`data-symbol` の値には影響しない。
 
@@ -123,4 +128,3 @@ Overview（#context の node）
 - 色だけで意味を区別しない（形・線種・文字ラベル）
 - 読みやすい文字サイズと行長
 - 画面幅を変えたときに崩れない
-

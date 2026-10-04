@@ -26,7 +26,7 @@ Inferred と Unknown は要素の種類ではなく、要素や関係に重ね�
 
 ## 関係（矢印）
 
-すべての矢印にラベルを付け、依存・呼び出しの意味を書く（「refresh を要求」「user id で検索」）。ラベルのない矢印は作らない。
+すべての矢印にラベルを付け、依存・呼び出しの具体的な意味を書く（「認証を要求」「refresh token を保存」「UserCreated を送信」「ユーザー ID で検索」）。「使用」「呼び出し」「依存」「通信」だけでは足りない。ラベルは model の `depends_on.meaning` または scenario step の action から作り、本文と同じ preferred term を使う。HTML ではラベルに `class="arrow-label"` または矢印要素に `data-arrow-label` を付けると、validator が抽象的なラベルを検査できる。ラベルのない矢印は作らない。
 
 | 意味 | 線 | 例 |
 | --- | --- | --- |
@@ -52,7 +52,7 @@ Inferred と Unknown は要素の種類ではなく、要素や関係に重ね�
 | Class | 用途 | 構造 |
 | --- | --- | --- |
 | `.map` | Component / Responsibility Map | `<div class="map">` の中に `.node` カード。カード内に責務、依存先と意味 |
-| `.seq` | Sequence | `<ol class="seq">` の各 `<li>` に `<span class="lane">送信元</span><span class="msg">内容</span><span class="lane">宛先</span>`。例外は `<li class="alt">` |
+| `.seq` | Sequence | `<ol class="seq">` の各 `<li>` に `<span class="lane">送信元</span><span class="msg">対象への具体的な動作</span><span class="lane">宛先</span>`。例外は条件と結果を持つ `<li class="alt">`。文章でも「Actor が Target に Action する」を追えるようにする |
 | `.flow` | 単一 component 内の手順 | `<ol class="flow">` の番号付き step |
 | `.states` | State の遷移表 | `<table class="states">`（遷移元 / event [guard] / action / 遷移先） |
 | `.decision` | Decision / Trade-off | `<article class="decision">` に context / decision / rationale / trade-off / 根拠 |

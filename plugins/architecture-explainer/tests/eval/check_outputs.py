@@ -29,9 +29,22 @@ REVIEW_FINDINGS = {
 }
 
 
+def model_for_html(html):
+    suffix = '.improved.html'
+    if html.name.endswith(suffix):
+        stem = html.name[:-len(suffix)]
+        return html.with_name(f'{stem}.explanation-model.json')
+    return html.with_name('explanation-model.json')
+
+
 def validate(html, root):
-    result = subprocess.run([sys.executable, str(VALIDATOR), str(html), '--source-root', str(root)],
-                            capture_output=True, text=True)
+    model = model_for_html(html)
+    if not model.is_file():
+        return {'errors': ['missing-model'], 'warnings': [], 'stats': {}, 'detail': str(model)}
+    command = [sys.executable, str(VALIDATOR), str(html), '--source-root', str(root), '--model', str(model)]
+    result = subprocess.run(command, capture_output=True, text=True)
+    if not result.stdout:
+        return {'errors': ['validator-failed'], 'warnings': [], 'stats': {}, 'detail': result.stderr.strip()}
     data = json.loads(result.stdout)
     return {'errors': [e['code'] for e in data['errors']], 'warnings': [w['code'] for w in data['warnings']],
             'stats': data['stats']}
@@ -90,7 +103,7 @@ def main():
     report['c'] = {
         'source_changes': changed_source(run / 'case-c'),
         'review_found': {name: bool(re.search(pattern, text)) for name, pattern in REVIEW_FINDINGS.items()},
-        'hard_gates_listed': all(f'G{i}' in text for i in range(1, 7)),
+        'hard_gates_listed': all(f'G{i}' in text for i in range(1, 8)),
         'prioritized_fixes': 'blocker' in text,
         'cited_source_files': sorted(set(re.findall(r'app/[\w/]+\.py', text))),
     }

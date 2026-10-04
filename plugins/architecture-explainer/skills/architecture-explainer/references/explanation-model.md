@@ -3,7 +3,7 @@
 HTML を書く前に作る中間表現。Source Truth から集めた Evidence を、読者の mental model に必要な要素へ整理する。HTML はこの model の一部を audience に合わせて描いたものにすぎない。
 
 ```text
-Source Truth → Evidence → Explanation Model → Explanation Plan → HTML
+Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Questions → Explanation Plan → HTML
 ```
 
 ## 保存形式
@@ -16,13 +16,14 @@ Source Truth → Evidence → Explanation Model → Explanation Plan → HTML
 - `status` が `unknown` の claim には、`unknowns` に `about` がその claim の `id` を指す行を置く。claim 自体の `evidence` は空にする。
 - decision は、判断の内容（`status`）と理由（`rationale.status`）を別々に分類する。実装から判断は確認できても、理由は Unknown であることが多い。
 - `source.revision` には、git 管理下なら commit SHA、そうでなければ資料名や取得日など版を識別できるものを書く。識別できなければ空にする。
+- `components`・`context.actors`・`context.external_systems`・`data` の `name` は Source Truth に現れる識別子または正式名称を記録する。人間向け表示名は `glossary.preferred` から取得する。両者が異なる場合、`name` を `glossary.code_terms` または `aliases` にも記録し、同じ concept の名称であることを明示する。
 
 ## Schema
 
 ```json
 {
   "subject": {"title": "", "question": "この資料が答える問い", "scope": {"in": [], "out": []}},
-  "source": {"root": "", "revision": "", "materials": []},
+  "source": {"root": "", "revision": "", "base_revision": "", "materials": []},
   "audience": {"profile": "newcomer|implementer|reviewer|architect|debugger", "familiarity": "", "goal": "", "inferred_from": ""},
   "purpose": {"problem": "", "responsibility": "", "status": "", "evidence": []},
   "context": {
@@ -51,13 +52,15 @@ Source Truth → Evidence → Explanation Model → Explanation Plan → HTML
   "invariants": [{"id": "", "description": "", "enforced_by": "", "status": "", "evidence": []}],
   "change_impacts": [{
     "id": "", "change": "",
+    "before": {"id": "", "behavior": "", "status": "", "evidence": []},
+    "after": {"id": "", "behavior": "", "status": "", "evidence": []},
     "affected": [{"target": "", "reason": "", "evidence": []}],
     "unaffected": [{"target": "", "reason": "", "evidence": []}],
     "requires_verification": [{"target": "", "reason": ""}]
   }],
-  "glossary": [{"term": "", "meaning": "", "evidence": []}],
+  "glossary": [{"id": "", "concept": "", "preferred": "", "code_terms": [], "aliases": [], "avoid": [], "meaning": "", "evidence": []}],
   "unknowns": [{"id": "", "about": "", "question": "", "reason": "", "how_to_resolve": ""}],
-  "evidence": [{"id": "", "kind": "code|test|doc|config|commit|issue", "file": "", "symbol": "", "line": 0, "note": ""}]
+  "evidence": [{"id": "", "kind": "code|test|doc|config|commit|diff|issue", "revision": "", "file": "", "symbol": "", "line": 0, "note": ""}]
 }
 ```
 
@@ -83,6 +86,18 @@ Source Truth → Evidence → Explanation Model → Explanation Plan → HTML
 
 `depends_on.meaning` には、依存の意味（「認証済み user id を要求」「refresh token を保存」）を書く。HTML の矢印ラベルはここから作る。
 
+既存コードを変更した場合は、`change_impacts.before` と `after` に利用者から見える振る舞いと条件を別々の claim として記録する。両方に Evidence Rules を適用する。`source.base_revision` に旧版、`source.revision` に新版を識別できる値を記録する。git では base / head SHA、旧実装をユーザーが提供した場合は旧資料名も版の識別子としてよい。各 `evidence.revision` は、その根拠が支える側の版に合わせる。diff は旧版と新版に対応する evidence 行を分け、同じ diff を参照する場合も `revision` で旧側・新側を区別する。`source.materials` は参照資料の一覧として併記できるが、版の識別子の代わりにはしない。変更前の Observed は旧版のコード・テスト・commit・diff・ユーザー提供の旧実装で、変更後の Observed は新版の根拠で裏付ける。`unaffected` は変わらないこと、`requires_verification` は人間の確認点に使う。差分の行順を説明しない。旧版の Source Truth がない場合は `before.status` を `unknown`、`before.evidence` を空にし、`unknowns` で対応する `before.id` を指す。表示は「変更前のbehaviorは、現在提供されているSource Truthからは確認できません」とする。
+
+## Controlled terminology
+
+`explanation-model.json` の `glossary` だけを canonical terminology の正本にする。表示する主要 concept ごとに行を作る。`concept` は `components`、`context.actors`、`data` などの安定した id を指す。`preferred` は本文・図・表・caption・矢印で使う名称、`code_terms` は変更しない source identifier、`aliases` は初出の対応付けや文脈上許容する既知の別名、`avoid` は別 concept と誤認させる名称である。`meaning` は名称の言い換えではなく責務や意味を示す。`evidence` は concept と identifier の対応を支える。HTML や validator に concept ごとの別の用語表を持たせない。
+
+```json
+{"id":"term-session-store","concept":"cmp-session-store","preferred":"セッションストア","code_terms":["SessionStore"],"aliases":[],"avoid":["セッション管理機構"],"meaning":"ユーザーのセッションを保存する component","evidence":["ev-session-store"]}
+```
+
+HTML を model から作るとき、concept id を使って `glossary.preferred` を引き、主要な表示名に `data-concept="cmp-session-store"` を付ける。初出の「セッションストア（`SessionStore`）」は preferred term と code identifier を別々の要素にし、それぞれに同じ `data-concept` を付ける。本文・図・caption・表・矢印ごとに名称を考え直さない。validator の `--model` は、この明示された表示名を同じ glossary と照合する。未注釈の文章や言い換えの意味までは保証しない。日本語の文面は [language-clarity.md](language-clarity.md) に従って確認する。
+
 ## 構築手順
 
 1. **subject と scope を決める。** 依頼文から「何について、どこまで」を一文にする。対象外も書く。
@@ -90,6 +105,7 @@ Source Truth → Evidence → Explanation Model → Explanation Plan → HTML
 3. **component と scenario を組み立てる。** 呼び出し経路を実際に辿り、各 step に evidence を付ける。辿れない step は `inferred` または `unknown` にする。
 4. **decision、invariant、change impact を検討する。** コメント、ADR、commit message、テスト名に根拠がある判断だけを `observed` にする。
 5. **unknown を確定する。** 推測で埋めたくなった箇所を `unknowns` に移し、解消方法（誰に聞くか、何を読めばよいか）を書く。
+6. **reader question と主要用語を確定する。** 表示する concept の preferred term と identifier を `glossary` に記録し、図・本文・表へ同じ語を投影する。
 
 大きなリポジトリでは、subject に関係する範囲だけを読む。全ファイルを読むことは、正確さの条件ではない。
 
