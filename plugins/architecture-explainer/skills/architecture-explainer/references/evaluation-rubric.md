@@ -53,6 +53,8 @@ Linguistic Cognitive Load は `pass` / `weak` / `fail` で判定する。`weak` 
 
 AI 実装の Orientation では、Source Truth に該当情報がある場合、first view だけで「実装・変更内容」「解く問題」「主要 runtime flow」「behavior の主要な変化」「reviewer の最初の確認点」を答えられるか確認する。約 30 秒は設計目標で、時間の機械的な gate ではない。詳細な file 一覧や全 component を first view に足して合格にしない。必要な詳細は後続 section へ置く。
 
+この audience 固有の判定は Explanation Plan と生成物の Evaluation で行う。Renderer が IR を描画できることや Validator が HTML の構造検査を通すことは、必要な問いに答えている証明にはならない。
+
 ## Severity
 
 | Severity | 意味 |

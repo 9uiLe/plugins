@@ -3,7 +3,7 @@
 可視化は記法から選ばない。audience が持つ問いを先に決め、その問いに答える view を選ぶ。C4、arc42、UML、sequence diagram の考え方は使ってよいが、記法そのものを目的にしない。
 
 ```text
-Audience → Reader questions → View per question → Visual grammar → HTML
+Audience → Reader questions → View per question → Presentation IR → Renderer → HTML
 ```
 
 ## 1. Audience から問いを決める
@@ -24,11 +24,11 @@ audience が指定されていなければ、依頼文の語（「新規参加�
 
 | 読者の問い | View | Model から読む要素 | 主な表現 |
 | --- | --- | --- | --- |
-| これは何か | Overview | purpose, subject | 2〜3 行の説明 + 小さな context 図 |
+| これは何か | Overview | purpose, subject | 2〜3 行の説明 + 小さな HTML card 図 |
 | 誰・何と接続しているか | System Context | context.actors, external_systems, boundaries | `.map` と `.boundary`、または SVG。対象 system と外部を分け、境界を明示 |
 | 何が何を担当しているか | Component / Responsibility Map | components（同一 level）, depends_on | SVG または `.map` の格子。box に責務、矢印に意味 |
 | 実行時にどう動くか | Sequence / Runtime Flow | runtime_scenarios | `.seq` の lifeline 表または `.flow` の番号付き step。例外経路を分岐で示す |
-| 状態がどう変化するか | State Machine | states | SVG または `.states` の遷移表。遷移に `event [guard] / action` |
+| 状態がどう変化するか | State Machine | states | `.states` の遷移表。event、guard、遷移先を表示 |
 | データがどう流れるか | Data Flow | data | SVG。data store と、データ名つきの流れ |
 | なぜこの設計なのか | Decision / Trade-off View | decisions, unknowns | `.decision` カード。context / decision / rationale / trade-off / 根拠 |
 | コードのどこに存在するか | Code Map | components.code_locations, evidence | `.codemap` の表。component → file → symbol → 関連 claim |
@@ -45,7 +45,17 @@ audience が指定されていなければ、依頼文の語（「新規参加�
 
 ## 4. 抽象度をそろえる
 
-1 つの view に並べる要素は、同じ抽象度にそろえる。次の組み合わせは同じ図に並べない。
+1 つの view に並べる要素は、同じ問いの中で意味のある interaction boundary にそろえる。Actor と External System は component hierarchy の level ではなく通信の参加者である。sequence / runtime flow では次のペアを許容する。
+
+| 許容する endpoint | 説明する境界 |
+| --- | --- |
+| actor / external ↔ system / container | 外部参加者と system / container のやり取り |
+| system ↔ system、container ↔ container | 同じ上位粒度のやり取り |
+| module ↔ module、class ↔ class、function ↔ function | 同じ実装粒度のやり取り |
+
+同じ scenario は同じ interaction level にそろえる。actor ↔ system と system ↔ system は一緒に追えるが、actor ↔ system と actor ↔ container は分ける。外部境界と class / function 内部の手順も一緒に置かない。actor ↔ function、system ↔ function、module ↔ function などは拒否し、読者の問いに応じて外側の sequence と内側の sequence に分ける。既存 model の component level は `system` / `container` / `module` / `class` / `function` である。
+
+そのほかの view でも抽象度をそろえる。次の組み合わせは同じ図に並べない。
 
 - actor（人）と、コード上の class
 - application / process と、database の table
@@ -67,7 +77,7 @@ audience が指定されていなければ、依頼文の語（「新規参加�
 4. behavior 上の主要な変更は何か。
 5. reviewer が最初に確認すべき点は何か。
 
-該当しない問いは無理に埋めず、省いた理由を Explanation Plan に記録する。Unknown は推測で埋めない。
+該当しない問いは無理に埋めず、省いた理由を Explanation Plan に記録する。reviewer に必要な scenario / change を first view に選ぶ判断は Plan と [evaluation-rubric.md](evaluation-rubric.md) が担い、Renderer の IR 構造検査には置かない。Unknown は推測で埋めない。
 
 - タイトル
 - この仕組みが何かを 2〜3 行で説明する文
@@ -80,7 +90,7 @@ audience が指定されていなければ、依頼文の語（「新規参加�
 
 ## 7. 選択の記録
 
-Explanation Plan では、view ごとに次を記録する。HTML ではこれを caption と `data-question` に反映する。
+Explanation Plan では、view ごとに次を記録する。Presentation IR の `question` と `view` に反映し、renderer が caption と `data-question` を生成する。
 
 ```text
 view id / 答える問い / view type / 使う model 要素 / 抽象度 / 省いた要素とその理由

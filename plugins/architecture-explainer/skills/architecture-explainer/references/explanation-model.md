@@ -1,9 +1,9 @@
 # Explanation Model
 
-HTML を書く前に作る中間表現。Source Truth から集めた Evidence を、読者の mental model に必要な要素へ整理する。HTML はこの model の一部を audience に合わせて描いたものにすぎない。
+Presentation IR を作る前に保存する semantic truth。Source Truth から集めた Evidence を、読者の mental model に必要な要素へ整理する。HTML はこの model の一部を audience に合わせて描いたものにすぎない。表示順、theme、layout、SVG 座標はここに置かない。
 
 ```text
-Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Questions → Explanation Plan → HTML
+Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Questions → Explanation Plan → Presentation IR → Renderer → HTML
 ```
 
 ## 保存形式
@@ -96,7 +96,7 @@ Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Q
 {"id":"term-session-store","concept":"cmp-session-store","preferred":"セッションストア","code_terms":["SessionStore"],"aliases":[],"avoid":["セッション管理機構"],"meaning":"ユーザーのセッションを保存する component","evidence":["ev-session-store"]}
 ```
 
-HTML を model から作るとき、concept id を使って `glossary.preferred` を引き、主要な表示名に `data-concept="cmp-session-store"` を付ける。初出の「セッションストア（`SessionStore`）」は preferred term と code identifier を別々の要素にし、それぞれに同じ `data-concept` を付ける。本文・図・caption・表・矢印ごとに名称を考え直さない。validator の `--model` は、この明示された表示名を同じ glossary と照合する。未注釈の文章や言い換えの意味までは保証しない。日本語の文面は [language-clarity.md](language-clarity.md) に従って確認する。
+renderer は concept id で `glossary.preferred` を引き、主要な表示名に `data-concept="cmp-session-store"` を付ける。初出の「セッションストア（`SessionStore`）」は preferred term と code identifier を別々の要素にし、それぞれに同じ `data-concept` を付ける。SVG では node の `<title>` に preferred term と `data-concept` を置き、可視ラベルも同じ glossary から生成する。本文・図・caption・表・矢印ごとに名称を考え直さない。validator の `--model` は、この明示された表示名を同じ glossary と照合する。未注釈の文章や言い換えの意味までは保証しない。日本語の文面は [language-clarity.md](language-clarity.md) に従って確認する。
 
 ## 構築手順
 

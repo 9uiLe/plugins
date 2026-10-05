@@ -1,0 +1,18 @@
+{
+  "template": "doc",
+  "theme": "technical",
+  "sections": [
+    {"id": "what", "question": "これは何をする仕組みか", "view": "overview", "sources": ["purpose", "cmp-auth-system", "rt-refresh-entry", "rt-refresh", "chg-refresh"]},
+    {"id": "context", "question": "誰が認証サービスに接続するか", "view": "system_context", "sources": ["actor-client"]},
+    {"id": "entry", "question": "クライアントはどこへ refresh token を送るか", "view": "sequence", "sources": ["rt-refresh-entry"]},
+    {"id": "responsibilities", "question": "どの component が何を担当するか", "view": "component_map", "sources": ["cmp-auth", "cmp-store"]},
+    {"id": "how-it-works", "question": "refresh token はどの順で処理されるか", "view": "sequence", "sources": ["rt-refresh"]},
+    {"id": "state-data", "question": "session の状態はどう変化するか", "view": "state_transition", "sources": ["st-active"]},
+    {"id": "data", "question": "session はどこに流れるか", "view": "data_flow", "sources": ["data-session"]},
+    {"id": "why", "question": "回転を選んだ理由は何か", "view": "decision", "sources": ["dec-rotate"]},
+    {"id": "change", "question": "振る舞いはどう変わったか", "view": "before_after", "sources": ["chg-refresh"]},
+    {"id": "impact", "question": "変更はどこに影響するか", "view": "change_impact", "sources": ["chg-refresh", "inv-token"]},
+    {"id": "code", "question": "実装はどこにあるか", "view": "code_map", "sources": ["cmp-auth", "cmp-store"]},
+    {"id": "unknowns", "question": "まだ何が分からないか", "view": "known_unknowns", "sources": ["unk-rationale", "unk-before"]}
+  ]
+}

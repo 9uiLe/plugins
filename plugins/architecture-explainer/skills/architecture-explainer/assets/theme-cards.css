@@ -1,0 +1,23 @@
+/* Theme changes presentation tokens only. Claims and section order come from the model and IR. */
+body[data-theme="cards"] {
+  --surface: #f3f7fb;
+  --surface-strong: #e8f0f8;
+  --border: #b7c6d5;
+  --radius: 14px;
+  --gap: 1.25rem;
+}
+body[data-theme="cards"] .doc-header { background: linear-gradient(125deg, var(--surface), var(--bg)); }
+body[data-theme="cards"] figure.view,
+body[data-theme="cards"] .decision,
+body[data-theme="cards"] .node,
+body[data-theme="cards"] .takeaway {
+  box-shadow: 0 6px 22px rgba(19, 48, 81, .08);
+}
+body[data-theme="cards"] .node { background: var(--surface); }
+@media (prefers-color-scheme: dark) {
+  body[data-theme="cards"] {
+    --surface: #1b2633;
+    --surface-strong: #263549;
+    --border: #526477;
+  }
+}
