@@ -19,6 +19,12 @@ export function checkModel(model: ExplanationModel): Findings {
       if (change && (!revision || !item.evidence.some(ref => evidence.get(ref)?.revision === revision))) result.errors.push({code:"change-evidence",message:`${id} needs evidence from ${revision||"its source revision"}`})
     }
   }
+  const structureEvidence=(refs:string[],id:string)=>{
+    if(!refs.length||refs.some(ref=>!evidence.has(ref)))result.errors.push({code:"structure-evidence",message:`${id} needs resolvable evidence IDs`})
+  }
+  const requireText=(label:string,value:string)=>{
+    if(!value.trim())result.errors.push({code:"model-label",message:`${label} needs text`})
+  }
   claim(model.purpose,"purpose")
   for (const item of [...model.context.actors,...model.context.external_systems,...model.components,...model.invariants]) claim(item,item.id)
   for (const item of model.runtime_scenarios) {
@@ -30,7 +36,7 @@ export function checkModel(model: ExplanationModel): Findings {
     if (item.before.status !== "unknown" && item.after.status !== "unknown" && model.source.base_revision === model.source.revision) result.errors.push({code:"change-evidence",message:`${item.id} needs distinct revisions`})
     claim(item.before,item.before.id,model.source.base_revision,true)
     claim(item.after,item.after.id,model.source.revision,true)
-    for (const impact of [...item.affected,...item.unaffected]) if (!impact.evidence.length || impact.evidence.some(ref => !evidence.has(ref))) result.errors.push({code:"change-evidence",message:`${item.id} impact ${impact.target} needs evidence`})
+    for (const impact of [...item.affected,...item.unaffected]) structureEvidence(impact.evidence,`${item.id} impact ${impact.target}`)
   }
   for (const item of model.unknowns) if (!index.has(item.about) && !model.change_impacts.some(change => change.before.id === item.about || change.after.id === item.about)) result.errors.push({code:"unknown-link",message:`${item.id} points to missing claim ${item.about}`})
   const terms=new Map<string,string>(),glossary=new Map(model.glossary.map(item=>[item.concept,item]))
@@ -43,15 +49,19 @@ export function checkModel(model: ExplanationModel): Findings {
     if(entry&&!new Set([entry.preferred,...entry.code_terms,...entry.aliases]).has(entity.name))result.errors.push({code:"model-terminology",message:`${entity.name} is not mapped for ${entity.id}`})
   }
   for(const item of model.components)for(const edge of item.depends_on)if(index.get(edge.target)?.kind!=="component")result.errors.push({code:"model-endpoint",message:`${item.id} depends on missing component ${edge.target}`})
-  for(const item of model.context.actors)if(!item.role.trim())result.errors.push({code:"model-label",message:`${item.id} needs actor.role`})
-  for(const item of model.context.external_systems)if(!item.interaction.trim())result.errors.push({code:"model-label",message:`${item.id} needs external.interaction`})
-  for(const item of model.components)for(const edge of item.depends_on)if(!edge.meaning.trim())result.errors.push({code:"model-label",message:`${item.id} → ${edge.target} needs depends_on.meaning`})
-  for(const item of model.runtime_scenarios)for(const step of item.steps)if(!step.action.trim())result.errors.push({code:"model-label",message:`${item.id} needs step.action`})
+  requireText("purpose.responsibility",model.purpose.responsibility)
+  for(const item of model.context.actors)requireText(`${item.id} actor.role`,item.role)
+  for(const item of model.context.external_systems)requireText(`${item.id} external.interaction`,item.interaction)
+  for(const item of model.components){requireText(`${item.id} responsibility`,item.responsibility);for(const edge of item.depends_on)requireText(`${item.id} → ${edge.target} depends_on.meaning`,edge.meaning)}
+  for(const item of model.runtime_scenarios)for(const step of item.steps)requireText(`${item.id} step.action`,step.action)
+  for(const item of model.decisions){requireText(`${item.id} decision`,item.decision);requireText(`${item.id} rationale.text`,item.rationale.text)}
+  for(const item of model.invariants)requireText(`${item.id} invariant.description`,item.description)
+  for(const item of model.unknowns)requireText(`${item.id} unknown.question`,item.question)
   for(const item of model.data){
-    if(!item.evidence.length||item.evidence.some(id=>!evidence.has(id)))result.errors.push({code:"claim-evidence",message:`${item.id} needs resolvable evidence IDs`})
+    structureEvidence(item.evidence,item.id)
     for(const id of [...item.written_by,...item.read_by])if(index.get(id)?.kind!=="component")result.errors.push({code:"model-endpoint",message:`${item.id} has missing component ${id}`})
   }
-  for(const item of model.states)for(const transition of item.transitions)if(!transition.evidence.length||transition.evidence.some(id=>!evidence.has(id)))result.errors.push({code:"claim-evidence",message:`${item.id} transition needs resolvable evidence IDs`})
+  for(const item of model.states)for(const transition of item.transitions)structureEvidence(transition.evidence,`${item.id} transition`)
   for(const item of model.context.boundaries)for(const id of item.contains)if(!index.has(id))result.errors.push({code:"model-endpoint",message:`${item.id} contains missing model ID ${id}`})
   return result
 }

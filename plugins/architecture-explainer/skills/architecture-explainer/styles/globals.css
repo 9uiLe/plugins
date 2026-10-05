@@ -22,7 +22,7 @@
   --architecture-system:#35648b; --architecture-component:#47836f; --architecture-external:#7b65a7;
   --architecture-actor:#ad763c; --architecture-data:#4d739e; --architecture-state:#61768b;
   --architecture-decision:#825a9a; --architecture-risk:#ad594d;
-  --evidence-observed:#2d7555; --evidence-inferred:#9a6c24; --evidence-unknown:#865071;
+  --evidence-observed:#2d7555; --evidence-inferred:#9a6c24; --evidence-unknown:#865071; --evidence-backed:#3c617e;
   --impact-affected:#a44b3c; --impact-unaffected:#538275; --impact-verify:#9a7228;
 }
 body[data-theme="cards"] { --background:#fffaf3; --foreground:#382c24; --card:#fffdf9; --border:#d9caba; --primary:#744e39; --accent:#f7e4ce; }
@@ -39,6 +39,7 @@ main { min-width:0; } main section { margin-bottom:3.5rem; scroll-margin-top:1re
 .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:.8rem; } .node { min-width:0; }
 .status { display:inline-flex; margin:.3rem .3rem .3rem 0; } [data-evidence="observed"] { --status:var(--evidence-observed); } [data-evidence="inferred"] { --status:var(--evidence-inferred); } [data-evidence="unknown"] { --status:var(--evidence-unknown); }
 .status { color:var(--status); border:1px solid var(--status); border-radius:99px; font-size:.72rem; padding:.04rem .45rem; }
+.evidence-marker [data-slot="badge"] { color:var(--evidence-backed); border-color:var(--evidence-backed); font-size:.72rem; margin-right:.3rem; }
 .code-ref { font-size:.77rem; overflow-wrap:anywhere; margin-right:.45rem; } .code-ref code { white-space:normal; }
 .graph { max-width:none; height:auto; display:block; } .graph-node { fill:var(--card); stroke:var(--architecture-component); stroke-width:2; } .graph-node.actor { stroke:var(--architecture-actor); } .graph-node.external { stroke:var(--architecture-external); } .graph-node.data { stroke:var(--architecture-data); }
 [data-kind="external"] .graph-node { stroke-dasharray:7 4; } [data-evidence="inferred"] .graph-node,[data-evidence="unknown"] .graph-node { stroke-dasharray:4 4; }

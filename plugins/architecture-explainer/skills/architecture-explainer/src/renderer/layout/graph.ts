@@ -2,7 +2,8 @@ import dagre from "@dagrejs/dagre"
 import { measure, wrapLabel } from "./text"
 import type { Status } from "../../domain/explanation-model"
 
-export type GraphNode = { id: string; label: string; concept?:string; detail?: string; kind: "system" | "component" | "external" | "actor" | "data"; status?: Status; evidence?: string[] }
+type GraphNodeBase = { id: string; label: string; concept?:string; detail?: string; evidence?: string[] }
+export type GraphNode = GraphNodeBase & ({ kind:"data"; evidenceBacked?:true; status?:never } | { kind:"system" | "component" | "external" | "actor"; status?:Status; evidenceBacked?:never })
 export type GraphEdge = { from: string; to: string; label: string }
 export type PositionedNode = GraphNode & { x: number; y: number; width: number; height: number; lines: string[]; detailLines: string[] }
 export type PositionedEdge = GraphEdge & { points: {x:number;y:number}[]; x: number; y: number; width: number; height: number; lines: string[] }
@@ -16,6 +17,7 @@ export function layoutGraph(nodes: GraphNode[], edges: GraphEdge[]): { width:num
     const title = wrapLabel(node.label, 176), detail = node.detail ? wrapLabel(node.detail, 176) : []
     if(node.status==="inferred")detail.push("推論")
     if(node.status==="unknown")detail.push("? 不明")
+    if(node.evidenceBacked)detail.push("根拠あり")
     const width = Math.max(170,Math.min(220,Math.max(...[...title,...detail].map(measure))+28))
     const height = Math.max(64,26+title.length*21+detail.length*18)
     lines.set(node.id,{title,detail})

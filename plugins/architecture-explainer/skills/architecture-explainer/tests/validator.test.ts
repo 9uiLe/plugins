@@ -18,6 +18,19 @@ describe("HTML contract regression",()=>{
   test("SVG alt, interactive handlers and focus",()=>{const result=validateHtml(page(body.replace('aria-label="関係"','').replace('<header>','<img src="data:image/png;base64,AAAA"><div onclick="go()" tabindex="2">開く</div><header>')));expect(codes(result.errors)).toContain("svg-label");expect(codes(result.errors)).toContain("img-alt");expect(codes(result.errors)).toContain("non-interactive-handler");expect(codes(result.warnings)).toContain("positive-tabindex")})
   test("file, symbol, line and path traversal",()=>{for(const [replacement,expected] of [['app/missing.py','code-ref-file'],['../outside.py','code-ref-file'],['app/service.py','none']] as const){const html=page(body.replace('data-file="app/service.py"',`data-file="${replacement}"`));const found=codes(validateHtml(html,{sourceRoot:root}).errors);if(expected==='none')expect(found).not.toContain("code-ref-file");else expect(found).toContain(expected)}expect(codes(validateHtml(page(body.replace("AuthService.refresh","AuthService.absent")),{sourceRoot:root}).errors)).toContain("code-ref-symbol");expect(codes(validateHtml(page(body.replace('data-line="2"','data-line="99"')),{sourceRoot:root}).errors)).toContain("code-ref-line")})
   test("evidence and code maps",()=>{const invalid=validateHtml(page(body.replace('data-evidence="observed"','data-evidence="likely"').replace('data-file="app/service.py"','')));expect(codes(invalid.errors)).toContain("evidence-value");expect(codes(invalid.warnings)).toContain("no-evidence-markers");expect(codes(invalid.warnings)).toContain("no-code-refs");const map='<table class="codemap"><tr><td><span class="src-file">app/service.py</span></td></tr></table>';const report=validateHtml(page(body+map));expect(codes(report.warnings)).toContain("codemap-label");expect(codes(report.warnings)).toContain("codemap-break")})
+  test("structural evidence metadata is separate from Claim status",()=>{
+    const source='<span id="source-ev-store">根拠</span>'
+    const valid=page(body+source+'<span data-evidence-backed="true" data-evidence-ids="ev-store">根拠あり</span>')
+    expect(validateHtml(valid).errors).toEqual([])
+    const cases:[string,string][]=[
+      ['<span data-evidence-backed="false" data-evidence-ids="ev-store">根拠あり</span>',"evidence-backed-value"],
+      ['<span data-evidence-backed="true">根拠あり</span>',"evidence-backed-ids"],
+      ['<span data-evidence-backed="true" data-evidence-ids="missing">根拠あり</span>',"evidence-backed-ref"],
+      ['<span data-evidence-backed="true" data-evidence="observed" data-evidence-ids="ev-store">根拠あり</span>',"evidence-kind-conflict"],
+      ['<g data-kind="data" data-evidence="observed"></g>',"evidence-kind-conflict"]
+    ]
+    for(const [markup,code] of cases)expect(codes(validateHtml(page(body+source+markup)).errors)).toContain(code)
+  })
   test("missing language, external media and Code Map source are reported",()=>{
     const html=page(body+'<img alt="remote" src="https://example.test/a.png"><table class="codemap"><tr><td data-label="要素">認証</td></tr></table>').replace('<html lang="ja">','<html>')
     const report=validateHtml(html)

@@ -31,6 +31,7 @@ export function checkHtml(html:string,findings:Findings):HtmlFacts {
   const root=parseHtml(html),nodes:HtmlNode[]=[],ids=new Map<string,number[]>(),anchors:{id:string;line?:number}[]=[],aria:{id:string;name:string;line?:number}[]=[]
   const figures:HtmlNode[]=[],codeRefs:HtmlNode[]=[],concepts:HtmlNode[]=[],prose:HtmlNode[]=[],responsibilities:HtmlNode[]=[],arrowLabels:{value:string;line?:number}[]=[],headings:{level:number;line?:number}[]=[]
   const evidenceMarkers:Record<string,number>={observed:0,inferred:0,unknown:0}
+  const backedMarkers:{ids:string[];line?:number}[]=[]
   walk(root,node=>{
     const tag=node.tagName;if(!tag)return;nodes.push(node)
     const id=attr(node,"id");if(id)ids.set(id,[...(ids.get(id)||[]),line(node)||0])
@@ -49,6 +50,14 @@ export function checkHtml(html:string,findings:Findings):HtmlFacts {
     if(hasClass(node,"arrow-label"))arrowLabels.push({value:textContent(node).trim(),line:line(node)})
     if(hasAttr(node,"data-arrow-label"))arrowLabels.push({value:attr(node,"data-arrow-label").trim(),line:line(node)})
     if(hasAttr(node,"data-evidence")){const status=attr(node,"data-evidence");if(status in evidenceMarkers)evidenceMarkers[status]++;else findings.errors.push({code:"evidence-value",message:`invalid data-evidence: ${status}`,line:line(node)})}
+    if(hasAttr(node,"data-evidence-backed")){
+      if(attr(node,"data-evidence-backed")!=="true")findings.errors.push({code:"evidence-backed-value",message:'data-evidence-backed must be "true"',line:line(node)})
+      if(hasAttr(node,"data-evidence"))findings.errors.push({code:"evidence-kind-conflict",message:"semantic status and structural evidence cannot share an element",line:line(node)})
+      const refs=attr(node,"data-evidence-ids").split(/\s+/).filter(Boolean)
+      if(!refs.length)findings.errors.push({code:"evidence-backed-ids",message:"evidence-backed structure needs evidence IDs",line:line(node)})
+      backedMarkers.push({ids:refs,line:line(node)})
+    }
+    if(attr(node,"data-kind")==="data"&&hasAttr(node,"data-evidence"))findings.errors.push({code:"evidence-kind-conflict",message:"Data is not a semantic Claim",line:line(node)})
     if(tag==="script"&&attr(node,"src")&&!attr(node,"src").startsWith("data:"))findings.errors.push({code:"external-script",message:"external script is not standalone",line:line(node)})
     if(tag==="link"&&/stylesheet|preload|modulepreload/.test(attr(node,"rel"))&&attr(node,"href")&&!attr(node,"href").startsWith("data:"))findings.errors.push({code:"external-stylesheet",message:"external stylesheet is not standalone",line:line(node)})
     if(["img","source","iframe","embed","object","video","audio"].includes(tag)){const src=attr(node,"src")||attr(node,"data");if(src&&!src.startsWith("data:"))findings.warnings.push({code:/^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(src)?"external-media":"relative-media",message:`media ${src} is not standalone`,line:line(node)})}
@@ -67,6 +76,7 @@ export function checkHtml(html:string,findings:Findings):HtmlFacts {
   for(const [id,lines] of ids)if(lines.length>1)findings.errors.push({code:"duplicate-id",message:`id ${id} appears ${lines.length} times`,line:lines[1]})
   for(const ref of anchors)if(!ids.has(ref.id))findings.errors.push({code:"broken-anchor",message:`#${ref.id} does not exist`,line:ref.line})
   for(const ref of aria)if(!ids.has(ref.id))findings.errors.push({code:"broken-aria-ref",message:`${ref.name} ${ref.id} does not exist`,line:ref.line})
+  for(const marker of backedMarkers)for(const ref of marker.ids)if(!ids.has(`source-${ref}`))findings.errors.push({code:"evidence-backed-ref",message:`evidence-backed marker references missing ${ref}`,line:marker.line})
   for(const figure of figures){const q=attr(figure,"data-question");if(!q.trim())findings.errors.push({code:"figure-question",message:"figure needs reader question",line:line(figure)});if(!descendants(figure,"figcaption").length)findings.errors.push({code:"figure-caption",message:"figure needs caption",line:line(figure)});const count=nodes.filter(n=>hasClass(n,"node")&&ancestors(n).includes(figure)).length;if(count>9)findings.warnings.push({code:"figure-density",message:`figure has ${count} nodes`,line:line(figure)})}
   if(figures.filter(f=>ancestors(f).some(n=>attr(n,"id")==="what"||hasClass(n,"first-view"))).length>1)findings.warnings.push({code:"first-view-figures",message:"first view has more than one figure"})
   for(const table of nodes.filter(n=>n.tagName==="table"&&hasClass(n,"codemap"))){if(descendants(table,"td").some(n=>!attr(n,"data-label")))findings.warnings.push({code:"codemap-label",message:"code map cell needs data-label",line:line(table)});if(!nodes.some(n=>ancestors(n).includes(table)&&hasClass(n,"src-file")))findings.warnings.push({code:"codemap-source",message:"code map has no file column",line:line(table)});if(nodes.some(n=>ancestors(n).includes(table)&&(hasClass(n,"src-file")&&missingBreak(n,"file")||hasClass(n,"src-symbol")&&missingBreak(n,"symbol"))))findings.warnings.push({code:"codemap-break",message:"code map identifier needs wrap opportunities",line:line(table)})}

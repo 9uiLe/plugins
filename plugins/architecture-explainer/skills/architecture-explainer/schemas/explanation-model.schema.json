@@ -267,7 +267,8 @@
             ]
           },
           "responsibility": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "depends_on": {
             "type": "array",
@@ -507,7 +508,8 @@
             "type": "string"
           },
           "decision": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "rationale": {
             "type": "object",
@@ -522,7 +524,8 @@
                 "$ref": "#/definitions/strings"
               },
               "text": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1
               }
             },
             "required": [
@@ -567,7 +570,8 @@
             "$ref": "#/definitions/strings"
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "enforced_by": {
             "type": "string"
@@ -707,7 +711,8 @@
             "type": "string"
           },
           "question": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "reason": {
             "type": "string"

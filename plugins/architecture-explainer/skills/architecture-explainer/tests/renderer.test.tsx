@@ -8,12 +8,14 @@ import { Badge } from "../src/components/ui/badge"
 import { Alert } from "../src/components/ui/alert"
 import { Separator } from "../src/components/ui/separator"
 import { Table, TableCell, TableRow } from "../src/components/ui/table"
-import { EvidenceBadge, RenderState, evidenceBackedDisplay } from "../src/components/architecture/common"
+import { CodeReference, EvidenceBadge, EvidenceMarker, RenderState, assertEvidenceBacked } from "../src/components/architecture/common"
 import { graphData } from "../src/components/architecture/graph-data"
+import { checkModel } from "../src/domain/evidence"
 import { checkPresentation, type Presentation } from "../src/domain/presentation"
 import { parseModel, parsePresentation } from "../src/domain/schema"
 import { render } from "../src/renderer/render"
 import { validateHtml } from "../src/validator/validate"
+import { attr, hasAttr, parseHtml, walk } from "../src/validator/html"
 
 const fixtures=resolve(import.meta.dir,"../../../tests/fixtures/presentation")
 const model=parseModel(JSON.parse(readFileSync(resolve(fixtures,"auth-model.json"),"utf8")))
@@ -37,14 +39,36 @@ describe("owned shadcn primitives",()=>{
     const observed=renderToStaticMarkup(<EvidenceBadge claim={model.purpose} state={state} about="purpose"/>)
     const unknown=renderToStaticMarkup(<EvidenceBadge claim={model.decisions[0].rationale} state={state} about="dec-rotate"/>)
     expect(observed).toContain('data-file="app/client/token_manager.py"')
-    expect(observed).toContain('<code>TokenManager._refresh</code>')
+    expect(observed).toContain('data-symbol="TokenManager._refresh"')
+    expect(observed).toContain("<wbr/>")
     expect(unknown).toContain('href="#unknown-unk-rationale"')
   })
   test("structural evidence marker is derived and requires resolvable evidence",()=>{
     const state=new RenderState(model)
-    expect(evidenceBackedDisplay(["ev-store"],state)).toEqual({status:"observed",evidence:["ev-store"]})
-    expect(()=>evidenceBackedDisplay([],state)).toThrow("resolvable evidence")
-    expect(()=>evidenceBackedDisplay(["missing"],state)).toThrow("resolvable evidence")
+    expect(()=>assertEvidenceBacked(["ev-store"],state)).not.toThrow()
+    const marker=renderToStaticMarkup(<EvidenceMarker evidence={["ev-store"]} state={state}/>)
+    expect(marker).toContain('data-evidence-backed="true"')
+    expect(marker).toContain('data-evidence-ids="ev-store"')
+    expect(marker).toContain("根拠あり")
+    expect(marker).not.toContain("data-evidence=")
+    expect(()=>assertEvidenceBacked([],state)).toThrow("resolvable evidence")
+    expect(()=>assertEvidenceBacked(["missing"],state)).toThrow("resolvable evidence")
+  })
+  test("Claim badges keep all three semantic states",()=>{
+    const state=new RenderState(model)
+    for(const status of ["observed","inferred","unknown"] as const){
+      const claim={status,evidence:status==="unknown"?[]:["ev-store"]}
+      const badge=renderToStaticMarkup(<EvidenceBadge claim={claim} state={state}/>)
+      expect(badge).toContain(`data-evidence="${status}"`)
+      expect(badge).not.toContain("data-evidence-backed")
+    }
+  })
+  test("long code references expose file and symbol with wrap opportunities",()=>{
+    const html=renderToStaticMarkup(<CodeReference item={{id:"long",kind:"code",revision:"rev",file:"very/long/path/file.ts",symbol:"ClassName.veryLongMethodName"}}/>)
+    expect(html).toContain('data-file="very/long/path/file.ts"')
+    expect(html).toContain('data-symbol="ClassName.veryLongMethodName"')
+    expect(html).toContain("very/<wbr/>")
+    expect(html).toContain("ClassName.<wbr/>veryLongMethodName")
   })
   test("first and later terms preserve the glossary concept contract",()=>{
     const state=new RenderState(model)
@@ -104,11 +128,39 @@ describe("renderer",()=>{
     const html=render(model,presentation)
     expect(html).toMatch(/<title data-concept="data-session">セッション<\/title>[\s\S]*?<text class="graph-text"[^>]*>[\s\S]*?セッション/)
   })
+  test("Data, transition and impact retain evidence without semantic Claim status",()=>{
+    const html=render(model,presentation),nodes:ReturnType<typeof parseHtml>[]=[]
+    walk(parseHtml(html),node=>{if(node.tagName)nodes.push(node)})
+    const data=nodes.find(node=>node.tagName==="g"&&attr(node,"data-kind")==="data")!
+    expect(attr(data,"data-evidence-backed")).toBe("true")
+    expect(attr(data,"data-evidence-ids")).toBe("ev-store")
+    expect(hasAttr(data,"data-evidence")).toBe(false)
+    expect(html).toMatch(/<title data-concept="data-session">セッション<\/title>[\s\S]*?根拠あり/)
+    const markers=nodes.filter(node=>attr(node,"data-evidence-backed")==="true"&&node.tagName==="span")
+    expect(markers.length).toBeGreaterThanOrEqual(3)
+    expect(markers.every(node=>!hasAttr(node,"data-evidence"))).toBe(true)
+    const transition=nodes.find(node=>node.tagName==="td"&&attr(node,"data-label")==="根拠")!
+    expect(markers.some(node=>node.parentNode===transition)).toBe(true)
+    const impact=nodes.find(node=>node.tagName==="li"&&attr(node,"data-impact")==="affected")!
+    expect(markers.some(node=>node.parentNode===impact)).toBe(true)
+    const observed=nodes.filter(node=>attr(node,"data-evidence")==="observed")
+    expect(observed.length).toBeGreaterThan(0)
+    expect(observed.some(node=>node.tagName==="g"&&attr(node,"data-kind")==="component")).toBe(true)
+    expect(validateHtml(html,{model,sourceRoot}).errors).toEqual([])
+  })
+  test("missing structural evidence is a model error, not Unknown",()=>{
+    for(const modify of [(value:typeof model)=>{value.data[0].evidence=[]},(value:typeof model)=>{value.states[0].transitions[0].evidence=[]},(value:typeof model)=>{value.change_impacts[0].affected[0].evidence=[]}]){
+      const changed=structuredClone(model);modify(changed)
+      expect(checkModel(changed).errors.map(issue=>issue.code)).toContain("structure-evidence")
+      expect(checkModel(changed).errors.map(issue=>issue.code)).not.toContain("unknown-link")
+      expect(()=>render(changed,presentation)).toThrow("structure-evidence")
+    }
+  })
   test("theme does not change semantic markers or source selection",()=>{
     const technical=render(model,presentation)
     const cards=render(model,{...presentation,theme:"cards"})
     expect(technical.replace('data-theme="technical"','data-theme="cards"')).toBe(cards)
-    for(const marker of [/data-evidence=/g,/data-file=/g,/<section\b/g,/data-question=/g])expect([...technical.matchAll(marker)].length).toBe([...cards.matchAll(marker)].length)
+    for(const marker of [/data-evidence=/g,/data-evidence-backed=/g,/data-file=/g,/<section\b/g,/data-question=/g])expect([...technical.matchAll(marker)].length).toBe([...cards.matchAll(marker)].length)
   })
   test("Evidence appendix omits empty metadata and Code Map handles absent symbol",()=>{
     const changed=structuredClone(model)

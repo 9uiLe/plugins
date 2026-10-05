@@ -2,6 +2,8 @@
 
 もっともらしいが実装に存在しない architecture を書かないための規則。すべての claim を Observed / Inferred / Unknown のいずれかに分類し、主要な claim は `Claim → Evidence → File → Symbol` まで辿れるようにする。
 
+Observed / Inferred / Unknown は Claim の分類である。Data、State transition、affected / unaffected impact のような status を持たない構造要素は、Evidence ID があるだけで Observed Claim にはならない。これらは解決可能な Evidence を必須とし、`data-evidence-backed="true"` と「根拠あり」で出所を表示する。Evidence がない場合は Unknown へ変換せず、model error とする。
+
 ## 分類
 
 | Status | 条件 | HTML での表示 |

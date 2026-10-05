@@ -11,7 +11,7 @@ export function ArchitectureGraph({id,question,caption,nodes,edges}:{id:string;q
       <rect className="graph-label-bg" x={edge.x-edge.width/2} y={edge.y-edge.height/2} width={edge.width} height={edge.height} rx="4"/>
       <text className="graph-edge-text arrow-label" x={edge.x} y={edge.y-(edge.lines.length-1)*8} textAnchor="middle">{edge.lines.map((line,j)=><tspan key={j} x={edge.x} dy={j?17:0}>{line}</tspan>)}</text>
     </g>)}
-    {graph.nodes.map(node=><g key={node.id} className="node" data-kind={node.kind} data-evidence={node.status} data-evidence-ids={node.evidence?.join(" ")}>
+    {graph.nodes.map(node=><g key={node.id} className="node" data-kind={node.kind} data-evidence={node.status} data-evidence-backed={node.evidenceBacked?"true":undefined} data-evidence-ids={node.evidence?.join(" ")}>
       <title data-concept={node.concept}>{node.label}</title>
       <rect className={`graph-node ${node.kind}`} x={node.x-node.width/2} y={node.y-node.height/2} width={node.width} height={node.height} rx={node.kind==="actor"?28:10}/>
       {node.kind==="data"&&<line x1={node.x-node.width/2+6} x2={node.x+node.width/2-6} y1={node.y-node.height/2+6} y2={node.y-node.height/2+6} stroke="var(--architecture-data)"/>}

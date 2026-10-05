@@ -43,6 +43,9 @@ test("CLI errors are nonzero, human-readable and stack-free",()=>{
   expectCleanFailure(["validate",join(temp,"missing.html")],"cannot read HTML file")
   expectCleanFailure(["validate",htmlFile,"--source-root",join(temp,"missing-source")],"source root is not a readable directory")
   expectCleanFailure(["render","--model",modelFile,"--presentation",presentationFile],"--output is required")
+  expectCleanFailure(["render","--model",modelFile,"--presentation",presentationFile,"--output",htmlFile,"--ouptut",htmlFile],"unknown option: --ouptut")
+  expectCleanFailure(["validate",htmlFile,"--source-rooot",temp],"unknown option: --source-rooot")
+  expectCleanFailure(["render","--model",modelFile,"--model",modelFile,"--presentation",presentationFile,"--output",htmlFile],"duplicate option: --model")
   expectCleanFailure(["unknown"],"Usage:")
 })
 test("inspect reports stable model counts and rejects malformed models",()=>{

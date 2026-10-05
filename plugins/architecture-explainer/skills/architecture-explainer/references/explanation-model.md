@@ -63,7 +63,7 @@ Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Q
 | Change Impact | 変更を起点にした affected / unaffected / requires verification | 読者の目的に変更理解が含まれない（newcomer の初回 orientation など） |
 | Unknown | Source Truth から判断できない問い | 判断できない点がない場合だけ空にする |
 
-State と Data は独立した Claim ではなく、`status` を持たない。State は状態の定義と Evidence 付き transition、Data は保存先・書き手・読み手と解決可能な `evidence` を持つ。Renderer が transition と Data に付ける `observed` badge は根拠が解決したことを示す表示上の状態であり、State / Data の semantic status ではない。推論や不明点は対応する Claim または `unknowns` で表す。Data Flow の矢印ラベルには glossary の preferred term を使い、「セッションを書き込む」のように対象を明示する。
+State と Data は独立した Claim ではなく、`status` を持たない。State は状態の定義と Evidence 付き transition、Data は保存先・書き手・読み手と解決可能な `evidence` を持つ。`status` を持たない要素の Evidence はその要素の出所を示し、Claim の Observed / Inferred / Unknown とは別である。Change Impact の affected / unaffected もこの扱いに含む。Renderer はこれらを「根拠あり」と表示し、Evidence がない場合は model error とする。推論や不明点は対応する Claim または `unknowns` で表す。Data Flow の矢印ラベルには glossary の preferred term を使い、「セッションを書き込む」のように対象を明示する。
 
 ## Component の粒度
 

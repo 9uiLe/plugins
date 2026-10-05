@@ -1,8 +1,8 @@
 # Visual Grammar
 
-同じ意味の要素は view と theme をまたいで同じ `data-kind`、`data-evidence`、`data-impact` を持つ。表示は `src/components/architecture/` が決め、`src/components/ui/` の shadcn 由来 primitive は意味を決めない。CSS は `styles/globals.css` から build して HTML に inline する。
+同じ意味の要素は view と theme をまたいで同じ `data-kind`、`data-evidence`、`data-evidence-backed`、`data-impact` を持つ。表示は `src/components/architecture/` が決め、`src/components/ui/` の shadcn 由来 primitive は意味を決めない。CSS は `styles/globals.css` から build して HTML に inline する。
 
-UI token（`--background`、`--card`、`--primary` など）と architecture の意味 token（`--architecture-system`、`--architecture-component`、`--evidence-observed`、`--impact-affected` など）は分ける。theme は UI の色を変えても、要素・根拠・影響の意味を変えない。
+UI token（`--background`、`--card`、`--primary` など）と architecture の意味 token（`--architecture-system`、`--architecture-component`、`--evidence-observed`、`--evidence-backed`、`--impact-affected` など）は分ける。`--evidence-observed` は Claim、`--evidence-backed` は非Claimの表示に使う。theme は UI の色を変えても、要素・根拠・影響の意味を変えない。
 
 ## 要素と根拠
 
@@ -13,13 +13,19 @@ UI token（`--background`、`--card`、`--primary` など）と architecture の
 | External system | `data-kind="external"` | 破線の枠、external 色 |
 | Actor | `data-kind="actor"` | 丸みの強い枠、actor 色 |
 | Data | `data-kind="data"` | 上辺に二本目の線、data 色 |
-| Observed | `data-evidence="observed"` | 「確認済み」badge と根拠へのリンク |
-| Inferred | `data-evidence="inferred"` | 「推論」badge、graph node は点線 |
-| Unknown | `data-evidence="unknown"` | 「不明」badge、解消方法へのリンク、graph node は点線と `?` |
+| Observed Claim | `data-evidence="observed"` | 「確認済み」badge と根拠へのリンク |
+| Inferred Claim | `data-evidence="inferred"` | 「推論」badge、graph node は点線 |
+| Unknown Claim | `data-evidence="unknown"` | 「不明」badge、解消方法へのリンク、graph node は点線と `?` |
+| 根拠付き構造要素 | `data-evidence-backed="true"` と `data-evidence-ids` | 「根拠あり」marker と根拠へのリンク。Data の SVG node にも可視ラベルを置く |
 
 色だけで意味を区別しない。status は badge と文字で表示する。要素の名前は `explanation-model.json` の glossary から取得し、`data-concept` を付ける。Graph の node 名は SVG の `<title data-concept>` に置く。
 
-`status` を持つ Claim の `data-evidence` は semantic status を示す。Data、State transition、change impact の affected / unaffected は `status` を持たず、解決済み Evidence から表示用の `observed` marker を導く。これは構造要素の根拠表示であり、その要素を独立した Observed Claim に昇格させない。
+| 対象 | Model の分類 | HTML contract |
+| --- | --- | --- |
+| Component responsibility、purpose、runtime step | Claim | `data-evidence="observed|inferred|unknown"` |
+| Data item、State transition、affected / unaffected impact | 非Claim構造要素 | `data-evidence-backed="true"` と解決可能な `data-evidence-ids` |
+
+`data-evidence` は Source Truth に対する Claim の semantic status を示す。非Claimの Evidence は出所を示すだけで、Observed Claim を意味しない。Evidence が欠けた構造要素は model validation error として表示を拒否し、Unknown Claim へ変換しない。HTML の `EvidenceBadge` と `EvidenceMarker` は別 component とし、SVG の Data node も `data-evidence` を持たない。
 
 ## 関係
 

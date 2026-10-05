@@ -97,21 +97,33 @@ test("presentation type is the strict section discriminator",()=>{
   expect(()=>parsePresentation(withSection({...section,type:undefined}))).toThrow("schema")
   expect(()=>parsePresentation(withSection({...section,extra:"typo"}))).toThrow("schema")
 })
-test("required graph and runtime labels cannot be empty",()=>{
+test("required reader-facing labels cannot be empty",()=>{
   const mutate=(change:(model:any)=>void)=>{const model=structuredClone(rawModel);change(model);expect(()=>parseModel(model)).toThrow("schema")}
+  mutate(model=>{model.purpose.responsibility=""})
   mutate(model=>{model.context.actors[0].role=""})
+  mutate(model=>{model.components[0].responsibility=""})
   mutate(model=>{model.components[1].depends_on[0].meaning=""})
   mutate(model=>{model.runtime_scenarios[0].steps[0].action=""})
+  mutate(model=>{model.decisions[0].decision=""})
+  mutate(model=>{model.decisions[0].rationale.text=""})
+  mutate(model=>{model.invariants[0].description=""})
+  mutate(model=>{model.unknowns[0].question=""})
   const model=structuredClone(rawModel)
   model.context.external_systems=[{id:"external",name:"外部",interaction:"",status:"observed",evidence:["ev-client"]}]
   expect(()=>parseModel(model)).toThrow("schema")
 })
-test("whitespace-only graph and runtime labels fail semantic checks",()=>{
+test("whitespace-only reader-facing labels fail semantic checks",()=>{
   const mutations=[
+    (model:any)=>{model.purpose.responsibility=" "},
     (model:any)=>{model.context.actors[0].role=" "},
     (model:any)=>{model.context.external_systems=[{id:"external",name:"外部",interaction:" ",status:"observed",evidence:["ev-client"]}]},
+    (model:any)=>{model.components[0].responsibility=" "},
     (model:any)=>{model.components[1].depends_on[0].meaning=" "},
-    (model:any)=>{model.runtime_scenarios[0].steps[0].action=" "}
+    (model:any)=>{model.runtime_scenarios[0].steps[0].action=" "},
+    (model:any)=>{model.decisions[0].decision=" "},
+    (model:any)=>{model.decisions[0].rationale.text=" "},
+    (model:any)=>{model.invariants[0].description=" "},
+    (model:any)=>{model.unknowns[0].question=" "}
   ]
   for(const mutate of mutations){const input=structuredClone(rawModel);mutate(input);expect(checkModel(parseModel(input)).errors.map(issue=>issue.code)).toContain("model-label")}
 })

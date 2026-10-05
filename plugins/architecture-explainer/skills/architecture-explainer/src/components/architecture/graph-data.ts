@@ -1,7 +1,7 @@
 import type { Actor, Component, DataItem, ExternalSystem } from "../../domain/explanation-model"
 import type { PresentationSection } from "../../domain/presentation"
 import type { GraphEdge, GraphNode } from "../../renderer/layout/graph"
-import { evidenceBackedDisplay, RenderState } from "./common"
+import { assertEvidenceBacked, RenderState } from "./common"
 
 type GraphSection = Extract<PresentationSection, { type: "system_context" | "component_map" | "data_flow" }>
 
@@ -33,7 +33,8 @@ export function graphData(section:GraphSection,state:RenderState):{nodes:GraphNo
   }else{
     for(const id of section.sources){
       const item=state.get<DataItem>(id),name=state.name(id)
-      nodes.push({id,label:name,concept:id,kind:"data",detail:item.stored_in,status:evidenceBackedDisplay(item.evidence,state).status,evidence:item.evidence})
+      assertEvidenceBacked(item.evidence,state)
+      nodes.push({id,label:name,concept:id,kind:"data",detail:item.stored_in,evidenceBacked:true,evidence:item.evidence})
       for(const writer of item.written_by)edges.push({from:writer,to:id,label:`${name}を書き込む`})
       for(const reader of item.read_by)edges.push({from:id,to:reader,label:`${name}を読み出す`})
     }
