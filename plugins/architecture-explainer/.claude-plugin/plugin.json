@@ -1,6 +1,6 @@
 {
   "name": "architecture-explainer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Create, review, and improve evidence-backed HTML explanations of code and architecture so readers can trace purpose, structure, runtime, code, rationale, and change impact.",
   "author": {
     "name": "9uiLe",
