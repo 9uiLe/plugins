@@ -78,15 +78,13 @@ plugin 自体の改善では `plugins/architecture-explainer/**` を変更しま
 
 ```bash
 cd plugins/architecture-explainer/skills/architecture-explainer
-bun install
-bun run test
-bun run typecheck
-bun run build
+bun ci
+bun run verify
 dist/architecture-explainer render --model path/to/explanation-model.json --presentation path/to/presentation-ir.json --output path/to/index.html
 dist/architecture-explainer validate path/to/index.html --source-root path/to/repo --model path/to/explanation-model.json
 ```
 
-`bun run test` は renderer、validator、graph、日本語 lint、評価 fixture の再構成を検証します。Skill の説明の正確さと Hard Gate は Source Truth を使った LLM 評価でも確認します。手順は [tests/eval/README.md](tests/eval/README.md) にあります。
+`bun run verify` は test、typecheck、build を実行し、build 前後の `dist/architecture-explainer` が byte 単位で一致することを確認します。続いて executable を一時ディレクトリに移し、Bun / Node.js を PATH に置かずに render / validate して error と warning が 0 件であることを確かめます。source を変更した場合は `bun run build` で配布 executable を更新し、source とともに commit してください。リポジトリ標準の `bash scripts/verify.sh` からもこの検証を実行します。Skill の説明の正確さと Hard Gate は Source Truth を使った LLM 評価でも確認します。手順は [tests/eval/README.md](tests/eval/README.md) にあります。
 
 ## Component の所有と更新
 
@@ -94,4 +92,4 @@ dist/architecture-explainer validate path/to/index.html --source-root path/to/re
 
 ## 制約
 
-Validator は claim の根拠 ID と版、HTML の構造と用語、Code Reference の file / symbol / line を検査します。Evidence が claim を実際に支えるか、Source Truth の調査が十分か、Reader Questions の選択が適切かは agent が [evaluation-rubric.md](skills/architecture-explainer/references/evaluation-rubric.md) の Hard Gate に沿って判断します。Graph の幅は文字種に基づく見積もりなので、未知の font や特殊な合字はブラウザで確認します。section patch と追加 template は未実装です。
+Validator は claim の根拠 ID と版、HTML の構造と用語、Code Reference の file / symbol / line を検査します。Evidence が claim を実際に支えるか、Source Truth の調査が十分か、Reader Questions の選択が適切かは agent が [evaluation-rubric.md](skills/architecture-explainer/references/evaluation-rubric.md) の Hard Gate に沿って判断します。Graph の幅は文字種に基づく見積もりなので、未知の font や特殊な合字はブラウザで確認します。配布 executable は約 64 MB で、commit ごとに Git 履歴が増えます。将来の release asset 化は follow-up です。section patch と追加 template は未実装です。

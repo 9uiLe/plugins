@@ -2,7 +2,7 @@ import type { ExplanationModel } from "../domain/explanation-model"
 import type { Findings } from "../domain/evidence"
 import { attr, line, textContent, type HtmlFacts } from "./html"
 
-const abstractLabels=new Set(["使用","呼び出し","依存","通信","連携","参照","利用"])
+const abstractLabels=new Set(["使用","呼び出し","依存","通信","連携","参照","利用","書き込む","読み出す","保存","取得"])
 const ambiguous=/^(?:これ|それ|この処理|その値|該当するもの|前述のもの)(?:は|が|を|に|で|も|について|、)/
 export function checkJapanese(facts:HtmlFacts,findings:Findings,model?:ExplanationModel):void {
   if(model){

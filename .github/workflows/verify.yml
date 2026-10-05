@@ -14,13 +14,13 @@ permissions:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: macos-15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install shellcheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
+        run: command -v shellcheck || brew install shellcheck
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -29,6 +29,15 @@ jobs:
 
       - name: Install Python test dependency
         run: python -m pip install Pillow
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.2"
+
+      - name: Install architecture-explainer dependencies
+        working-directory: plugins/architecture-explainer/skills/architecture-explainer
+        run: bun ci
 
       - name: Verify repository
         run: bash scripts/verify.sh

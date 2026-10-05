@@ -1,13 +1,13 @@
 import React from "react"
-import type { Change, Component, DataItem, Decision, Entity, Evidence, Invariant, Scenario, State, Unknown, Claim } from "../../domain/explanation-model"
+import type { Change, Component, Decision, Entity, Evidence, Invariant, Scenario, State, Unknown, Claim } from "../../domain/explanation-model"
 import type { PresentationSection } from "../../domain/presentation"
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { Separator } from "../ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import { ArchitectureGraph } from "./graph"
-import { CodeReference, EvidenceBadge, Figure, RenderState, statusForData } from "./common"
-import type { GraphEdge, GraphNode } from "../../renderer/layout/graph"
+import { CodeReference, EvidenceBadge, Figure, RenderState } from "./common"
+import { graphData } from "./graph-data"
 
 type ViewProps = { section:PresentationSection; state:RenderState }
 function ClaimCard({title,description,claim,state,concept}:{title:React.ReactNode;description?:string;claim:Claim;state:RenderState;concept?:string}) {
@@ -27,22 +27,8 @@ function Overview({section,state}:ViewProps) {
     })}</div></Figure><div className="takeaway"><strong>要点</strong><p>{purpose.responsibility}</p></div></>
 }
 function GraphView({section,state}:ViewProps) {
-  const nodes:GraphNode[]=[], edges:GraphEdge[]=[]
-  if (section.type==="system_context") {
-    nodes.push({id:"__subject",label:state.model.subject.title,kind:"system"})
-    for (const id of section.sources) {const source=state.sources.get(id)!, item=source.value as Entity; nodes.push({id,label:state.name(id),concept:id,kind:source.kind==="actor"?"actor":"external",detail:item.role||item.interaction,status:item.status,evidence:item.evidence}); edges.push({from:id,to:"__subject",label:item.role||item.interaction||"接続する"})}
-  } else if (section.type==="component_map") {
-    for (const id of section.sources) {const item=state.get<Component>(id); nodes.push({id,label:state.name(id),concept:id,kind:"component",detail:item.responsibility,status:item.status,evidence:item.evidence})}
-    const ids=new Set(section.sources)
-    for (const id of section.sources) for (const edge of state.get<Component>(id).depends_on) if(ids.has(edge.target)) edges.push({from:id,to:edge.target,label:edge.meaning})
-  } else if (section.type==="data_flow") {
-    for (const id of section.sources) {const item=state.get<DataItem>(id); nodes.push({id,label:state.name(id),concept:id,kind:"data",detail:item.stored_in,status:statusForData(item.evidence,state),evidence:item.evidence});
-      for (const writer of item.written_by) edges.push({from:writer,to:id,label:"書き込む"})
-      for (const reader of item.read_by) edges.push({from:id,to:reader,label:"読み出す"})
-    }
-    const endpoints=new Set(edges.flatMap(edge=>[edge.from,edge.to]))
-    for(const id of endpoints) if(!nodes.some(node=>node.id===id)) {const item=state.get<Component>(id); nodes.push({id,label:state.name(id),concept:id,kind:"component",status:item.status,evidence:item.evidence})}
-  }
+  if(section.type!=="system_context"&&section.type!=="component_map"&&section.type!=="data_flow")throw new Error(`unsupported graph section: ${section.type}`)
+  const {nodes,edges}=graphData(section,state)
   const kinds=new Set(nodes.map(node=>node.kind))
   return <Figure question={section.question}><ArchitectureGraph id={section.id} question={section.question} caption={section.question} nodes={nodes} edges={edges}/>{kinds.size>1&&<p className="legend">凡例: {[...kinds].map(kind=>({system:"対象",component:"構成要素",actor:"利用者",external:"外部",data:"データ"})[kind]).join(" · ")}</p>}{section.type==="system_context"&&state.model.context.boundaries.length>0&&<div className="boundaries"><h3>境界</h3><ul>{state.model.context.boundaries.map(boundary=><li key={boundary.id} data-kind="boundary"><strong>{boundary.kind}</strong>: {boundary.contains.map(id=>state.glossary.get(id)?.preferred||id).join("、")}</li>)}</ul></div>}<ul>{nodes.filter(node=>node.evidence?.length).map(node=><li key={node.id}>{state.term(node.id)} <EvidenceBadge claim={{status:node.status||"observed",evidence:node.evidence||[]}} state={state} about={node.id}/></li>)}</ul></Figure>
 }

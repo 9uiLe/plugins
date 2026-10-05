@@ -75,7 +75,7 @@ CI と同じ検証は、リポジトリのルートで次の 1 コマンドで�
 bash scripts/verify.sh
 ```
 
-必要なツールは Bash、Git、jq、ShellCheck、Node.js、Python 3 と Pillow（`python3 -m pip install Pillow`）です。スクリプトはツールをインストールしません。
+必要なツールは Bash、Git、jq、ShellCheck、Node.js、Python 3 と Pillow（`python3 -m pip install Pillow`）、Bun 1.4.2 です。`architecture-explainer` の配布 executable を検証するため、標準検証は Apple Silicon macOS で実行します。Bun 依存は `plugins/architecture-explainer/skills/architecture-explainer` で `bun ci` により導入します。検証スクリプト自体はツールをインストールしません。
 
 `scripts/verify.sh` は ShellCheck、マニフェストとバージョンの整合性、README のプラグイン一覧と配布対象の一致を検査し、次の規約で置いたテストを自動で実行します。テストを追加・削除しても、スクリプトや CI を変更する必要はありません。
 
@@ -84,6 +84,7 @@ bash scripts/verify.sh
 | `scripts/tests/*.test.sh` | `bash scripts/tests/<name>.test.sh` |
 | `plugins/<name>/tests/*.test.mjs` | `node --test plugins/<name>/tests/*.test.mjs` |
 | `plugins/<name>/tests/test_*.py` | `python3 -m unittest discover -s plugins/<name>/tests -v` |
+| `plugins/*/skills/*/package.json` の `scripts.verify` | そのディレクトリで `bun run verify`。architecture-explainer は test、typecheck、build、配布 executable の差分確認と smoke を実行 |
 
 特定の領域だけを確認する場合は、上の表のコマンドで個別に実行できます。プラグイン固有の手動確認や評価手順は、各プラグインの README を参照してください。
 

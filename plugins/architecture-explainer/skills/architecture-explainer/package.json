@@ -8,7 +8,9 @@
     "css": "bunx @tailwindcss/cli -i styles/globals.css -o src/renderer/generated.css --minify",
     "test": "bun run css && bun test",
     "typecheck": "tsc --noEmit",
-    "build": "bun run css && bun build src/cli.ts --compile --outfile dist/architecture-explainer"
+    "build": "bun run css && bun build src/cli.ts --compile --outfile dist/architecture-explainer",
+    "smoke": "bun scripts/smoke.ts",
+    "verify": "bash scripts/verify.sh"
   },
   "dependencies": {
     "@dagrejs/dagre": "3.1.1",

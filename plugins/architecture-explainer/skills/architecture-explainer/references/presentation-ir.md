@@ -29,7 +29,7 @@ Source Truth → Evidence → Explanation Model → Reader Questions → Explana
 
 - `template`: `doc`。線形説明と目次を持つ。`sheet` は未実装。
 - `theme`: `technical` または `cards`。変更しても claim、status、Evidence、section 選択は変わらない。
-- `sections`: 表示順。各 section は独立した reader question を一つ持つ。`id` は小文字・数字・ハイフンの anchor。最初の section は `id: "what"`, `view: "overview"` とし、`sources` に `purpose` を含める。
+- `sections`: 表示順。各 section は独立した reader question を一つ持つ。`id` は小文字・数字・ハイフンの anchor。最初の section は `id: "what"`, `type: "overview"` とし、`sources` に `purpose` を含める。
 - `question`: figure の `data-question` と caption、section heading の原文。
 - `type`: 下表の値。TypeScript では discriminated union であり、`sources` が指す model 要素との適合も renderer が検査する。
 - `sources`: Explanation Model の安定した ID の配列。`purpose` だけは固定 ID。`code_map` では evidence ID を source として選択できる。claim 本文、Evidence の内容、status、表示名を IR に書かない。表示順が必要な場合は配列順を使う。
@@ -72,7 +72,9 @@ dist/architecture-explainer validate index.html --model explanation-model.json -
 | Validator | 生成後の HTML に対する standalone、heading、anchor、figure、code ref、用語、change evidence、accessibility、日本語 lint |
 | Evaluation | Plan の十分性、first view の audience 適合、Source Truth と claim の一致、Evidence が claim を支えるか、Hard Gate |
 
-Renderer は unknown model ID、重複 section ID、unknown view、view/source kind 不適合、sequence / runtime flow の複数 scenario、存在しない graph endpoint、不整合な component map の抽象度、必須 render data の欠落、解決できない evidence ID を拒否する。最初の section の `id: "what"`、`view: "overview"`、`purpose` 選択は HTML の構造契約として検査する。
+Renderer は unknown model ID、重複 section ID、unknown `type`、view/source kind 不適合、sequence / runtime flow の複数 scenario、存在しない graph endpoint、不整合な component map の抽象度、必須 render data の欠落、解決できない evidence ID を拒否する。最初の section の `id: "what"`、`type: "overview"`、`purpose` 選択は HTML の構造契約として検査する。
+
+旧 Presentation IR の section property `"view": "sequence"` は、`"type": "sequence"` に変更する。`view` を残した JSON は schema が拒否するため、既存ファイルの各 section を移行する。
 
 Renderer は audience に必要な section の十分性、Plan の最適性、reviewer に対する first view の十分性、Source Truth の調査範囲、claim の真偽、Evidence が claim を実際に支えるかを判定しない。reviewer で runtime scenario や change impact を first view に含めるべきかは Plan / Evaluation で判断する。
 

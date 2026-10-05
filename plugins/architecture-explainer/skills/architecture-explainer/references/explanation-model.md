@@ -80,6 +80,8 @@ Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Q
 | Change Impact | 変更を起点にした affected / unaffected / requires verification | 読者の目的に変更理解が含まれない（newcomer の初回 orientation など） |
 | Unknown | Source Truth から判断できない問い | 判断できない点がない場合だけ空にする |
 
+Data は独立した Claim ではなく、`status` を持たない。保存先・書き手・読み手には解決可能な `evidence` を必須とする。Renderer が付ける `observed` badge は根拠付き Data の表示上の状態であり、Data の semantic status ではない。推論や不明点は対応する Claim または `unknowns` で表す。Data Flow の矢印ラベルには glossary の preferred term を使い、「セッションを書き込む」のように対象を明示する。
+
 ## Component の粒度
 
 `level` を必ず付ける。同じ view に並べる要素は同じ `level` にそろえる（[visualization-selection.md](visualization-selection.md) の抽象度規則）。`responsibility` は「何を担うか」を一文で書き、名前の言い換え（`UserRepository` → 「User のリポジトリ」）にしない。

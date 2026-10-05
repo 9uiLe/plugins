@@ -1,32 +1,841 @@
 {
-  "$schema":"http://json-schema.org/draft-07/schema#",
-  "$id":"https://9uile.github.io/architecture-explainer/explanation-model.schema.json",
-  "type":"object","additionalProperties":false,
-  "required":["subject","source","audience","purpose","context","components","runtime_scenarios","states","data","decisions","invariants","change_impacts","glossary","unknowns","evidence"],
-  "properties":{
-    "subject":{"type":"object","required":["title","question","scope"],"properties":{"title":{"type":"string","minLength":1},"question":{"type":"string"},"scope":{"type":"object","required":["in","out"],"properties":{"in":{"$ref":"#/definitions/strings"},"out":{"$ref":"#/definitions/strings"}}}}},
-    "source":{"type":"object","required":["root","revision","materials"],"properties":{"root":{"type":"string"},"revision":{"type":"string"},"base_revision":{"type":"string"},"materials":{"$ref":"#/definitions/strings"}}},
-    "audience":{"type":"object","required":["profile","familiarity","goal"],"properties":{"profile":{"enum":["newcomer","implementer","reviewer","architect","debugger"]},"familiarity":{"type":"string"},"goal":{"type":"string"},"inferred_from":{"type":"string"}}},
-    "purpose":{"allOf":[{"$ref":"#/definitions/claim"},{"type":"object","required":["problem","responsibility"],"properties":{"problem":{"type":"string"},"responsibility":{"type":"string"}}}]},
-    "context":{"type":"object","required":["actors","external_systems","boundaries"],"properties":{"actors":{"type":"array","items":{"$ref":"#/definitions/entity"}},"external_systems":{"type":"array","items":{"$ref":"#/definitions/entity"}},"boundaries":{"type":"array","items":{"type":"object","required":["id","kind","contains"],"properties":{"id":{"type":"string"},"kind":{"type":"string"},"contains":{"$ref":"#/definitions/strings"}}}}}},
-    "components":{"type":"array","items":{"allOf":[{"$ref":"#/definitions/entity"},{"type":"object","required":["level","responsibility","depends_on","code_locations"],"properties":{"level":{"enum":["system","container","module","class","function"]},"responsibility":{"type":"string"},"depends_on":{"type":"array","items":{"type":"object","required":["target","meaning"],"properties":{"target":{"type":"string"},"meaning":{"type":"string"}}}},"code_locations":{"type":"array","items":{"$ref":"#/definitions/location"}}}}]}},
-    "runtime_scenarios":{"type":"array","items":{"type":"object","required":["id","name","trigger","steps","exceptional_paths"],"properties":{"id":{"type":"string"},"name":{"type":"string"},"trigger":{"type":"string"},"steps":{"type":"array","items":{"allOf":[{"$ref":"#/definitions/claim"},{"type":"object","required":["from","to","action"],"properties":{"from":{"type":"string"},"to":{"type":"string"},"action":{"type":"string"}}}]}},"exceptional_paths":{"type":"array","items":{"allOf":[{"$ref":"#/definitions/claim"},{"type":"object","required":["at_step","condition","result"],"properties":{"at_step":{"type":"integer"},"condition":{"type":"string"},"result":{"type":"string"}}}]}}}}},
-    "states":{"type":"array","items":{"type":"object","required":["id","owner","name","transitions"],"properties":{"id":{"type":"string"},"owner":{"type":"string"},"name":{"type":"string"},"status":{"$ref":"#/definitions/status"},"transitions":{"type":"array","items":{"type":"object","required":["event","guard","to","evidence"],"properties":{"event":{"type":"string"},"guard":{"type":"string"},"to":{"type":"string"},"evidence":{"$ref":"#/definitions/strings"}}}}}}},
-    "data":{"type":"array","items":{"type":"object","required":["id","name","stored_in","written_by","read_by","evidence"],"properties":{"id":{"type":"string"},"name":{"type":"string"},"stored_in":{"type":"string"},"written_by":{"$ref":"#/definitions/strings"},"read_by":{"$ref":"#/definitions/strings"},"evidence":{"$ref":"#/definitions/strings"},"status":{"$ref":"#/definitions/status"}}}},
-    "decisions":{"type":"array","items":{"allOf":[{"$ref":"#/definitions/claim"},{"type":"object","required":["id","context","decision","rationale","tradeoffs","alternatives"],"properties":{"id":{"type":"string"},"context":{"type":"string"},"decision":{"type":"string"},"rationale":{"allOf":[{"$ref":"#/definitions/claim"},{"type":"object","required":["text"],"properties":{"text":{"type":"string"}}}]},"tradeoffs":{"$ref":"#/definitions/strings"},"alternatives":{"$ref":"#/definitions/strings"}}}]}},
-    "invariants":{"type":"array","items":{"allOf":[{"$ref":"#/definitions/claim"},{"type":"object","required":["id","description","enforced_by"],"properties":{"id":{"type":"string"},"description":{"type":"string"},"enforced_by":{"type":"string"}}}]}},
-    "change_impacts":{"type":"array","items":{"type":"object","required":["id","change","before","after","affected","unaffected","requires_verification"],"properties":{"id":{"type":"string"},"change":{"type":"string"},"before":{"$ref":"#/definitions/behavior"},"after":{"$ref":"#/definitions/behavior"},"affected":{"type":"array","items":{"$ref":"#/definitions/impact"}},"unaffected":{"type":"array","items":{"$ref":"#/definitions/impact"}},"requires_verification":{"type":"array","items":{"type":"object","required":["target","reason"],"properties":{"target":{"type":"string"},"reason":{"type":"string"}}}}}}},
-    "glossary":{"type":"array","items":{"type":"object","required":["id","concept","preferred","code_terms","aliases","avoid","meaning","evidence"],"properties":{"id":{"type":"string"},"concept":{"type":"string"},"preferred":{"type":"string","minLength":1},"code_terms":{"$ref":"#/definitions/strings"},"aliases":{"$ref":"#/definitions/strings"},"avoid":{"$ref":"#/definitions/strings"},"meaning":{"type":"string"},"evidence":{"$ref":"#/definitions/strings"}}}},
-    "unknowns":{"type":"array","items":{"type":"object","required":["id","about","question","reason","how_to_resolve"],"properties":{"id":{"type":"string"},"about":{"type":"string"},"question":{"type":"string"},"reason":{"type":"string"},"how_to_resolve":{"type":"string"}}}},
-    "evidence":{"type":"array","items":{"type":"object","required":["id","kind","revision"],"properties":{"id":{"type":"string"},"kind":{"enum":["code","test","doc","config","commit","diff","issue"]},"revision":{"type":"string"},"file":{"type":"string"},"symbol":{"type":"string"},"line":{"type":"integer","minimum":1},"note":{"type":"string"}}}}
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://9uile.github.io/architecture-explainer/explanation-model.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "subject",
+    "source",
+    "audience",
+    "purpose",
+    "context",
+    "components",
+    "runtime_scenarios",
+    "states",
+    "data",
+    "decisions",
+    "invariants",
+    "change_impacts",
+    "glossary",
+    "unknowns",
+    "evidence"
+  ],
+  "properties": {
+    "subject": {
+      "type": "object",
+      "required": [
+        "title",
+        "question",
+        "scope"
+      ],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "question": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "object",
+          "required": [
+            "in",
+            "out"
+          ],
+          "properties": {
+            "in": {
+              "$ref": "#/definitions/strings"
+            },
+            "out": {
+              "$ref": "#/definitions/strings"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "root",
+        "revision",
+        "materials"
+      ],
+      "properties": {
+        "root": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "base_revision": {
+          "type": "string"
+        },
+        "materials": {
+          "$ref": "#/definitions/strings"
+        }
+      },
+      "additionalProperties": false
+    },
+    "audience": {
+      "type": "object",
+      "required": [
+        "profile",
+        "familiarity",
+        "goal"
+      ],
+      "properties": {
+        "profile": {
+          "enum": [
+            "newcomer",
+            "implementer",
+            "reviewer",
+            "architect",
+            "debugger"
+          ]
+        },
+        "familiarity": {
+          "type": "string"
+        },
+        "goal": {
+          "type": "string"
+        },
+        "inferred_from": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "purpose": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/status"
+        },
+        "evidence": {
+          "$ref": "#/definitions/strings"
+        },
+        "problem": {
+          "type": "string"
+        },
+        "responsibility": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "evidence",
+        "problem",
+        "responsibility"
+      ],
+      "additionalProperties": false
+    },
+    "context": {
+      "type": "object",
+      "required": [
+        "actors",
+        "external_systems",
+        "boundaries"
+      ],
+      "properties": {
+        "actors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/entity"
+          }
+        },
+        "external_systems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/entity"
+          }
+        },
+        "boundaries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "kind",
+              "contains"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "contains": {
+                "$ref": "#/definitions/strings"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/definitions/status"
+          },
+          "evidence": {
+            "$ref": "#/definitions/strings"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "interaction": {
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "system",
+              "container",
+              "module",
+              "class",
+              "function"
+            ]
+          },
+          "responsibility": {
+            "type": "string"
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "target",
+                "meaning"
+              ],
+              "properties": {
+                "target": {
+                  "type": "string"
+                },
+                "meaning": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "code_locations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/location"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "evidence",
+          "id",
+          "name",
+          "level",
+          "responsibility",
+          "depends_on",
+          "code_locations"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "runtime_scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "trigger",
+          "steps",
+          "exceptional_paths"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "trigger": {
+            "type": "string"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "status": {
+                  "$ref": "#/definitions/status"
+                },
+                "evidence": {
+                  "$ref": "#/definitions/strings"
+                },
+                "from": {
+                  "type": "string"
+                },
+                "to": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status",
+                "evidence",
+                "from",
+                "to",
+                "action"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "exceptional_paths": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "status": {
+                  "$ref": "#/definitions/status"
+                },
+                "evidence": {
+                  "$ref": "#/definitions/strings"
+                },
+                "at_step": {
+                  "type": "integer"
+                },
+                "condition": {
+                  "type": "string"
+                },
+                "result": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status",
+                "evidence",
+                "at_step",
+                "condition",
+                "result"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "states": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "owner",
+          "name",
+          "transitions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/definitions/status"
+          },
+          "transitions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "event",
+                "guard",
+                "to",
+                "evidence"
+              ],
+              "properties": {
+                "event": {
+                  "type": "string"
+                },
+                "guard": {
+                  "type": "string"
+                },
+                "to": {
+                  "type": "string"
+                },
+                "evidence": {
+                  "$ref": "#/definitions/strings"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "stored_in",
+          "written_by",
+          "read_by",
+          "evidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "stored_in": {
+            "type": "string"
+          },
+          "written_by": {
+            "$ref": "#/definitions/strings"
+          },
+          "read_by": {
+            "$ref": "#/definitions/strings"
+          },
+          "evidence": {
+            "$ref": "#/definitions/strings"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/definitions/status"
+          },
+          "evidence": {
+            "$ref": "#/definitions/strings"
+          },
+          "context": {
+            "type": "string"
+          },
+          "decision": {
+            "type": "string"
+          },
+          "rationale": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "status": {
+                "$ref": "#/definitions/status"
+              },
+              "evidence": {
+                "$ref": "#/definitions/strings"
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "status",
+              "evidence",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          "tradeoffs": {
+            "$ref": "#/definitions/strings"
+          },
+          "alternatives": {
+            "$ref": "#/definitions/strings"
+          }
+        },
+        "required": [
+          "status",
+          "evidence",
+          "id",
+          "context",
+          "decision",
+          "rationale",
+          "tradeoffs",
+          "alternatives"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "invariants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/definitions/status"
+          },
+          "evidence": {
+            "$ref": "#/definitions/strings"
+          },
+          "description": {
+            "type": "string"
+          },
+          "enforced_by": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "evidence",
+          "id",
+          "description",
+          "enforced_by"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "change_impacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "change",
+          "before",
+          "after",
+          "affected",
+          "unaffected",
+          "requires_verification"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "change": {
+            "type": "string"
+          },
+          "before": {
+            "$ref": "#/definitions/behavior"
+          },
+          "after": {
+            "$ref": "#/definitions/behavior"
+          },
+          "affected": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/impact"
+            }
+          },
+          "unaffected": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/impact"
+            }
+          },
+          "requires_verification": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "target",
+                "reason"
+              ],
+              "properties": {
+                "target": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "glossary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "concept",
+          "preferred",
+          "code_terms",
+          "aliases",
+          "avoid",
+          "meaning",
+          "evidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "concept": {
+            "type": "string"
+          },
+          "preferred": {
+            "type": "string",
+            "minLength": 1
+          },
+          "code_terms": {
+            "$ref": "#/definitions/strings"
+          },
+          "aliases": {
+            "$ref": "#/definitions/strings"
+          },
+          "avoid": {
+            "$ref": "#/definitions/strings"
+          },
+          "meaning": {
+            "type": "string"
+          },
+          "evidence": {
+            "$ref": "#/definitions/strings"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "unknowns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "about",
+          "question",
+          "reason",
+          "how_to_resolve"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "about": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "how_to_resolve": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "revision"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "code",
+              "test",
+              "doc",
+              "config",
+              "commit",
+              "diff",
+              "issue"
+            ]
+          },
+          "revision": {
+            "type": "string"
+          },
+          "file": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
   },
-  "definitions":{
-    "strings":{"type":"array","items":{"type":"string"}},
-    "status":{"enum":["observed","inferred","unknown"]},
-    "claim":{"type":"object","required":["status","evidence"],"properties":{"id":{"type":"string"},"status":{"$ref":"#/definitions/status"},"evidence":{"$ref":"#/definitions/strings"}}},
-    "entity":{"allOf":[{"$ref":"#/definitions/claim"},{"type":"object","required":["id","name"],"properties":{"id":{"type":"string"},"name":{"type":"string"},"role":{"type":"string"},"interaction":{"type":"string"}}}]},
-    "location":{"type":"object","required":["file"],"properties":{"file":{"type":"string"},"symbol":{"type":"string"},"line":{"type":"integer","minimum":1}}},
-    "behavior":{"allOf":[{"$ref":"#/definitions/claim"},{"type":"object","required":["id","behavior"],"properties":{"id":{"type":"string"},"behavior":{"type":"string"}}}]},
-    "impact":{"type":"object","required":["target","reason","evidence"],"properties":{"target":{"type":"string"},"reason":{"type":"string"},"evidence":{"$ref":"#/definitions/strings"}}}
+  "definitions": {
+    "strings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "enum": [
+        "observed",
+        "inferred",
+        "unknown"
+      ]
+    },
+    "claim": {
+      "type": "object",
+      "required": [
+        "status",
+        "evidence"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/status"
+        },
+        "evidence": {
+          "$ref": "#/definitions/strings"
+        }
+      },
+      "additionalProperties": false
+    },
+    "entity": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/status"
+        },
+        "evidence": {
+          "$ref": "#/definitions/strings"
+        },
+        "name": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "interaction": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "evidence",
+        "id",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "location": {
+      "type": "object",
+      "required": [
+        "file"
+      ],
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "behavior": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/status"
+        },
+        "evidence": {
+          "$ref": "#/definitions/strings"
+        },
+        "behavior": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "evidence",
+        "id",
+        "behavior"
+      ],
+      "additionalProperties": false
+    },
+    "impact": {
+      "type": "object",
+      "required": [
+        "target",
+        "reason",
+        "evidence"
+      ],
+      "properties": {
+        "target": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "evidence": {
+          "$ref": "#/definitions/strings"
+        }
+      },
+      "additionalProperties": false
+    }
   }
 }
