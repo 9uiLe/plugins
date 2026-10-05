@@ -5,6 +5,8 @@
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-05
+
 ### Changed
 
 - **architecture-explainer**: 説明の生成・表示・検証を TypeScript + Bun に移行。Agent が作る Explanation Model と Presentation IR から、所有する shadcn/ui 由来の部品、Tailwind CSS、Dagre、React の静的描画で standalone HTML を生成する。Python の renderer・validator・layout を廃止し、Apple Silicon macOS 向け standalone executable を同梱。ルートの標準検証と CI に test・typecheck・build・配布 binary の一致確認・隔離 smoke test を統合。
@@ -13,7 +15,6 @@
 ### Migration
 
 - **architecture-explainer（破壊的変更）**: 既存の Presentation IR は section の `view` を `type` に変更する。旧 Python コマンドに代えて `dist/architecture-explainer render` / `validate` を使用する。配布 executable の対象は Apple Silicon macOS（arm64）。閲覧時の HTML は Bun・Node.js・React runtime を必要としない。
-
 ## [0.8.2] - 2026-10-02
 
 ### Changed
@@ -247,7 +248,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/9uiLe/plugins/compare/v0.8.2...v0.9.0
 [0.8.2]: https://github.com/9uiLe/plugins/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/9uiLe/plugins/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/9uiLe/plugins/compare/v0.7.2...v0.8.0
