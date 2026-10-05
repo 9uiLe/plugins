@@ -123,7 +123,8 @@
           "type": "string"
         },
         "responsibility": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       },
       "required": [
@@ -145,13 +146,65 @@
         "actors": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/entity"
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "status": {
+                "$ref": "#/definitions/status"
+              },
+              "evidence": {
+                "$ref": "#/definitions/strings"
+              },
+              "name": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "status",
+              "evidence",
+              "id",
+              "name",
+              "role"
+            ],
+            "additionalProperties": false
           }
         },
         "external_systems": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/entity"
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "status": {
+                "$ref": "#/definitions/status"
+              },
+              "evidence": {
+                "$ref": "#/definitions/strings"
+              },
+              "name": {
+                "type": "string"
+              },
+              "interaction": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "status",
+              "evidence",
+              "id",
+              "name",
+              "interaction"
+            ],
+            "additionalProperties": false
           }
         },
         "boundaries": {
@@ -168,7 +221,14 @@
                 "type": "string"
               },
               "kind": {
-                "type": "string"
+                "enum": [
+                  "app",
+                  "module",
+                  "process",
+                  "data",
+                  "external",
+                  "trust"
+                ]
               },
               "contains": {
                 "$ref": "#/definitions/strings"
@@ -197,12 +257,6 @@
           "name": {
             "type": "string"
           },
-          "role": {
-            "type": "string"
-          },
-          "interaction": {
-            "type": "string"
-          },
           "level": {
             "enum": [
               "system",
@@ -228,7 +282,8 @@
                   "type": "string"
                 },
                 "meaning": {
-                  "type": "string"
+                  "type": "string",
+                  "minLength": 1
                 }
               },
               "additionalProperties": false
@@ -296,7 +351,8 @@
                   "type": "string"
                 },
                 "action": {
-                  "type": "string"
+                  "type": "string",
+                  "minLength": 1
                 }
               },
               "required": [
@@ -366,9 +422,6 @@
           },
           "name": {
             "type": "string"
-          },
-          "status": {
-            "$ref": "#/definitions/status"
           },
           "transitions": {
             "type": "array",
@@ -742,36 +795,6 @@
           "$ref": "#/definitions/strings"
         }
       },
-      "additionalProperties": false
-    },
-    "entity": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "status": {
-          "$ref": "#/definitions/status"
-        },
-        "evidence": {
-          "$ref": "#/definitions/strings"
-        },
-        "name": {
-          "type": "string"
-        },
-        "role": {
-          "type": "string"
-        },
-        "interaction": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "status",
-        "evidence",
-        "id",
-        "name"
-      ],
       "additionalProperties": false
     },
     "location": {

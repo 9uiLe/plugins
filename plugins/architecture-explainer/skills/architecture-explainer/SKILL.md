@@ -40,7 +40,7 @@ Source Truth → Evidence → Explanation Model → Reader Questions → Termino
 
 ## Workflow
 
-CLI と schema のパスは、この `SKILL.md` があるディレクトリからの相対パスで書いてある。macOS 用 CLI は開発時に `bun run build` で生成し、配布時は `dist/architecture-explainer` を同梱する。生成後の利用に Bun / Node.js / Python は不要。
+CLI と schema のパスは、この `SKILL.md` があるディレクトリからの相対パスで書いてある。Apple Silicon macOS（arm64）用 CLI は開発時に `bun run build` で生成し、配布時は `dist/architecture-explainer` を同梱する。生成後の利用に Bun / Node.js / Python は不要。
 
 1. **Mode、audience、goal、scope を決める。** audience が指定されていなければ、依頼文と対象から推定し、推定理由を記録する。成果を左右する不明点（対象 subsystem の候補が複数あるなど）は質問し、回答に依存しない調査は先に進める。
 2. **Evidence を集める。** [evidence-rules.md](references/evidence-rules.md) に従い、entry point、境界、代表 scenario の呼び出し経路、テスト、設定、関連 commit を読む。読むのは subject に関係する範囲だけにする。

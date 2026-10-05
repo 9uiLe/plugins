@@ -47,13 +47,13 @@ plugin 自体の改善では `plugins/architecture-explainer/**` を変更しま
 
 ## 既知の制限
 
-- claim が正しいかは、Skill を実行するモデルが Source Truth を読んで判断します。renderer は model の claim と Evidence を投影します。独立した validator は構造に加えて、注釈された名称と model の不一致、Before / After の根拠 ID と版の対応、曖昧表現、抽象的な矢印ラベルを検出します。根拠の内容が claim を支えるか、日本語全体が明確かまでは保証しません。
+- claim が正しいかは、Skill を実行するモデルが Source Truth を読んで判断します。renderer は model の claim と Evidence を投影します。独立した validator は構造に加えて、注釈された名称と model の不一致、Before / After の根拠 ID と版の対応、曖昧表現、抽象的な矢印ラベルを検出します。根拠の内容が claim を支えるか、日本語全体が明確かまでは保証しません。Code Reference の `Class.method` は各部分が source file にあるかを調べるため、別々の箇所に現れる同名の部分を完全には区別しません。
 - 大きなリポジトリでは、依頼の subject に関係する範囲だけを読みます。範囲外の構成は説明に含まれません。
 - 表示確認はブラウザを使える環境で行います。使えない環境では、validator の構造検査だけになります。
 
 ## 構成と実行環境
 
-コードを読める AI エージェントと、表示確認用のブラウザが必要です。macOS 用の `architecture-explainer` executable は Bun、Node.js、Python、npm、shadcn CLI をインストールせずに実行できます。開発・build には Bun を使います。
+コードを読める AI エージェントと、表示確認用のブラウザが必要です。同梱する `architecture-explainer` executable の対象は **Apple Silicon macOS（arm64）** です。Intel Mac、Linux、Windows は対象外です。利用時に Bun、Node.js、Python、npm、shadcn CLI のインストールは不要です。開発・build には Bun を使います。
 
 以下のパスは `skills/architecture-explainer/` 内にあります。
 
@@ -84,7 +84,7 @@ dist/architecture-explainer render --model path/to/explanation-model.json --pres
 dist/architecture-explainer validate path/to/index.html --source-root path/to/repo --model path/to/explanation-model.json
 ```
 
-`bun run verify` は test、typecheck、build を実行し、build 前後の `dist/architecture-explainer` が byte 単位で一致することを確認します。続いて executable を一時ディレクトリに移し、Bun / Node.js を PATH に置かずに render / validate して error と warning が 0 件であることを確かめます。source を変更した場合は `bun run build` で配布 executable を更新し、source とともに commit してください。リポジトリ標準の `bash scripts/verify.sh` からもこの検証を実行します。Skill の説明の正確さと Hard Gate は Source Truth を使った LLM 評価でも確認します。手順は [tests/eval/README.md](tests/eval/README.md) にあります。
+`bun run verify` は test、typecheck、build を実行し、build 前後の `dist/architecture-explainer` が byte 単位で一致することを確認します。続いて executable を一時ディレクトリに移し、Bun / Node.js を PATH に置かずに render / validate して error と warning が 0 件であることを確かめます。`bun ci` は依存の取得に network を使う場合がありますが、その後の CSS 生成と build はインストール済みの依存だけを使います。`--target=bun-darwin-arm64` で配布対象を固定します。source を変更した場合は `bun run build` で配布 executable を更新し、source とともに commit してください。リポジトリ標準の `bash scripts/verify.sh` からもこの検証を実行します。Skill の説明の正確さと Hard Gate は Source Truth を使った LLM 評価でも確認します。手順は [tests/eval/README.md](tests/eval/README.md) にあります。
 
 ## Component の所有と更新
 

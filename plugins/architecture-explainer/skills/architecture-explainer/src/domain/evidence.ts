@@ -43,6 +43,10 @@ export function checkModel(model: ExplanationModel): Findings {
     if(entry&&!new Set([entry.preferred,...entry.code_terms,...entry.aliases]).has(entity.name))result.errors.push({code:"model-terminology",message:`${entity.name} is not mapped for ${entity.id}`})
   }
   for(const item of model.components)for(const edge of item.depends_on)if(index.get(edge.target)?.kind!=="component")result.errors.push({code:"model-endpoint",message:`${item.id} depends on missing component ${edge.target}`})
+  for(const item of model.context.actors)if(!item.role.trim())result.errors.push({code:"model-label",message:`${item.id} needs actor.role`})
+  for(const item of model.context.external_systems)if(!item.interaction.trim())result.errors.push({code:"model-label",message:`${item.id} needs external.interaction`})
+  for(const item of model.components)for(const edge of item.depends_on)if(!edge.meaning.trim())result.errors.push({code:"model-label",message:`${item.id} → ${edge.target} needs depends_on.meaning`})
+  for(const item of model.runtime_scenarios)for(const step of item.steps)if(!step.action.trim())result.errors.push({code:"model-label",message:`${item.id} needs step.action`})
   for(const item of model.data){
     if(!item.evidence.length||item.evidence.some(id=>!evidence.has(id)))result.errors.push({code:"claim-evidence",message:`${item.id} needs resolvable evidence IDs`})
     for(const id of [...item.written_by,...item.read_by])if(index.get(id)?.kind!=="component")result.errors.push({code:"model-endpoint",message:`${item.id} has missing component ${id}`})

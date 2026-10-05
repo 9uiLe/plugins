@@ -12,6 +12,7 @@ export function layoutGraph(nodes: GraphNode[], edges: GraphEdge[]): { width:num
   graph.setDefaultEdgeLabel(() => ({}))
   const lines = new Map<string,{title:string[]; detail:string[]}>()
   for (const node of nodes) {
+    if(lines.has(node.id))throw new Error(`duplicate graph node ID: ${node.id}`)
     const title = wrapLabel(node.label, 176), detail = node.detail ? wrapLabel(node.detail, 176) : []
     if(node.status==="inferred")detail.push("推論")
     if(node.status==="unknown")detail.push("? 不明")

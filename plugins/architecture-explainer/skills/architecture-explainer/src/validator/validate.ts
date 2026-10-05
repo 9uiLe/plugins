@@ -20,6 +20,11 @@ export function validateHtml(html:string,options:{model?:ExplanationModel;source
   const findings=emptyFindings(),facts=checkHtml(html,findings)
   checkJapanese(facts,findings,options.model)
   if(options.model){const modelFindings=checkModel(options.model);findings.errors.push(...modelFindings.errors);findings.warnings.push(...modelFindings.warnings)}
-  if(options.sourceRoot){const root=realpathSync(options.sourceRoot);for(const node of facts.codeRefs)checkCodeRef(attr(node,"data-file"),attr(node,"data-symbol"),attr(node,"data-line"),line(node),root,findings)}
+  if(options.sourceRoot){
+    let root:string
+    try {root=realpathSync(options.sourceRoot);if(!statSync(root).isDirectory())throw new Error("not a directory")}
+    catch {throw new Error(`source root is not a readable directory: ${options.sourceRoot}`)}
+    for(const node of facts.codeRefs)checkCodeRef(attr(node,"data-file"),attr(node,"data-symbol"),attr(node,"data-line"),line(node),root,findings)
+  }
   return {...findings,ok:findings.errors.length===0,stats:facts.stats}
 }

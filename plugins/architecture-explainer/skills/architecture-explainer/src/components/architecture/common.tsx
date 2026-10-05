@@ -24,7 +24,7 @@ export class RenderState {
 }
 export function CodeReference({item}:{item:Evidence}) {
   if (!item.file) return <a className="code-ref" href={`#source-${item.id}`}>根拠 {item.id}</a>
-  return <a className="code-ref" href={`#source-${item.id}`} data-file={item.file} data-symbol={item.symbol || ""} data-line={item.line || undefined}><code>{item.file}{item.line ? `:${item.line}`:""}</code></a>
+  return <a className="code-ref" href={`#source-${item.id}`} data-file={item.file} data-symbol={item.symbol || ""} data-line={item.line || undefined}><code>{item.file}{item.line ? `:${item.line}`:""}</code>{item.symbol&&<> · <code>{item.symbol}</code></>}</a>
 }
 export function EvidenceBadge({claim, state, about}:{claim:Claim;state:RenderState;about?:string}) {
   if (!statuses[claim.status]) throw new Error(`invalid claim status: ${about}`)
@@ -34,7 +34,8 @@ export function EvidenceBadge({claim, state, about}:{claim:Claim;state:RenderSta
   return <span className="evidence-line"><Badge className="status" data-evidence={claim.status}>{statuses[claim.status]}</Badge>{claim.evidence.map(id=>{const item=state.evidence.get(id); if(!item) throw new Error(`unresolved evidence: ${id}`); return <CodeReference key={id} item={item}/>})}{unknown && <a className="code-ref" href={`#unknown-${unknown.id}`}>解消方法</a>}</span>
 }
 export function Figure({question,caption,children}:{question:string;caption?:string;children:React.ReactNode}) { return <figure className="view" data-question={question}>{children}<figcaption>{caption || question}</figcaption></figure> }
-export function evidencePresentationStatus(evidence:string[],state:RenderState):Status {
-  if(!evidence.length||evidence.some(id=>!state.evidence.has(id)))throw new Error("data needs resolvable evidence")
-  return "observed"
+/** Data, transitions, and impacts have no semantic status. This marker only reports resolved evidence. */
+export function evidenceBackedDisplay(evidence:string[],state:RenderState):{status:"observed";evidence:string[]} {
+  if(!evidence.length||evidence.some(id=>!state.evidence.has(id)))throw new Error("structural item needs resolvable evidence")
+  return {status:"observed",evidence}
 }

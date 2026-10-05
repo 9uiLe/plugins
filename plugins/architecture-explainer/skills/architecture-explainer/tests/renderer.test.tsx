@@ -8,7 +8,7 @@ import { Badge } from "../src/components/ui/badge"
 import { Alert } from "../src/components/ui/alert"
 import { Separator } from "../src/components/ui/separator"
 import { Table, TableCell, TableRow } from "../src/components/ui/table"
-import { EvidenceBadge, RenderState } from "../src/components/architecture/common"
+import { EvidenceBadge, RenderState, evidenceBackedDisplay } from "../src/components/architecture/common"
 import { graphData } from "../src/components/architecture/graph-data"
 import { checkPresentation, type Presentation } from "../src/domain/presentation"
 import { parseModel, parsePresentation } from "../src/domain/schema"
@@ -37,7 +37,14 @@ describe("owned shadcn primitives",()=>{
     const observed=renderToStaticMarkup(<EvidenceBadge claim={model.purpose} state={state} about="purpose"/>)
     const unknown=renderToStaticMarkup(<EvidenceBadge claim={model.decisions[0].rationale} state={state} about="dec-rotate"/>)
     expect(observed).toContain('data-file="app/client/token_manager.py"')
+    expect(observed).toContain('<code>TokenManager._refresh</code>')
     expect(unknown).toContain('href="#unknown-unk-rationale"')
+  })
+  test("structural evidence marker is derived and requires resolvable evidence",()=>{
+    const state=new RenderState(model)
+    expect(evidenceBackedDisplay(["ev-store"],state)).toEqual({status:"observed",evidence:["ev-store"]})
+    expect(()=>evidenceBackedDisplay([],state)).toThrow("resolvable evidence")
+    expect(()=>evidenceBackedDisplay(["missing"],state)).toThrow("resolvable evidence")
   })
   test("first and later terms preserve the glossary concept contract",()=>{
     const state=new RenderState(model)
@@ -64,11 +71,23 @@ describe("renderer",()=>{
   })
   test("system context keeps actor and external edge directions",()=>{
     const changed=structuredClone(model)
-    changed.context.external_systems.push({...changed.context.actors[0],id:"external-identity",name:"Identity Provider",role:"識別する"})
+    changed.context.external_systems.push({id:"external-identity",name:"Identity Provider",status:"observed",evidence:["ev-client"],interaction:"識別する"})
     changed.glossary.push({...changed.glossary[0],id:"gloss-external",concept:"external-identity",preferred:"識別基盤",code_terms:["IdentityProvider"]})
     const section={id:"context",type:"system_context" as const,question:"誰と接続するか",sources:["actor-client","external-identity"]}
     const graph=graphData(section,new RenderState(changed))
     expect(graph.edges.map(({from,to})=>({from,to}))).toEqual([{from:"actor-client",to:"__subject"},{from:"__subject",to:"external-identity"}])
+    changed.context.actors[0].role="  "
+    expect(()=>graphData(section,new RenderState(changed))).toThrow("needs a role")
+    changed.context.actors[0].role="認証要求を送る"
+    changed.context.external_systems[0].interaction=" "
+    expect(()=>graphData(section,new RenderState(changed))).toThrow("needs an interaction")
+    expect(graph.edges.every(edge=>edge.label!=="接続する")).toBe(true)
+  })
+  test("component graph rejects dependencies without a meaning",()=>{
+    const changed=structuredClone(model)
+    changed.components[1].depends_on[0].meaning="  "
+    const section={id:"components",type:"component_map" as const,question:"何に依存するか",sources:["cmp-auth","cmp-store"]}
+    expect(()=>graphData(section,new RenderState(changed))).toThrow("needs a meaning")
   })
   test("data flow edges use the glossary preferred term",()=>{
     const section={id:"data",type:"data_flow" as const,question:"何を読み書きするか",sources:["data-session"]}
@@ -89,6 +108,18 @@ describe("renderer",()=>{
     const technical=render(model,presentation)
     const cards=render(model,{...presentation,theme:"cards"})
     expect(technical.replace('data-theme="technical"','data-theme="cards"')).toBe(cards)
+    for(const marker of [/data-evidence=/g,/data-file=/g,/<section\b/g,/data-question=/g])expect([...technical.matchAll(marker)].length).toBe([...cards.matchAll(marker)].length)
+  })
+  test("Evidence appendix omits empty metadata and Code Map handles absent symbol",()=>{
+    const changed=structuredClone(model)
+    changed.evidence.push({id:"ev-commit",kind:"commit",revision:"abc123",note:"設計判断"})
+    changed.components[1].code_locations[0].symbol=undefined
+    changed.components[1].code_locations[0].line=undefined
+    const html=render(changed,presentation)
+    expect(html).toContain('<li id="source-ev-commit">commit · abc123 · 設計判断</li>')
+    expect(html).not.toContain("undefined")
+    expect(html).toMatch(/class="[^"]*src-symbol" data-label="シンボル">—<\/td>/)
+    expect(validateHtml(html,{model:changed,sourceRoot}).errors).toEqual([])
   })
   test("all selected views have a reader question, caption and trace",()=>{
     const html=render(model,presentation)

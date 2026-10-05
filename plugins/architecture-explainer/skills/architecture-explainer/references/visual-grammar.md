@@ -2,6 +2,8 @@
 
 同じ意味の要素は view と theme をまたいで同じ `data-kind`、`data-evidence`、`data-impact` を持つ。表示は `src/components/architecture/` が決め、`src/components/ui/` の shadcn 由来 primitive は意味を決めない。CSS は `styles/globals.css` から build して HTML に inline する。
 
+UI token（`--background`、`--card`、`--primary` など）と architecture の意味 token（`--architecture-system`、`--architecture-component`、`--evidence-observed`、`--impact-affected` など）は分ける。theme は UI の色を変えても、要素・根拠・影響の意味を変えない。
+
 ## 要素と根拠
 
 | 意味 | HTML / SVG | 見分け方 |
@@ -17,9 +19,13 @@
 
 色だけで意味を区別しない。status は badge と文字で表示する。要素の名前は `explanation-model.json` の glossary から取得し、`data-concept` を付ける。Graph の node 名は SVG の `<title data-concept>` に置く。
 
+`status` を持つ Claim の `data-evidence` は semantic status を示す。Data、State transition、change impact の affected / unaffected は `status` を持たず、解決済み Evidence から表示用の `observed` marker を導く。これは構造要素の根拠表示であり、その要素を独立した Observed Claim に昇格させない。
+
 ## 関係
 
-Graph edge の向きは、呼ぶ側 → 呼ばれる側、またはデータの出所 → 行き先。ラベルは model の `depends_on.meaning`、actor の role / interaction、または data の read / write に基づく。依存や通信などの抽象的な語だけにしない。ラベルの HTML / SVG には `.arrow-label` を付け、validator が抽象的なラベルを警告する。
+Graph edge の向きは、呼ぶ側 → 呼ばれる側、またはデータの出所 → 行き先。ラベルは model の `depends_on.meaning`、actor の `role`、external の `interaction`、または data の read / write に基づく。依存や通信などの抽象的な語だけにしない。ラベルの HTML / SVG には `.arrow-label` を付け、validator が抽象的なラベルを警告する。
+
+System Context は現行 model contract に従って **actor → subject system**、**subject system → external system** とする。actor の `role` と external の `interaction` は必須で、renderer はラベル文字列から向きを推測しない。双方向の関係が必要になった場合は model schema に方向を明示してから renderer を拡張する。Component dependency は `depends_on.meaning` を必須とする。Dagre は self-loop を描画し、重複 node ID は拒否する。
 
 `@dagrejs/dagre` は配置だけを決める。`renderer/layout/text.ts` は日本語と Latin identifier の幅を見積もって折り返し、node と edge label の寸法を渡す。SVG は `components/architecture/graph.tsx` が所有する。`viewBox`、`width`、`role="img"`、`aria-labelledby`、`<title>`、`<desc>` を出力する。狭い画面では figure 内を横スクロールさせ、文字を縮小しない。
 

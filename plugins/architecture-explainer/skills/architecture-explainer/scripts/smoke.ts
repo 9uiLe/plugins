@@ -21,7 +21,10 @@ try {
   }
   run(["render","--model","model.json","--presentation","presentation.json","--output","index.html"])
   const html=readFileSync(join(temp,"index.html"),"utf8")
-  assert.match(html,/<style>[\s\S]{1000,}<\/style>/)
+  const css=html.match(/<style>([\s\S]+)<\/style>/)?.[1]||""
+  assert.ok(css.length>1000,"inline CSS is missing")
+  assert.match(css,/\.gap-3\{/)
+  assert.match(css,/\.overflow-x-auto\{/)
   assert.doesNotMatch(html,/<script\b|__NEXT_DATA__|react-dom|<link[^>]+stylesheet/i)
   const report=JSON.parse(run(["validate","index.html","--model","model.json","--source-root","source"]))
   assert.deepEqual(report.errors,[])
