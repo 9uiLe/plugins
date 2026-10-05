@@ -206,6 +206,14 @@ class ValidateExplainerTests(unittest.TestCase):
         self.assertIn('LANG009', self.codes(output['hints']))
         self.assertTrue(all(item['line'] is not None and item['message'] for item in output['hints']))
 
+    def test_paragraph_hint_starts_at_seven_sentences(self):
+        for count, expected in ((6, False), (7, True)):
+            with self.subTest(sentences=count):
+                body = VALID_BODY.replace('</main>', '<p>' + '認証サービスが確認します。' * count + '</p></main>')
+                code, output = self.run_cli(page(body))
+                self.assertEqual(code, 0, output)
+                self.assertEqual('LANG002' in self.codes(output['hints']), expected)
+
     def test_valid_explainer_passes_with_code_refs_resolved_against_source(self):
         returncode, output = self.run_cli(page(VALID_BODY), '--source-root', str(self.root / 'repo'))
         self.assertEqual(returncode, 0, output)

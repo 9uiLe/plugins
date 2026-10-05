@@ -107,10 +107,12 @@ def layout_graph(nodes, edges):
     left = 28
     top = 24
     boxes = {}
+    rank_top = {}
     rank_bottom = {}
     y = top
     max_columns = max((len(group) for group in groups.values()), default=1)
     for rank in sorted(groups):
+        rank_top[rank] = y
         heights = []
         for column, id_ in enumerate(groups[rank]):
             node = by_id[id_]
@@ -129,6 +131,9 @@ def layout_graph(nodes, edges):
     routes = []
     side_index = 0
     lane_uses = {}
+    ordered_ranks = sorted(groups)
+    following_rank = {rank: ordered_ranks[index + 1] if index + 1 < len(ordered_ranks) else None
+                      for index, rank in enumerate(ordered_ranks)}
     for edge in edges:
         source, target = boxes[edge["from"]], boxes[edge["to"]]
         source_rank, target_rank = ranks[source.id], ranks[target.id]
@@ -146,13 +151,34 @@ def layout_graph(nodes, edges):
         else:
             side_index += 1
             side_x = content_right + 112 + side_index * 18
-            points = ((source.x + source.width, source.y + source.height // 2),
-                      (side_x, source.y + source.height // 2),
-                      (side_x, target.y + target.height // 2),
-                      (target.x + target.width, target.y + target.height // 2))
+            next_rank = following_rank[source_rank]
+            exit_y = (rank_top[next_rank] - 24 if next_rank is not None
+                      else rank_bottom[source_rank] + 64)
+            source_x = source.x + source.width // 2
+            target_x = target.x + target.width // 2
+            if target_rank < source_rank:
+                next_target = following_rank[target_rank]
+                entry_y = (rank_top[next_target] - 24 if next_target is not None
+                           else rank_bottom[target_rank] + 64)
+                target_y = target.y + target.height
+            else:
+                entry_y = max(0, rank_top[target_rank] - 24)
+                target_y = target.y
+            points = ((source_x, source.y + source.height),
+                      (source_x, exit_y), (side_x, exit_y),
+                      (side_x, entry_y), (target_x, entry_y), (target_x, target_y))
             label_x = side_x
-            label_y = (source.y + target.y) // 2
+            label_y = (exit_y + entry_y) // 2
+        label_lines = tuple(wrap_label(edge["label"], 180))
+        label_width = max(text_width(line) for line in label_lines) + 18
+        label_box = (label_x - label_width / 2, label_y - 17,
+                     label_width, len(label_lines) * 18 + 4)
         routes.append({"points": points, "label": edge["label"],
-                       "label_x": label_x, "label_y": label_y, "edge": edge})
-    height = max((box.y + box.height for box in boxes.values()), default=0) + 32
+                       "label_x": label_x, "label_y": label_y,
+                       "label_lines": label_lines, "label_box": label_box, "edge": edge})
+    width = max(width, *(point[0] + 32 for route in routes for point in route["points"]),
+                *(route["label_box"][0] + route["label_box"][2] + 32 for route in routes))
+    height = max(*(box.y + box.height for box in boxes.values()),
+                 *(point[1] for route in routes for point in route["points"]),
+                 *(route["label_box"][1] + route["label_box"][3] for route in routes), 0) + 32
     return width, height, boxes, routes

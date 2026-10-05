@@ -20,6 +20,36 @@ IR = json.loads((FIXTURE / "auth-presentation.json").read_text(encoding="utf-8")
 
 
 class RenderExplainerTests(unittest.TestCase):
+    def runtime_case(self, source, target, view="sequence", extra_steps=None):
+        model = copy.deepcopy(MODEL)
+        model["context"]["external_systems"].append({
+            "id": "ext-provider", "name": "ExternalProvider", "interaction": "認証要求を送る",
+            "status": "observed", "evidence": ["ev-routes"],
+        })
+        model["glossary"].append({"id": "term-external", "concept": "ext-provider",
+                                  "preferred": "外部プロバイダー", "code_terms": ["ExternalProvider"],
+                                  "aliases": [], "avoid": []})
+        for level in ("system", "container", "module", "function"):
+            count = 2 if level in {"container", "module", "function"} else 1
+            for index in range(count):
+                id_ = f"cmp-{level}-{index}"
+                model["components"].append({"id": id_, "name": id_, "level": level,
+                                            "responsibility": "要求を処理する。", "depends_on": [],
+                                            "code_locations": [], "status": "observed", "evidence": ["ev-routes"]})
+                model["glossary"].append({"id": f"term-{id_}", "concept": id_,
+                                          "preferred": id_, "code_terms": [], "aliases": [], "avoid": []})
+        steps = [{"from": source, "to": target, "action": "token を渡す",
+                  "status": "observed", "evidence": ["ev-routes"]}]
+        steps.extend(extra_steps or [])
+        model["runtime_scenarios"].append({"id": "rt-case", "name": "境界の確認",
+                                          "trigger": "更新を開始する", "steps": steps,
+                                          "exceptional_paths": []})
+        ir = {"template": "doc", "theme": "technical", "sections": [
+            {"id": "what", "question": "対象は何か", "view": "overview", "sources": ["purpose"]},
+            {"id": "path", "question": "誰が何に token を渡すか", "view": view, "sources": ["rt-case"]},
+        ]}
+        return model, ir
+
     def test_same_inputs_render_identical_html_and_theme_preserves_content(self):
         technical = Renderer(copy.deepcopy(MODEL), copy.deepcopy(IR)).render()
         self.assertEqual(technical, Renderer(copy.deepcopy(MODEL), copy.deepcopy(IR)).render())
@@ -68,12 +98,107 @@ class RenderExplainerTests(unittest.TestCase):
             Renderer(copy.deepcopy(MODEL), ir)
         model = copy.deepcopy(MODEL)
         model["components"][1]["level"] = "module"
+        ir = copy.deepcopy(IR)
+        ir["sections"] = [section for section in ir["sections"] if section["view"] != "sequence"]
         with self.assertRaisesRegex(ValueError, "abstraction levels"):
-            Renderer(model, copy.deepcopy(IR)).render()
+            Renderer(model, ir).render()
         model = copy.deepcopy(MODEL)
-        model["runtime_scenarios"][0]["steps"][0]["from"] = "actor-client"
-        with self.assertRaisesRegex(ValueError, "abstraction levels"):
+        model["runtime_scenarios"][1]["steps"][0]["from"] = "actor-client"
+        with self.assertRaisesRegex(ValueError, "incompatible runtime participants"):
             Renderer(model, copy.deepcopy(IR))
+
+    def test_runtime_participant_compatibility(self):
+        valid = [
+            ("actor-client", "cmp-auth-system"),
+            ("actor-client", "cmp-container-0"),
+            ("ext-provider", "cmp-auth-system"),
+            ("ext-provider", "cmp-container-0"),
+            ("cmp-auth-system", "cmp-system-0"),
+            ("cmp-container-0", "cmp-container-1"),
+            ("cmp-auth", "cmp-store"),
+            ("cmp-module-0", "cmp-module-1"),
+            ("cmp-function-0", "cmp-function-1"),
+        ]
+        for view in ("sequence", "runtime_flow"):
+            for source, target in valid:
+                with self.subTest(view=view, source=source, target=target):
+                    model, ir = self.runtime_case(source, target, view)
+                    self.assertIn("token を渡す", Renderer(model, ir).render())
+
+        invalid = [
+            ("actor-client", "cmp-function-0"),
+            ("cmp-auth-system", "cmp-function-0"),
+            ("cmp-module-0", "cmp-function-0"),
+            ("cmp-auth", "cmp-module-0"),
+        ]
+        for source, target in invalid:
+            with self.subTest(source=source, target=target):
+                model, ir = self.runtime_case(source, target)
+                with self.assertRaisesRegex(ValueError, "incompatible runtime participants"):
+                    Renderer(model, ir)
+
+        model, ir = self.runtime_case("actor-client", "cmp-function-0")
+        next(item for item in model["components"] if item["id"] == "cmp-function-0")["level"] = "method"
+        with self.assertRaisesRegex(ValueError, "needs a known level"):
+            Renderer(model, ir)
+
+        model, ir = self.runtime_case("actor-client", "cmp-auth-system", extra_steps=[
+            {"from": "cmp-auth", "to": "cmp-store", "action": "session を取得する",
+             "status": "observed", "evidence": ["ev-service"]},
+        ])
+        with self.assertRaisesRegex(ValueError, "split reader questions"):
+            Renderer(model, ir)
+
+        model, ir = self.runtime_case("actor-client", "cmp-auth-system", extra_steps=[
+            {"from": "ext-provider", "to": "cmp-container-0", "action": "結果を渡す",
+             "status": "observed", "evidence": ["ev-routes"]},
+        ])
+        with self.assertRaisesRegex(ValueError, "split reader questions"):
+            Renderer(model, ir)
+
+    def test_ir_contract_does_not_depend_on_audience_policy(self):
+        model, ir = self.runtime_case("actor-client", "cmp-auth-system")
+        for profile in ("reviewer", "newcomer", "debugger"):
+            with self.subTest(profile=profile):
+                model["audience"]["profile"] = profile
+                self.assertIn('id="what"', Renderer(model, ir).render())
+
+    def test_ir_structure_and_renderability_errors(self):
+        model, ir = self.runtime_case("actor-client", "cmp-auth-system")
+        cases = [
+            (lambda x: x["sections"][1].update(id="what"), "duplicate section ID"),
+            (lambda x: x["sections"][1].update(view="unlisted"), "view is unknown"),
+            (lambda x: x["sections"][1].update(sources=["cmp-auth"]), "cannot be used in sequence"),
+            (lambda x: x["sections"][0].update(id="intro"), "first section"),
+            (lambda x: x["sections"][0].update(sources=["cmp-auth"]), "must select purpose"),
+            (lambda x: x["sections"][1].update(sources=["rt-case", "rt-refresh"]), "one scenario"),
+        ]
+        for mutate, message in cases:
+            with self.subTest(message=message):
+                changed = copy.deepcopy(ir)
+                mutate(changed)
+                with self.assertRaisesRegex(ValueError, message):
+                    Renderer(model, changed)
+        broken = copy.deepcopy(model)
+        broken["runtime_scenarios"][-1]["steps"][0]["to"] = "missing"
+        with self.assertRaisesRegex(ValueError, "unknown endpoint"):
+            Renderer(broken, ir)
+        broken = copy.deepcopy(model)
+        broken["runtime_scenarios"][-1]["steps"] = []
+        with self.assertRaisesRegex(ValueError, "at least one scenario step"):
+            Renderer(broken, ir)
+        broken = copy.deepcopy(model)
+        broken["runtime_scenarios"][-1]["steps"][0]["evidence"] = ["missing"]
+        with self.assertRaisesRegex(ValueError, "unresolved evidence ID"):
+            Renderer(broken, ir).render()
+        broken = copy.deepcopy(MODEL)
+        broken["components"][1]["depends_on"][0]["target"] = "missing"
+        with self.assertRaisesRegex(ValueError, "unknown graph endpoint"):
+            Renderer(broken, copy.deepcopy(IR))
+        broken = copy.deepcopy(MODEL)
+        broken["data"][0]["read_by"] = ["missing"]
+        with self.assertRaisesRegex(ValueError, "unknown graph endpoint"):
+            Renderer(broken, copy.deepcopy(IR))
 
     def test_runtime_flow_callout_and_takeaway_use_model_claims(self):
         ir = copy.deepcopy(IR)

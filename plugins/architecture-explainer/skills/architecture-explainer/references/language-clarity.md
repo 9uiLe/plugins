@@ -38,6 +38,6 @@ Validator の severity は次のとおり。すべての finding は該当 HTML 
 | --- | --- |
 | Error | glossary の同一語が複数 concept を指す、model entity の source name が用語へ対応していない、annotation が別 concept の語を指す |
 | Warning | 曖昧な指示語、避ける名称、意味の薄い arrow label、独立 claim を詰め込んだ責務文、条件と結果が追いにくい文 |
-| Hint | 複数 clause を含む長い文、文数が多い段落、冗長な「〜を行う」等 |
+| Hint | 複数 clause を含む長い文、7 文以上の段落、冗長な「〜を行う」等。1 段落 6 文までは文数だけで hint にしない |
 
 日本語の受け身は一律に検出・禁止しない。actor が reader question に必要なのに省略されているかは人が確認する。修正時に条件、例外、Unknown を削って短くしてはならない。

@@ -9,13 +9,19 @@
     "boundaries": []
   },
   "components": [
+    {"id": "cmp-auth-system", "name": "auth-service", "level": "system", "responsibility": "HTTP の認証要求を受け、認証操作の結果を返す。", "depends_on": [], "code_locations": [{"file": "app/api/routes.py", "symbol": "build_routes", "line": 8}], "status": "observed", "evidence": ["ev-routes"]},
     {"id": "cmp-auth", "name": "AuthService", "level": "class", "responsibility": "refresh token を回転して access token を発行する。", "depends_on": [{"target": "cmp-store", "meaning": "refresh token を回転するよう要求"}], "code_locations": [{"file": "app/auth/service.py", "symbol": "AuthService.refresh", "line": 34}], "status": "observed", "evidence": ["ev-service"]},
     {"id": "cmp-store", "name": "SessionStore", "level": "class", "responsibility": "提示された refresh token を検証し、新しい token に置き換える。", "depends_on": [], "code_locations": [{"file": "app/auth/session_store.py", "symbol": "SessionStore.rotate", "line": 45}], "status": "observed", "evidence": ["ev-store"]}
   ],
-  "runtime_scenarios": [{"id": "rt-refresh", "name": "token 更新", "trigger": "クライアントが refresh token を提示する", "steps": [
+  "runtime_scenarios": [
+    {"id": "rt-refresh-entry", "name": "認証 API の入口", "trigger": "クライアントが token 更新を開始する", "steps": [
+      {"from": "actor-client", "to": "cmp-auth-system", "action": "refresh token を /token/refresh に送る", "status": "observed", "evidence": ["ev-client", "ev-routes"]}
+    ], "exceptional_paths": []},
+    {"id": "rt-refresh", "name": "token 更新", "trigger": "認証 API が refresh token を受け取る", "steps": [
     {"from": "cmp-auth", "to": "cmp-store", "action": "refresh token の回転を要求する", "status": "observed", "evidence": ["ev-service"]},
     {"from": "cmp-store", "to": "cmp-auth", "action": "回転後の session を返す", "status": "observed", "evidence": ["ev-store"]}
-  ], "exceptional_paths": [{"at_step": 2, "condition": "refresh token が不明", "result": "UnknownRefreshToken を送出する", "status": "observed", "evidence": ["ev-store"]}]}],
+  ], "exceptional_paths": [{"at_step": 2, "condition": "refresh token が不明", "result": "UnknownRefreshToken を送出する", "status": "observed", "evidence": ["ev-store"]}]}
+  ],
   "states": [{"id": "st-active", "owner": "cmp-store", "name": "有効", "status": "observed", "transitions": [{"event": "revoke", "guard": "session ID が存在する", "to": "失効", "evidence": ["ev-store"]}]}],
   "data": [{"id": "data-session", "name": "Session", "stored_in": "SessionStore._sessions", "written_by": ["cmp-store"], "read_by": ["cmp-auth"], "evidence": ["ev-store"]}],
   "decisions": [{"id": "dec-rotate", "context": "token 更新", "decision": "refresh token を回転する", "status": "observed", "evidence": ["ev-store"], "rationale": {"text": "回転を選んだ理由は Source Truth から確認できない。", "status": "unknown", "evidence": []}, "tradeoffs": [], "alternatives": []}],
@@ -23,6 +29,7 @@
   "change_impacts": [{"id": "chg-refresh", "change": "token 更新", "before": {"id": "before-refresh", "behavior": "旧版の振る舞いは提供された Source Truth から確認できない。", "status": "unknown", "evidence": []}, "after": {"id": "after-refresh", "behavior": "refresh token を回転して新しい token pair を返す。", "status": "observed", "evidence": ["ev-service"]}, "affected": [{"target": "更新経路", "reason": "token が置き換わる", "evidence": ["ev-service"]}], "unaffected": [], "requires_verification": [{"target": "旧 token の再利用", "reason": "失効経路を確認する"}]}],
   "glossary": [
     {"id": "term-client", "concept": "actor-client", "preferred": "クライアント", "code_terms": [], "aliases": [], "avoid": [], "meaning": "token を送る側", "evidence": []},
+    {"id": "term-system", "concept": "cmp-auth-system", "preferred": "認証システム", "code_terms": ["auth-service"], "aliases": [], "avoid": [], "meaning": "認証要求の HTTP 境界", "evidence": ["ev-routes"]},
     {"id": "term-auth", "concept": "cmp-auth", "preferred": "認証サービス", "code_terms": ["AuthService"], "aliases": [], "avoid": ["認証管理機構"], "meaning": "認証操作の入口", "evidence": ["ev-service"]},
     {"id": "term-store", "concept": "cmp-store", "preferred": "セッションストア", "code_terms": ["SessionStore"], "aliases": [], "avoid": [], "meaning": "session の保存先", "evidence": ["ev-store"]},
     {"id": "term-session", "concept": "data-session", "preferred": "セッション", "code_terms": ["Session"], "aliases": [], "avoid": [], "meaning": "token の状態", "evidence": ["ev-store"]}
@@ -33,6 +40,7 @@
   ],
   "evidence": [
     {"id": "ev-client", "kind": "code", "revision": "fixture-head", "file": "app/client/token_manager.py", "symbol": "TokenManager._refresh", "line": 26, "note": "期限切れ時の更新"},
+    {"id": "ev-routes", "kind": "code", "revision": "fixture-head", "file": "app/api/routes.py", "symbol": "build_routes", "line": 8, "note": "認証 API の入口"},
     {"id": "ev-service", "kind": "code", "revision": "fixture-head", "file": "app/auth/service.py", "symbol": "AuthService.refresh", "line": 34, "note": "token 更新"},
     {"id": "ev-store", "kind": "code", "revision": "fixture-head", "file": "app/auth/session_store.py", "symbol": "SessionStore.rotate", "line": 45, "note": "token 回転"}
   ]

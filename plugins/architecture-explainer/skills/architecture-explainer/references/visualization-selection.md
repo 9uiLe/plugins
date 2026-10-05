@@ -45,7 +45,17 @@ audience が指定されていなければ、依頼文の語（「新規参加�
 
 ## 4. 抽象度をそろえる
 
-1 つの view に並べる要素は、同じ抽象度にそろえる。次の組み合わせは同じ図に並べない。
+1 つの view に並べる要素は、同じ問いの中で意味のある interaction boundary にそろえる。Actor と External System は component hierarchy の level ではなく通信の参加者である。sequence / runtime flow では次のペアを許容する。
+
+| 許容する endpoint | 説明する境界 |
+| --- | --- |
+| actor / external ↔ system / container | 外部参加者と system / container のやり取り |
+| system ↔ system、container ↔ container | 同じ上位粒度のやり取り |
+| module ↔ module、class ↔ class、function ↔ function | 同じ実装粒度のやり取り |
+
+同じ scenario は同じ interaction level にそろえる。actor ↔ system と system ↔ system は一緒に追えるが、actor ↔ system と actor ↔ container は分ける。外部境界と class / function 内部の手順も一緒に置かない。actor ↔ function、system ↔ function、module ↔ function などは拒否し、読者の問いに応じて外側の sequence と内側の sequence に分ける。既存 model の component level は `system` / `container` / `module` / `class` / `function` である。
+
+そのほかの view でも抽象度をそろえる。次の組み合わせは同じ図に並べない。
 
 - actor（人）と、コード上の class
 - application / process と、database の table
@@ -67,7 +77,7 @@ audience が指定されていなければ、依頼文の語（「新規参加�
 4. behavior 上の主要な変更は何か。
 5. reviewer が最初に確認すべき点は何か。
 
-該当しない問いは無理に埋めず、省いた理由を Explanation Plan に記録する。Unknown は推測で埋めない。
+該当しない問いは無理に埋めず、省いた理由を Explanation Plan に記録する。reviewer に必要な scenario / change を first view に選ぶ判断は Plan と [evaluation-rubric.md](evaluation-rubric.md) が担い、Renderer の IR 構造検査には置かない。Unknown は推測で埋めない。
 
 - タイトル
 - この仕組みが何かを 2〜3 行で説明する文

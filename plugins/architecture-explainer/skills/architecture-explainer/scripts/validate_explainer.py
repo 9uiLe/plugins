@@ -525,7 +525,7 @@ def check_language(parser, findings, model=None):
                 findings.hint("LANG001", "long sentence has several clauses; consider a list while keeping conditions and Unknowns", line)
             if any(phrase in sentence for phrase in ("を行う", "を実施する", "をすることができる")):
                 findings.hint("LANG009", "consider a direct action verb if it preserves the actor and condition", line)
-        if len(sentences) >= 6:
+        if len(sentences) > 6:
             findings.hint("LANG002", "paragraph has many sentences; consider one topic per paragraph", line)
 
     for label, line in parser.arrow_labels:

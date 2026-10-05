@@ -34,9 +34,11 @@ Source Truth → Evidence → Explanation Model → Reader Questions → Explana
 - `sources`: Explanation Model の安定した ID の配列。`purpose` だけは固定 ID。`code_map` では evidence ID を source として選択できる。claim 本文、Evidence の内容、status、表示名を IR に書かない。表示順が必要な場合は配列順を使う。
 - `density`: 省略時 `comfortable`、任意で `compact`。`emphasis`: 省略時 `normal`、任意で `strong`。CSS 上の高レベル hint で、claim の選択には影響しない。
 
+Presentation IR は Explanation Plan を実行可能にした表示指示であり、audience policy engine ではない。audience から導出した「必要な問い」は Plan で決め、その結果だけを `sections` に記録する。IR に claim 本文、status、Evidence 本文、HTML、CSS、SVG 座標、audience ごとの必須 section 規則を複製しない。
+
 | View | 主な Model source | Renderer の表現 |
 | --- | --- | --- |
-| `overview` | `purpose`、最大 3 つの actor / external / component、必要な scenario / change | first view の lede、HTML card、takeaway。reviewer では model に runtime / change があれば該当 source を選ぶ |
+| `overview` | `purpose`、最大 3 つの actor / external / component、Plan で選んだ scenario / change | first view の lede、HTML card、takeaway |
 | `system_context` | actor、external | 対象 system と接点の SVG graph |
 | `component_map` | 同一 level の component | 責務と意味付き依存の SVG graph |
 | `sequence` | scenario 1 つ | actor → action → target の順序付き HTML |
@@ -59,6 +61,18 @@ python3 scripts/render_explainer.py presentation-ir.json --model explanation-mod
 python3 scripts/validate_explainer.py index.html --model explanation-model.json --source-root /path/to/source
 ```
 
-renderer は入力 ID、view との適合、抽象度、Evidence の存在を検査してから HTML を出す。validator は独立に HTML の standalone、見出し、anchor、figure contract、code ref、用語、change evidence、accessibility、日本語の明確さを検査する。Source Truth に照らした claim の真偽と根拠の十分性は人が Review / Hard Gate で判断する。
+## 責務と検証範囲
+
+| 段階 | 判断すること |
+| --- | --- |
+| Explanation Plan | audience に必要な reader question、view、first view の内容と省略理由 |
+| Presentation IR | 選ばれた section の順序、question、view、model source ID、density、emphasis、theme |
+| Renderer | IR の構造、参照、view と source kind の適合、描画可能性。HTML / CSS / SVG と layout を生成 |
+| Validator | 生成後の HTML に対する standalone、heading、anchor、figure、code ref、用語、change evidence、accessibility、日本語 lint |
+| Evaluation | Plan の十分性、first view の audience 適合、Source Truth と claim の一致、Evidence が claim を支えるか、Hard Gate |
+
+Renderer は unknown model ID、重複 section ID、unknown view、view/source kind 不適合、sequence / runtime flow の複数 scenario、存在しない graph endpoint、不整合な component map の抽象度、必須 render data の欠落、解決できない evidence ID を拒否する。最初の section の `id: "what"`、`view: "overview"`、`purpose` 選択は HTML の構造契約として検査する。
+
+Renderer は audience に必要な section の十分性、Plan の最適性、reviewer に対する first view の十分性、Source Truth の調査範囲、claim の真偽、Evidence が claim を実際に支えるかを判定しない。reviewer で runtime scenario や change impact を first view に含めるべきかは Plan / Evaluation で判断する。
 
 IR を変更して section、順序、audience に対応する問い、theme を調整できる。audience と depth の変更は先に Explanation Plan と IR の source 選択へ反映し、必要な claim が model にない場合だけ Source Truth から Evidence を集め直す。section 単位の patch API と IR の HTML 内埋め込みは未実装であり、IR を編集してページ全体を再 render する。

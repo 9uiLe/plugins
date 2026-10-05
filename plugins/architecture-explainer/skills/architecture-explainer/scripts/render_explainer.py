@@ -11,7 +11,7 @@ from pathlib import Path
 import re
 import sys
 
-from graph_layout import layout_graph, text_width, wrap_label
+from graph_layout import layout_graph
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +37,20 @@ KINDS = {
     "evidence": {"code_map"},
 }
 STATUS_LABELS = {"observed": "確認済み", "inferred": "推論", "unknown": "不明"}
+COMPONENT_LEVELS = {"system", "container", "module", "class", "function"}
+# An actor or external system is an interaction participant, not a level in
+# the component hierarchy. Each allowed pair belongs to one reader-facing band.
+RUNTIME_PAIRS = {
+    frozenset(("actor", "system")): "system",
+    frozenset(("actor", "container")): "container",
+    frozenset(("external", "system")): "system",
+    frozenset(("external", "container")): "container",
+    frozenset(("system",)): "system",
+    frozenset(("container",)): "container",
+    frozenset(("module",)): "module",
+    frozenset(("class",)): "class",
+    frozenset(("function",)): "function",
+}
 
 
 def e(value):
@@ -84,30 +98,48 @@ def validate_ir(ir, model):
         raise ValueError("the first section must be id 'what' with view 'overview'")
     if "purpose" not in sections[0]["sources"]:
         raise ValueError("the first section must select purpose")
-    if model.get("audience", {}).get("profile") == "reviewer":
-        if model.get("runtime_scenarios") and not any(known[source][0] == "scenario" for source in sections[0]["sources"]):
-            raise ValueError("reviewer first view needs a selected runtime scenario when Source Truth has one")
-        if model.get("change_impacts") and not any(known[source][0] == "change" for source in sections[0]["sources"]):
-            raise ValueError("reviewer first view needs a selected change impact when Source Truth has one")
     if sum(known[source][0] in {"actor", "external", "component"}
            for source in sections[0]["sources"]) > 3:
         raise ValueError("first-view overview may select at most three nodes; use a focused section for more")
     for section in sections:
+        if section["view"] == "component_map":
+            for source in section["sources"]:
+                for dependency in known[source][1].get("depends_on", []):
+                    target = dependency.get("target")
+                    if target not in known or known[target][0] != "component":
+                        raise ValueError(f"component map has unknown graph endpoint: {target}")
+        if section["view"] == "data_flow":
+            for source in section["sources"]:
+                data = known[source][1]
+                for endpoint in data.get("written_by", []) + data.get("read_by", []):
+                    if endpoint not in known or known[endpoint][0] != "component":
+                        raise ValueError(f"data flow has unknown graph endpoint: {endpoint}")
         if section["view"] in {"sequence", "runtime_flow"} and len(section["sources"]) != 1:
             raise ValueError(f"{section['view']} needs one scenario per reader question")
         if section["view"] in {"sequence", "runtime_flow"}:
             scenario = known[section["sources"][0]][1]
-            levels = set()
-            for step in scenario.get("steps", []):
+            steps = scenario.get("steps", [])
+            if not isinstance(steps, list) or not steps:
+                raise ValueError(f"{section['view']} needs at least one scenario step")
+            bands = set()
+            for step in steps:
+                participants = []
                 for endpoint in (step.get("from"), step.get("to")):
                     if endpoint not in known:
                         raise ValueError(f"scenario step has unknown endpoint: {endpoint}")
                     kind, entity = known[endpoint]
                     if kind not in {"actor", "external", "component"}:
                         raise ValueError(f"scenario endpoint is not an actor or component: {endpoint}")
-                    levels.add("context" if kind in {"actor", "external"} else entity.get("level"))
-            if len(levels) > 1:
-                raise ValueError("sequence / runtime flow cannot mix abstraction levels")
+                    level = kind if kind != "component" else entity.get("level")
+                    if kind == "component" and level not in COMPONENT_LEVELS:
+                        raise ValueError(f"scenario component {endpoint} needs a known level")
+                    participants.append(level)
+                band = RUNTIME_PAIRS.get(frozenset(participants))
+                if band is None:
+                    raise ValueError(f"incompatible runtime participants: {participants[0]} ↔ {participants[1]}")
+                bands.add(band)
+            if len(bands) > 1:
+                raise ValueError("one scenario mixes interaction levels; split reader questions")
     return known
 
 
@@ -215,10 +247,10 @@ class Renderer:
         for route in routes:
             points = " ".join(f"{x},{y}" for x, y in route["points"])
             lines.append(f'<polyline class="edge" points="{points}" marker-end="url(#arrow-{e(section["id"])})"/>')
-            labels = wrap_label(route["label"], 180)
+            labels = route["label_lines"]
             x, y = route["label_x"], route["label_y"]
-            label_width = max(text_width(label) for label in labels) + 18
-            lines.append(f'<rect class="edge-label-bg" x="{x - label_width / 2:.1f}" y="{y - 17}" width="{label_width:.1f}" height="{len(labels) * 18 + 4}" rx="4"/>')
+            label_left, label_top, label_width, label_height = route["label_box"]
+            lines.append(f'<rect class="edge-label-bg" x="{label_left:.1f}" y="{label_top:.1f}" width="{label_width:.1f}" height="{label_height:.1f}" rx="4"/>')
             lines.append(f'<text class="edge-label arrow-label" x="{x}" y="{y}" text-anchor="middle">')
             for index, label in enumerate(labels):
                 lines.append(f'<tspan x="{x}" dy="{0 if index == 0 else 17}">{e(label)}</tspan>')

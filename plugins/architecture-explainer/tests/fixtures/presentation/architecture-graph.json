@@ -1,0 +1,19 @@
+{
+  "nodes": [
+    {"id": "client", "label": "クライアント", "kind": "actor"},
+    {"id": "api", "label": "認証 API", "kind": "system"},
+    {"id": "auth", "label": "認証サービス AuthService", "kind": "component"},
+    {"id": "sessions", "label": "セッションストア SessionStore", "kind": "component"},
+    {"id": "issuer", "label": "トークン発行 TokenIssuer", "kind": "component"},
+    {"id": "keys", "label": "鍵ストア KeyStore", "kind": "data"},
+    {"id": "audit", "label": "監査ログ AuditLog", "kind": "data"}
+  ],
+  "edges": [
+    {"from": "client", "to": "api", "label": "refresh token を提示する"},
+    {"from": "api", "to": "auth", "label": "token 更新を要求する"},
+    {"from": "auth", "to": "sessions", "label": "refresh token を回転する"},
+    {"from": "auth", "to": "issuer", "label": "access token を発行する"},
+    {"from": "issuer", "to": "keys", "label": "署名鍵を取得する"},
+    {"from": "auth", "to": "audit", "label": "更新結果を記録する"}
+  ]
+}
