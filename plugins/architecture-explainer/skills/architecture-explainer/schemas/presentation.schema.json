@@ -1,0 +1,32 @@
+{
+  "$schema":"http://json-schema.org/draft-07/schema#",
+  "$id":"https://9uile.github.io/architecture-explainer/presentation.schema.json",
+  "type":"object","additionalProperties":false,"required":["template","theme","sections"],
+  "properties":{
+    "version":{"const":1},"title":{"type":"string"},"template":{"const":"doc"},"theme":{"enum":["technical","cards"]},
+    "sections":{"type":"array","minItems":1,"items":{"oneOf":[
+      {"$ref":"#/definitions/overview"},{"$ref":"#/definitions/system_context"},{"$ref":"#/definitions/component_map"},
+      {"$ref":"#/definitions/sequence"},{"$ref":"#/definitions/runtime_flow"},{"$ref":"#/definitions/state_transition"},
+      {"$ref":"#/definitions/data_flow"},{"$ref":"#/definitions/decision"},{"$ref":"#/definitions/before_after"},
+      {"$ref":"#/definitions/change_impact"},{"$ref":"#/definitions/code_map"},{"$ref":"#/definitions/known_unknowns"},
+      {"$ref":"#/definitions/callout"},{"$ref":"#/definitions/takeaway"}
+    ]}}
+  },
+  "definitions":{
+    "section":{"type":"object","required":["id","type","question","sources"],"properties":{"id":{"type":"string","pattern":"^[a-z][a-z0-9-]*$"},"type":{"type":"string"},"question":{"type":"string","minLength":1},"sources":{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string"}},"density":{"enum":["comfortable","compact"]},"emphasis":{"enum":["normal","strong"]}},"additionalProperties":false},
+    "overview":{"allOf":[{"$ref":"#/definitions/section"},{"properties":{"type":{"const":"overview"}}}]},
+    "system_context":{"allOf":[{"$ref":"#/definitions/section"},{"properties":{"type":{"const":"system_context"}}}]},
+    "component_map":{"allOf":[{"$ref":"#/definitions/section"},{"properties":{"type":{"const":"component_map"}}}]},
+    "sequence":{"allOf":[{"$ref":"#/definitions/section"},{"properties":{"type":{"const":"sequence"}}}]},
+    "runtime_flow":{"allOf":[{"$ref":"#/definitions/section"},{"properties":{"type":{"const":"runtime_flow"}}}]},
+    "state_transition":{"allOf":[{"$ref":"#/definitions/section"},{"properties":{"type":{"const":"state_transition"}}}]},
+    "data_flow":{"allOf":[{"$ref":"#/definitions/section"},{"properties":{"type":{"const":"data_flow"}}}]},
+    "decision":{"allOf":[{"$ref":"#/definitions/section"},{"properties":{"type":{"const":"decision"}}}]},
+    "before_after":{"allOf":[{"$ref":"#/definitions/section"},{"properties":{"type":{"const":"before_after"}}}]},
+    "change_impact":{"allOf":[{"$ref":"#/definitions/section"},{"properties":{"type":{"const":"change_impact"}}}]},
+    "code_map":{"allOf":[{"$ref":"#/definitions/section"},{"properties":{"type":{"const":"code_map"}}}]},
+    "known_unknowns":{"allOf":[{"$ref":"#/definitions/section"},{"properties":{"type":{"const":"known_unknowns"}}}]},
+    "callout":{"allOf":[{"$ref":"#/definitions/section"},{"properties":{"type":{"const":"callout"}}}]},
+    "takeaway":{"allOf":[{"$ref":"#/definitions/section"},{"properties":{"type":{"const":"takeaway"}}}]}
+  }
+}

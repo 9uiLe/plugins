@@ -2,17 +2,110 @@
   "template": "doc",
   "theme": "technical",
   "sections": [
-    {"id": "what", "question": "これは何をする仕組みか", "view": "overview", "sources": ["purpose", "cmp-auth-system", "rt-refresh-entry", "rt-refresh", "chg-refresh"]},
-    {"id": "context", "question": "誰が認証サービスに接続するか", "view": "system_context", "sources": ["actor-client"]},
-    {"id": "entry", "question": "クライアントはどこへ refresh token を送るか", "view": "sequence", "sources": ["rt-refresh-entry"]},
-    {"id": "responsibilities", "question": "どの component が何を担当するか", "view": "component_map", "sources": ["cmp-auth", "cmp-store"]},
-    {"id": "how-it-works", "question": "refresh token はどの順で処理されるか", "view": "sequence", "sources": ["rt-refresh"]},
-    {"id": "state-data", "question": "session の状態はどう変化するか", "view": "state_transition", "sources": ["st-active"]},
-    {"id": "data", "question": "session はどこに流れるか", "view": "data_flow", "sources": ["data-session"]},
-    {"id": "why", "question": "回転を選んだ理由は何か", "view": "decision", "sources": ["dec-rotate"]},
-    {"id": "change", "question": "振る舞いはどう変わったか", "view": "before_after", "sources": ["chg-refresh"]},
-    {"id": "impact", "question": "変更はどこに影響するか", "view": "change_impact", "sources": ["chg-refresh", "inv-token"]},
-    {"id": "code", "question": "実装はどこにあるか", "view": "code_map", "sources": ["cmp-auth", "cmp-store"]},
-    {"id": "unknowns", "question": "まだ何が分からないか", "view": "known_unknowns", "sources": ["unk-rationale", "unk-before"]}
-  ]
+    {
+      "id": "what",
+      "question": "これは何をする仕組みか",
+      "sources": [
+        "purpose",
+        "cmp-auth-system",
+        "rt-refresh-entry",
+        "rt-refresh",
+        "chg-refresh"
+      ],
+      "type": "overview"
+    },
+    {
+      "id": "context",
+      "question": "誰が認証サービスに接続するか",
+      "sources": [
+        "actor-client"
+      ],
+      "type": "system_context"
+    },
+    {
+      "id": "entry",
+      "question": "クライアントはどこへ refresh token を送るか",
+      "sources": [
+        "rt-refresh-entry"
+      ],
+      "type": "sequence"
+    },
+    {
+      "id": "responsibilities",
+      "question": "どの component が何を担当するか",
+      "sources": [
+        "cmp-auth",
+        "cmp-store"
+      ],
+      "type": "component_map"
+    },
+    {
+      "id": "how-it-works",
+      "question": "refresh token はどの順で処理されるか",
+      "sources": [
+        "rt-refresh"
+      ],
+      "type": "sequence"
+    },
+    {
+      "id": "state-data",
+      "question": "session の状態はどう変化するか",
+      "sources": [
+        "st-active"
+      ],
+      "type": "state_transition"
+    },
+    {
+      "id": "data",
+      "question": "session はどこに流れるか",
+      "sources": [
+        "data-session"
+      ],
+      "type": "data_flow"
+    },
+    {
+      "id": "why",
+      "question": "回転を選んだ理由は何か",
+      "sources": [
+        "dec-rotate"
+      ],
+      "type": "decision"
+    },
+    {
+      "id": "change",
+      "question": "振る舞いはどう変わったか",
+      "sources": [
+        "chg-refresh"
+      ],
+      "type": "before_after"
+    },
+    {
+      "id": "impact",
+      "question": "変更はどこに影響するか",
+      "sources": [
+        "chg-refresh",
+        "inv-token"
+      ],
+      "type": "change_impact"
+    },
+    {
+      "id": "code",
+      "question": "実装はどこにあるか",
+      "sources": [
+        "cmp-auth",
+        "cmp-store"
+      ],
+      "type": "code_map"
+    },
+    {
+      "id": "unknowns",
+      "question": "まだ何が分からないか",
+      "sources": [
+        "unk-rationale",
+        "unk-before"
+      ],
+      "type": "known_unknowns"
+    }
+  ],
+  "version": 1
 }

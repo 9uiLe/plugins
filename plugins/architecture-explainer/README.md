@@ -39,7 +39,7 @@ codex plugin add architecture-explainer@9uile-plugins
 - 主要な claim から file と symbol へ辿れます。
 - 設計意図、採用理由、要件などは、コメント・設計資料・commit などの明示的な根拠がなければ Unknown とし、解消方法を添えます。コードから推測した理由を事実として書きません。
 - Before / After は旧版・新版それぞれの Source Truth と結びます。旧版がない場合、変更前の behavior は Unknown と表示します。
-- HTML は CSS と SVG を inline した単体ファイルです。外部 CDN を必須にしません。`technical` / `cards` theme は説明内容と独立して切り替えられます。
+- HTML は CSS と SVG を inline した単体ファイルです。閲覧時に React や外部 CDN は不要です。`technical` / `cards` theme は説明内容と独立して切り替えられます。
 
 Review と Improve は、見た目より先に、コードとの一致と根拠を評価します。7 つの Hard Gate（事実の捏造、主要 claim の根拠、図の問い、抽象度、対象・読者の明示、コードとの対応、重大な用語混同）に違反がある場合は、見た目に関係なく受け入れ不可とします。
 
@@ -53,33 +53,45 @@ plugin 自体の改善では `plugins/architecture-explainer/**` を変更しま
 
 ## 構成と実行環境
 
-コードを読める AI エージェントと、表示確認用のブラウザが必要です。renderer と validator は Python 3 標準ライブラリだけで動きます。
+コードを読める AI エージェントと、表示確認用のブラウザが必要です。macOS 用の `architecture-explainer` executable は Bun、Node.js、Python、npm、shadcn CLI をインストールせずに実行できます。開発・build には Bun を使います。
 
 以下のパスは `skills/architecture-explainer/` 内にあります。
 
 | ファイル | 責務 |
 | --- | --- |
 | `SKILL.md` | mode 判定、保存先、workflow、報告内容 |
-| `references/explanation-model.md` | 中間表現の schema と構築・逆算手順 |
+| `references/explanation-model.md` / `schemas/explanation-model.schema.json` | semantic truth と実行時 schema |
 | `references/evidence-rules.md` | Observed / Inferred / Unknown の分類と traceability |
 | `references/language-clarity.md` | 日本語の用語統制と明確な文・手順の指針 |
 | `references/visualization-selection.md` | audience と問いから view を選ぶ規則 |
-| `references/presentation-ir.md` | renderer の入力 schema、view と source の対応 |
+| `references/presentation-ir.md` / `schemas/presentation.schema.json` | 表示指示、view と source の対応、実行時 schema |
 | `references/visual-grammar.md` | 要素・関係・status の一貫した視覚表現 |
 | `references/html-structure.md` | ページ構成、drill-down、code linking、accessibility |
 | `references/evaluation-rubric.md` | Hard Gate、評価次元、severity、修正優先順位、完了条件 |
-| `assets/explainer-base.css` | HTML に inline するスタイル |
-| `assets/theme-technical.css` / `assets/theme-cards.css` | 内容から独立した見た目 |
-| `scripts/graph_layout.py` | 日本語ラベルを測った graph の node・edge 配置 |
-| `scripts/render_explainer.py` | model と IR から standalone HTML を生成 |
-| `scripts/validate_explainer.py` | 構造・リンク・standalone・簡易 accessibility・code ref と限定的な language lint |
+| `src/components/ui/` | 公式 shadcn CLI から取り込んで所有する Card、Badge、Alert、Separator、Table |
+| `src/components/architecture/` | Overview、graph、runtime、decision、impact、code map 等の意味付き view |
+| `src/renderer/` / `styles/globals.css` | TSX 静的描画、Dagre 配置、日本語ラベル計測、inline CSS と theme token |
+| `src/validator/` | HTML を外部契約として検査する独立 validator |
+| `src/cli.ts` | `render`、`validate`、`inspect`、`lint` の入口 |
 
 ## 検証
 
 ```bash
-python3 -m unittest discover -s plugins/architecture-explainer/tests -v
-python3 plugins/architecture-explainer/skills/architecture-explainer/scripts/render_explainer.py path/to/presentation-ir.json --model path/to/explanation-model.json -o path/to/index.html
-python3 plugins/architecture-explainer/skills/architecture-explainer/scripts/validate_explainer.py path/to/index.html --source-root path/to/repo --model path/to/explanation-model.json
+cd plugins/architecture-explainer/skills/architecture-explainer
+bun install
+bun run test
+bun run typecheck
+bun run build
+dist/architecture-explainer render --model path/to/explanation-model.json --presentation path/to/presentation-ir.json --output path/to/index.html
+dist/architecture-explainer validate path/to/index.html --source-root path/to/repo --model path/to/explanation-model.json
 ```
 
-`tests/` の自動テストは、validator の規則と、評価用 fixture（`tests/fixtures/auth-service/`）の再構成・bug の再現を検証します。Skill の出力品質は LLM 評価と表示確認で確かめます。手順と Case は [tests/eval/README.md](tests/eval/README.md) にあり、通常の CI には含めません。ローカル導入とリポジトリ全体の検証は [コントリビューションガイド](../../CONTRIBUTING.md#ローカルで検証する) を参照してください。
+`bun run test` は renderer、validator、graph、日本語 lint、評価 fixture の再構成を検証します。Skill の説明の正確さと Hard Gate は Source Truth を使った LLM 評価でも確認します。手順は [tests/eval/README.md](tests/eval/README.md) にあります。
+
+## Component の所有と更新
+
+`components.json` は開発時に必要な component だけを公式 shadcn CLI から取り込む設定です。Card、Badge、Alert、Separator、Table は shadcn CLI 4.21.1 で 2026-10-05 に取得しました。現在の source はこの repository が所有します。Badge の Slot と variant、Alert の live region、Separator の Radix dependency、未使用の Card / Table subcomponent を削り、静的資料と accessibility に合わせました。上流の更新は自動適用せず、上流 source と所有 source の diff を確認して手動で取り込みます。コピー元のライセンスは [SHADCN-LICENSE.md](skills/architecture-explainer/src/components/ui/SHADCN-LICENSE.md) にあります。
+
+## 制約
+
+Validator は claim の根拠 ID と版、HTML の構造と用語、Code Reference の file / symbol / line を検査します。Evidence が claim を実際に支えるか、Source Truth の調査が十分か、Reader Questions の選択が適切かは agent が [evaluation-rubric.md](skills/architecture-explainer/references/evaluation-rubric.md) の Hard Gate に沿って判断します。Graph の幅は文字種に基づく見積もりなので、未知の font や特殊な合字はブラウザで確認します。section patch と追加 template は未実装です。

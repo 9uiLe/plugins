@@ -4,20 +4,21 @@
 
 ```text
 Source Truth → Evidence → Explanation Model → Reader Questions → Explanation Plan
-→ presentation-ir.json → render_explainer.py → standalone HTML → validate_explainer.py
+→ presentation-ir.json → TypeScript renderer → standalone HTML → TypeScript validator
 ```
 
 ## Schema
 
 ```json
 {
+  "version": 1,
   "template": "doc",
   "theme": "technical",
   "sections": [
     {
       "id": "what",
       "question": "これは何をする仕組みか",
-      "view": "overview",
+      "type": "overview",
       "sources": ["purpose", "cmp-auth", "rt-refresh"],
       "density": "comfortable",
       "emphasis": "normal"
@@ -30,7 +31,7 @@ Source Truth → Evidence → Explanation Model → Reader Questions → Explana
 - `theme`: `technical` または `cards`。変更しても claim、status、Evidence、section 選択は変わらない。
 - `sections`: 表示順。各 section は独立した reader question を一つ持つ。`id` は小文字・数字・ハイフンの anchor。最初の section は `id: "what"`, `view: "overview"` とし、`sources` に `purpose` を含める。
 - `question`: figure の `data-question` と caption、section heading の原文。
-- `view`: 下表の値。`sources` が指す model 要素との適合を renderer が検査する。
+- `type`: 下表の値。TypeScript では discriminated union であり、`sources` が指す model 要素との適合も renderer が検査する。
 - `sources`: Explanation Model の安定した ID の配列。`purpose` だけは固定 ID。`code_map` では evidence ID を source として選択できる。claim 本文、Evidence の内容、status、表示名を IR に書かない。表示順が必要な場合は配列順を使う。
 - `density`: 省略時 `comfortable`、任意で `compact`。`emphasis`: 省略時 `normal`、任意で `strong`。CSS 上の高レベル hint で、claim の選択には影響しない。
 
@@ -52,13 +53,13 @@ Presentation IR は Explanation Plan を実行可能にした表示指示であ�
 | `known_unknowns` | unknown | 問い、判断できない理由、解消方法の表 |
 | `callout` / `takeaway` | purpose、component、decision、invariant、change、unknown の適合要素 | 強調カード |
 
-`system_context` / `component_map` / `data_flow` の node と edge の座標は renderer の `graph_layout.py` が計算する。日本語と code identifier の表示幅を見積もって折り返し、node 高さを決める。edge label は node 間の lane に置く。狭い画面では SVG の文字を縮小せず figure 内で横スクロールする。最初の小規模 Overview は HTML card を使う。
+`system_context` / `component_map` / `data_flow` の node と edge の座標は `@dagrejs/dagre` が計算する。日本語と code identifier の表示幅を `renderer/layout/text.ts` で見積もって折り返し、node 高さと edge label の寸法を Dagre に渡す。狭い画面では SVG の文字を縮小せず figure 内で横スクロールする。最初の小規模 Overview は HTML card を使う。
 
 ## 実行
 
 ```bash
-python3 scripts/render_explainer.py presentation-ir.json --model explanation-model.json -o index.html
-python3 scripts/validate_explainer.py index.html --model explanation-model.json --source-root /path/to/source
+dist/architecture-explainer render --model explanation-model.json --presentation presentation-ir.json --output index.html
+dist/architecture-explainer validate index.html --model explanation-model.json --source-root /path/to/source
 ```
 
 ## 責務と検証範囲
