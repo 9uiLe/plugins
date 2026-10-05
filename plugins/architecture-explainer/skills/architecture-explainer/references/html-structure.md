@@ -1,10 +1,10 @@
 # HTML Structure
 
-HTML は Explanation Plan を描く最終形式である。1 ファイルで開けるようにし（standalone）、HTML、CSS、inline SVG、必要最小限の vanilla JavaScript で作る。
+HTML は Presentation IR と Explanation Model を renderer が描いた最終形式である。1 ファイルで開ける standalone HTML とする。この文書は renderer output と、既存 HTML を Review する際の構造 contract である。Create / Improve では `scripts/render_explainer.py` を使う。
 
 ## 技術方針
 
-- `assets/explainer-base.css` の内容を `<style>` に inline する。資料固有の調整は、その後ろに追記する。
+- renderer は `assets/explainer-base.css` と選択 theme の内容を `<style>` に inline する。資料固有の CSS を IR に書かない。
 - 外部 CDN、外部 font、外部 script を読み込まない。React、D3、Mermaid などは、使わないと説明品質が明確に下がる場合だけ使い、その場合も inline で同梱し、理由を報告する。
 - 進行の制御（開閉、drill-down）は `<details>` と anchor link で作る。JavaScript は、静的な HTML では実現できない interaction が問いへの理解を助ける場合だけ追加する。
 

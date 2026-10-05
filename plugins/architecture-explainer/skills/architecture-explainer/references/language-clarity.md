@@ -30,4 +30,14 @@
 
 ## 作成・評価時の確認
 
-Reader Questions を決めた後、表示する主要 concept の preferred term と code identifier を model で確定する。Explanation Plan の図・本文・表へ同じ語を投影する。HTML の作成後、各主要 concept の表示を追い、文の主要 claim、actor、条件、結果、指示先、status を読み直す。language lint は architecture explanation の mental model を壊す不一致を優先する。順序は用語不一致 → 曖昧な entity / 指示先 → 意味の薄い関係ラベル → 複雑な責務文 → 読みやすさの目安。heuristic は warning にとどめる。文意や根拠の妥当性は [evaluation-rubric.md](evaluation-rubric.md) で判断する。
+Reader Questions を決めた後、表示する主要 concept の preferred term と code identifier を model で確定する。renderer は model の用語を図・本文・表へ投影する。HTML の作成後、各主要 concept の表示を追い、文の主要 claim、actor、条件、結果、指示先、status を読み直す。文意や根拠の妥当性は [evaluation-rubric.md](evaluation-rubric.md) で判断する。
+
+Validator の severity は次のとおり。すべての finding は該当 HTML の行番号を返し、修正の方向を示す。文字数だけを Hard Gate にしない。
+
+| Severity | 対象 |
+| --- | --- |
+| Error | glossary の同一語が複数 concept を指す、model entity の source name が用語へ対応していない、annotation が別 concept の語を指す |
+| Warning | 曖昧な指示語、避ける名称、意味の薄い arrow label、独立 claim を詰め込んだ責務文、条件と結果が追いにくい文 |
+| Hint | 複数 clause を含む長い文、文数が多い段落、冗長な「〜を行う」等 |
+
+日本語の受け身は一律に検出・禁止しない。actor が reader question に必要なのに省略されているかは人が確認する。修正時に条件、例外、Unknown を削って短くしてはならない。

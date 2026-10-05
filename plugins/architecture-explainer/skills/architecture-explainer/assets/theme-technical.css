@@ -1,0 +1,2 @@
+/* Technical theme keeps the existing visual grammar and base tokens. */
+body[data-theme="technical"] .doc-header { background: var(--surface); }

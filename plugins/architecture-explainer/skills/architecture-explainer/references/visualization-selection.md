@@ -3,7 +3,7 @@
 可視化は記法から選ばない。audience が持つ問いを先に決め、その問いに答える view を選ぶ。C4、arc42、UML、sequence diagram の考え方は使ってよいが、記法そのものを目的にしない。
 
 ```text
-Audience → Reader questions → View per question → Visual grammar → HTML
+Audience → Reader questions → View per question → Presentation IR → Renderer → HTML
 ```
 
 ## 1. Audience から問いを決める
@@ -24,11 +24,11 @@ audience が指定されていなければ、依頼文の語（「新規参加�
 
 | 読者の問い | View | Model から読む要素 | 主な表現 |
 | --- | --- | --- | --- |
-| これは何か | Overview | purpose, subject | 2〜3 行の説明 + 小さな context 図 |
+| これは何か | Overview | purpose, subject | 2〜3 行の説明 + 小さな HTML card 図 |
 | 誰・何と接続しているか | System Context | context.actors, external_systems, boundaries | `.map` と `.boundary`、または SVG。対象 system と外部を分け、境界を明示 |
 | 何が何を担当しているか | Component / Responsibility Map | components（同一 level）, depends_on | SVG または `.map` の格子。box に責務、矢印に意味 |
 | 実行時にどう動くか | Sequence / Runtime Flow | runtime_scenarios | `.seq` の lifeline 表または `.flow` の番号付き step。例外経路を分岐で示す |
-| 状態がどう変化するか | State Machine | states | SVG または `.states` の遷移表。遷移に `event [guard] / action` |
+| 状態がどう変化するか | State Machine | states | `.states` の遷移表。event、guard、遷移先を表示 |
 | データがどう流れるか | Data Flow | data | SVG。data store と、データ名つきの流れ |
 | なぜこの設計なのか | Decision / Trade-off View | decisions, unknowns | `.decision` カード。context / decision / rationale / trade-off / 根拠 |
 | コードのどこに存在するか | Code Map | components.code_locations, evidence | `.codemap` の表。component → file → symbol → 関連 claim |
@@ -80,7 +80,7 @@ audience が指定されていなければ、依頼文の語（「新規参加�
 
 ## 7. 選択の記録
 
-Explanation Plan では、view ごとに次を記録する。HTML ではこれを caption と `data-question` に反映する。
+Explanation Plan では、view ごとに次を記録する。Presentation IR の `question` と `view` に反映し、renderer が caption と `data-question` を生成する。
 
 ```text
 view id / 答える問い / view type / 使う model 要素 / 抽象度 / 省いた要素とその理由

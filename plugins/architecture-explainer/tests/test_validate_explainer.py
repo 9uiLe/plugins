@@ -177,6 +177,35 @@ class ValidateExplainerTests(unittest.TestCase):
         self.assertEqual(code, 0, output)
         self.assertIn('LANG005', self.codes(output['warnings']))
 
+    def test_glossary_term_collision_is_an_error(self):
+        model = {'glossary': [
+            {'concept': 'a', 'preferred': 'セッションストア', 'code_terms': [], 'aliases': []},
+            {'concept': 'b', 'preferred': 'セッションストア', 'code_terms': [], 'aliases': []},
+        ]}
+        code, output = self.run_cli(page(VALID_BODY), '--model', str(self.model_path(model)))
+        self.assertEqual(code, 1)
+        self.assertIn('glossary-collision', self.codes(output['errors']))
+
+    def test_long_clear_japanese_and_passive_are_not_hard_errors(self):
+        long_sentence = ('設定値は起動時に読み込まれます。'
+                         '設定ファイルに有効な token が記録されている場合、認証サービスがその token を検証し、'
+                         '期限が切れていた場合には新しい token を発行してからクライアントへ返します。')
+        body = VALID_BODY.replace('</main>', f'<p>{long_sentence}</p></main>')
+        code, output = self.run_cli(page(body))
+        self.assertEqual(code, 0, output)
+        self.assertNotIn('LANG001', self.codes(output['errors']))
+        self.assertFalse(any('passive' in finding['message'] for finding in output['warnings']))
+
+    def test_readability_hints_include_line_and_action(self):
+        sentence = ('条件が成立する場合、エラーがないため、権限を確認するので、'
+                    '認証サービスは user の権限照合を行う。')
+        body = VALID_BODY.replace('</main>', f'<p>{sentence}</p></main>')
+        code, output = self.run_cli(page(body))
+        self.assertEqual(code, 0)
+        self.assertIn('LANG008', self.codes(output['warnings']))
+        self.assertIn('LANG009', self.codes(output['hints']))
+        self.assertTrue(all(item['line'] is not None and item['message'] for item in output['hints']))
+
     def test_valid_explainer_passes_with_code_refs_resolved_against_source(self):
         returncode, output = self.run_cli(page(VALID_BODY), '--source-root', str(self.root / 'repo'))
         self.assertEqual(returncode, 0, output)

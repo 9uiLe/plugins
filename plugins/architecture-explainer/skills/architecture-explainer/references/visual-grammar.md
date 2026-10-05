@@ -1,6 +1,6 @@
 # Visual Grammar
 
-同じ意味の要素は、どの資料・どの view でも同じ見た目にする。各要素は形・線種・文字ラベルで区別し、色は補助にとどめる。class とトークンは `assets/explainer-base.css` に定義してあり、HTML へ inline する。
+同じ意味の要素は、どの資料・どの view でも同じ見た目にする。各要素は形・線種・文字ラベルで区別し、色は補助にとどめる。renderer が `assets/explainer-base.css` と選択 theme を HTML へ inline する。Presentation IR には CSS / SVG 座標を置かない。
 
 ## 要素
 

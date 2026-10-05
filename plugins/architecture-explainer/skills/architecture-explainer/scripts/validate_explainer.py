@@ -88,12 +88,16 @@ class OpenElement:
 class Findings:
     errors: list = field(default_factory=list)
     warnings: list = field(default_factory=list)
+    hints: list = field(default_factory=list)
 
     def error(self, code, message, line=None):
         self.errors.append({"code": code, "message": message, "line": line})
 
     def warn(self, code, message, line=None):
         self.warnings.append({"code": code, "message": message, "line": line})
+
+    def hint(self, code, message, line=None):
+        self.hints.append({"code": code, "message": message, "line": line})
 
 
 class ExplainerParser(HTMLParser):
@@ -183,8 +187,10 @@ class ExplainerParser(HTMLParser):
                 self.codemaps.append(codemap)
             concept = attr.get("data-concept")
             arrow_label = "arrow-label" in classes
+            in_main = tag == "main" or any(element.tag == "main" for element in self.stack)
             self.stack.append(OpenElement(tag, self.line, first_view, scrolls, codemap, source_part, figure, svg,
-                                          concept, arrow_label, tag in PROSE_TAGS, "data-responsibility" in attr))
+                                          concept, arrow_label, tag in PROSE_TAGS and in_main,
+                                          "data-responsibility" in attr))
         if "data-arrow-label" in attr:
             self.arrow_labels.append((attr["data-arrow-label"].strip(), self.line))
 
@@ -483,6 +489,10 @@ def check_language(parser, findings, model=None):
             for term in [entry.get("preferred", ""), *entry.get("code_terms", []), *entry.get("aliases", [])]:
                 if term:
                     owners.setdefault(term, set()).add(concept)
+        for term, concepts in owners.items():
+            if len(concepts) > 1:
+                findings.error("glossary-collision",
+                               f"glossary term '{term}' names several concepts: {', '.join(sorted(concepts))}; choose distinct terms")
         for concept, label, line in parser.concept_labels:
             entry = by_concept.get(concept)
             if entry is None:
@@ -494,28 +504,37 @@ def check_language(parser, findings, model=None):
             if owners.get(label, set()) - {concept}:
                 findings.error("LANG004", f"'{label}' is annotated as '{concept}' but names another concept", line)
             else:
-                findings.warn("LANG004", f"'{label}' differs from preferred term '{entry.get('preferred', '')}'", line)
+                findings.warn("LANG004", f"'{label}' differs from preferred term '{entry.get('preferred', '')}'; use preferred or register an alias", line)
+
+        avoided = [(entry.get("concept"), word) for entry in entries for word in entry.get("avoid", []) if word]
+        for block, line in parser.prose_blocks:
+            for concept, word in avoided:
+                if word in block:
+                    findings.warn("LANG007", f"'{word}' is discouraged for {concept}; use glossary.preferred if this names the concept", line)
 
     for block, line in parser.prose_blocks:
         sentences = [part.strip() for part in re.split(r"(?<=[。！？])", block) if part.strip()]
         for sentence in sentences:
             if AMBIGUOUS_START.match(sentence):
-                findings.warn("LANG003", f"possible ambiguous reference: '{sentence[:24]}'", line)
+                findings.warn("LANG003", f"possible ambiguous reference: '{sentence[:24]}'; name the referenced actor or value", line)
+            elif re.search(r"(?:、|。)(?:これ|それ|この処理|その値)(?:は|が|を|に)", sentence):
+                findings.warn("LANG003", f"possible ambiguous reference in '{sentence[:24]}'; name the referenced actor or value", line)
+            if sentence.count("場合") + sentence.count("ため") + sentence.count("ので") >= 3:
+                findings.warn("LANG008", "several conditions or reasons occur in one sentence; check their result pairs without removing exceptions", line)
+            if len(sentence) > 120 and (sentence.count("、") >= 3 or sentence.count("場合") >= 2):
+                findings.hint("LANG001", "long sentence has several clauses; consider a list while keeping conditions and Unknowns", line)
+            if any(phrase in sentence for phrase in ("を行う", "を実施する", "をすることができる")):
+                findings.hint("LANG009", "consider a direct action verb if it preserves the actor and condition", line)
+        if len(sentences) >= 6:
+            findings.hint("LANG002", "paragraph has many sentences; consider one topic per paragraph", line)
 
     for label, line in parser.arrow_labels:
         if label in ABSTRACT_ARROW_LABELS:
-            findings.warn("LANG006", f"arrow label '{label}' does not say what is exchanged or done", line)
+            findings.warn("LANG006", f"arrow label '{label}' does not say what is exchanged or done; name the object and action", line)
 
     for statement, line in parser.responsibilities:
         if len(re.findall(r"[。！？]", statement)) >= 3:
             findings.warn("LANG005", "component responsibility has several claims; consider a single clear role", line)
-
-    for block, line in parser.prose_blocks:
-        sentences = [part.strip() for part in re.split(r"(?<=[。！？])", block) if part.strip()]
-        for sentence in sentences:
-            if len(sentence) > 120 and (sentence.count("、") >= 3 or sentence.count("場合") >= 2):
-                findings.warn("LANG001", "sentence may contain too many claims; review actor and conditions", line)
-
 
 def check_change_evidence(model, findings):
     evidence_by_id = {item.get("id"): item for item in model.get("evidence", [])}
@@ -577,6 +596,7 @@ def validate(html, source_root=None, model=None):
         "ok": not findings.errors,
         "errors": findings.errors,
         "warnings": findings.warnings,
+        "hints": findings.hints,
         "stats": {"figures": len(parser.figures), "code_refs": len(parser.code_refs),
                   "evidence_markers": parser.evidence, "headings": len(parser.headings)},
     }
