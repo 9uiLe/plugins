@@ -3,6 +3,7 @@ import { basename, dirname, join, relative, resolve } from "node:path"
 import { spawnSync } from "node:child_process"
 import { parseModel } from "../../skills/architecture-explainer/src/domain/schema"
 import { validateHtml } from "../../skills/architecture-explainer/src/validator/validate"
+import { parseHtml, type HtmlNode } from "../../skills/architecture-explainer/src/validator/html"
 
 const fabrications=["Redis","RS256","JWT","bcrypt","PostgreSQL","API Gateway","Load Balancer","security team","セキュリティチーム","ASVS","10,000"]
 const reviewFindings:Record<string,RegExp>={
@@ -23,7 +24,11 @@ export function validate(html:string,root:string){const path=modelForHtml(html);
 }
 function files(root:string):string[]{if(!existsSync(root))return [];return readdirSync(root,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?files(join(root,entry.name)):[join(root,entry.name)])}
 function changedSource(root:string):string[]{const result=spawnSync("git",["status","--porcelain"],{cwd:root,encoding:"utf8"});return result.stdout.split("\n").filter(line=>line&&!/explainers\/|\.improved\.|explanation-model\.json|review\.md/.test(line))}
-function fabricationContexts(html:string){const text=html.replace(/<style[\s\S]*?<\/style>/g,"");return Object.fromEntries(fabrications.filter(word=>text.includes(word)).map(word=>[word,[...text.matchAll(new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"g"))].map(match=>text.slice(Math.max(0,match.index-70),match.index+word.length+50).replace(/\n/g," "))]))}
+function visibleText(node:HtmlNode):string {
+  if(node.tagName==="style"||node.tagName==="script"||node.tagName==="template"||node.tagName==="head")return ""
+  return node.value||node.childNodes?.map(visibleText).join("")||""
+}
+export function fabricationContexts(html:string){const text=visibleText(parseHtml(html));return Object.fromEntries(fabrications.filter(word=>text.includes(word)).map(word=>[word,[...text.matchAll(new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"g"))].map(match=>text.slice(Math.max(0,match.index-70),match.index+word.length+50).replace(/\n/g," "))]))}
 function summarizeHtml(path:string,root:string){const text=readFileSync(path,"utf8"),first=text.match(/<section[^>]*id="what"[\s\S]*?<\/section>/)?.[0];return {validator:validate(path,root),sections:[...text.matchAll(/<section[^>]*id="([^"]+)"/g)].map(m=>m[1]),questions:[...text.matchAll(/data-question="([^"]+)"/g)].map(m=>m[1]),first_view_figures:first?(first.match(/<figure/g)||[]).length:null,fabrication_contexts:fabricationContexts(text)}}
 function summarizeModel(path:string){const model=JSON.parse(readFileSync(path,"utf8"));return {audience:model.audience?.profile,source_revision:model.source?.revision,unknowns:model.unknowns?.length||0,evidence:model.evidence?.length||0,decision_rationale_status:(model.decisions||[]).map((d:{rationale?:{status?:string}})=>d.rationale?.status||"not-an-object")}}
 export function checkOutputs(run:string){const report:Record<string,unknown>={}

@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { build } from "../../../tests/fixture-repo"
-import { modelForHtml, validate } from "../../../tests/eval/check-outputs"
+import { fabricationContexts, modelForHtml, validate } from "../../../tests/eval/check-outputs"
 import { validateHtml } from "../src/validator/validate"
 
 test("evaluation fixture history is reproducible and defective HTML fails structural gates",()=>{
@@ -21,4 +21,8 @@ test("evaluation uses the documented model filename and reports missing or malfo
   expect(validate(html,root).errors).toContain("missing-model")
   writeFileSync(modelForHtml(html),'{"glossary":null}')
   expect(validate(html,root).errors).toContain("validator-failed")
+})
+test("fabrication contexts include visible claims without CSS or script text",()=>{
+  const html='<!doctype html><html><head><style>.badge::after{content:"Redis"}</style><script>const claim="JWT"</script></head><body><p>PostgreSQL を使う。</p></body></html>'
+  expect(Object.keys(fabricationContexts(html))).toEqual(["PostgreSQL"])
 })
