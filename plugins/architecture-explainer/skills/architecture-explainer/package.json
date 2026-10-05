@@ -1,0 +1,32 @@
+{
+  "name": "architecture-explainer-cli",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run css && bun src/cli.ts",
+    "css": "bunx --no-install --bun @tailwindcss/cli -i styles/globals.css -o src/renderer/generated.css --minify",
+    "test": "bun run css && bun test",
+    "typecheck": "tsc --noEmit",
+    "build": "bun run css && bun build src/cli.ts --compile --target=bun-darwin-arm64 --outfile dist/architecture-explainer",
+    "smoke": "bun scripts/smoke.ts",
+    "verify": "bash scripts/verify.sh"
+  },
+  "dependencies": {
+    "@dagrejs/dagre": "3.1.1",
+    "ajv": "^8.17.1",
+    "clsx": "^2.1.1",
+    "parse5": "^8.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.0",
+    "@types/bun": "latest",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.9.0"
+  }
+}

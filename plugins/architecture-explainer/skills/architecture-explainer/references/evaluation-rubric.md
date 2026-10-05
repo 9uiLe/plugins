@@ -7,7 +7,7 @@ Create / Review / Improve で共通に使う評価モデル。見た目の良さ
 1. 対象 HTML
 2. HTML から逆算した Explanation Model と、claim 単位の照合結果（`verified` / `contradicted` / `unsupported` / `not-checkable`。[explanation-model.md](explanation-model.md)）
 3. Source Truth から作った Explanation Model
-4. `scripts/validate_explainer.py` の結果（構造・リンク・standalone・簡易 accessibility・限定的な language lint）
+4. `architecture-explainer validate` の結果（構造・リンク・standalone・簡易 accessibility・限定的な language lint）
 
 script は構造と、明示された用語・一部の曖昧表現だけを検出する。claim の正しさ、抽象度、問いと view の対応、文意は Source Truth を読んで判断する。
 

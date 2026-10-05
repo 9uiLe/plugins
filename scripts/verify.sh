@@ -2,8 +2,8 @@
 # verify.sh — run every deterministic repository check. CI and local development
 # both use this entry point, so a check added here runs in both.
 #
-# Tests are discovered by file-name convention rather than listed, so adding a
-# test needs no edit here or in CI. Installs nothing: CI and contributors
+# Tests are discovered by file-name convention or a package verify script, so
+# adding a test needs no edit here or in CI. Installs nothing: CI and contributors
 # provide the tools listed in CONTRIBUTING.md.
 # shellcheck shell=bash
 
@@ -12,7 +12,7 @@ export SCRIPT_NAME="verify"
 # shellcheck source=lib/common.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 
-for cmd in jq git shellcheck node python3; do
+for cmd in jq git shellcheck node python3 bun; do
   require_cmd "$cmd"
 done
 
@@ -54,6 +54,13 @@ for dir in plugins/*/tests; do
   fi
   if compgen -G "$dir/test_*.py" >/dev/null; then
     check "$dir (python)" python3 -m unittest discover -s "$dir" -v
+  fi
+done
+
+for package in plugins/*/skills/*/package.json; do
+  [[ -f "$package" ]] || continue
+  if jq -e '.scripts.verify | type == "string"' "$package" >/dev/null; then
+    check "${package%/package.json} (bun)" bash -c 'cd "$1" && bun run verify' _ "${package%/package.json}"
   fi
 done
 

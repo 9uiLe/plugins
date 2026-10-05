@@ -22,7 +22,7 @@
     {"from": "cmp-store", "to": "cmp-auth", "action": "回転後の session を返す", "status": "observed", "evidence": ["ev-store"]}
   ], "exceptional_paths": [{"at_step": 2, "condition": "refresh token が不明", "result": "UnknownRefreshToken を送出する", "status": "observed", "evidence": ["ev-store"]}]}
   ],
-  "states": [{"id": "st-active", "owner": "cmp-store", "name": "有効", "status": "observed", "transitions": [{"event": "revoke", "guard": "session ID が存在する", "to": "失効", "evidence": ["ev-store"]}]}],
+  "states": [{"id": "st-active", "owner": "cmp-store", "name": "有効", "transitions": [{"event": "revoke", "guard": "session ID が存在する", "to": "失効", "evidence": ["ev-store"]}]}],
   "data": [{"id": "data-session", "name": "Session", "stored_in": "SessionStore._sessions", "written_by": ["cmp-store"], "read_by": ["cmp-auth"], "evidence": ["ev-store"]}],
   "decisions": [{"id": "dec-rotate", "context": "token 更新", "decision": "refresh token を回転する", "status": "observed", "evidence": ["ev-store"], "rationale": {"text": "回転を選んだ理由は Source Truth から確認できない。", "status": "unknown", "evidence": []}, "tradeoffs": [], "alternatives": []}],
   "invariants": [{"id": "inv-token", "description": "失効した session は active とみなさない", "enforced_by": "SessionStore.is_active", "status": "observed", "evidence": ["ev-store"]}],

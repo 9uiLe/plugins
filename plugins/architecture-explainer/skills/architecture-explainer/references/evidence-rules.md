@@ -2,6 +2,8 @@
 
 もっともらしいが実装に存在しない architecture を書かないための規則。すべての claim を Observed / Inferred / Unknown のいずれかに分類し、主要な claim は `Claim → Evidence → File → Symbol` まで辿れるようにする。
 
+Observed / Inferred / Unknown は Claim の分類である。Data、State transition、affected / unaffected impact のような status を持たない構造要素は、Evidence ID があるだけで Observed Claim にはならない。これらは解決可能な Evidence を必須とし、`data-evidence-backed="true"` と「根拠あり」で出所を表示する。Evidence がない場合は Unknown へ変換せず、model error とする。
+
 ## 分類
 
 | Status | 条件 | HTML での表示 |
@@ -64,7 +66,7 @@ Unknown には `question`、`reason`（なぜ判断できないか）、`how_to_
      data-file="app/client/token_manager.py" data-symbol="TokenManager._refresh_once">token_manager.py · _refresh_once</a></p>
 ```
 
-- `data-file` と `data-symbol` は `validate_explainer.py --source-root` の検査対象になる。file が存在し、symbol が file 内に現れることを確認する。
+- `data-file` と `data-symbol` は `architecture-explainer validate --source-root` の検査対象になる。file が存在し、symbol が file 内に現れることを確認する。
 - code ref の `href` は、Code Map または evidence 一覧の該当行（`id`）を指す。リポジトリの Web URL が分かっている場合は、そこから外部リンクを追加してよい。
 - 推論・不明の表示は次の markup にする。
 

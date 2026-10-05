@@ -20,49 +20,32 @@ Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Q
 
 ## Schema
 
-```json
-{
-  "subject": {"title": "", "question": "この資料が答える問い", "scope": {"in": [], "out": []}},
-  "source": {"root": "", "revision": "", "base_revision": "", "materials": []},
-  "audience": {"profile": "newcomer|implementer|reviewer|architect|debugger", "familiarity": "", "goal": "", "inferred_from": ""},
-  "purpose": {"problem": "", "responsibility": "", "status": "", "evidence": []},
-  "context": {
-    "actors": [{"id": "", "name": "", "role": "", "status": "", "evidence": []}],
-    "external_systems": [{"id": "", "name": "", "interaction": "", "status": "", "evidence": []}],
-    "boundaries": [{"id": "", "kind": "app|module|process|data|external|trust", "contains": []}]
-  },
-  "components": [{
-    "id": "", "name": "", "level": "system|container|module|class|function",
-    "responsibility": "", "depends_on": [{"target": "", "meaning": ""}],
-    "code_locations": [{"file": "", "symbol": "", "line": 0}],
-    "status": "", "evidence": []
-  }],
-  "runtime_scenarios": [{
-    "id": "", "name": "", "trigger": "",
-    "steps": [{"from": "", "to": "", "action": "", "status": "", "evidence": []}],
-    "exceptional_paths": [{"at_step": 0, "condition": "", "result": "", "status": "", "evidence": []}]
-  }],
-  "states": [{"id": "", "owner": "", "name": "", "transitions": [{"event": "", "guard": "", "to": "", "evidence": []}]}],
-  "data": [{"id": "", "name": "", "stored_in": "", "written_by": [], "read_by": [], "evidence": []}],
-  "decisions": [{
-    "id": "", "context": "", "decision": "", "status": "", "evidence": [],
-    "rationale": {"text": "", "status": "", "evidence": []},
-    "tradeoffs": [], "alternatives": []
-  }],
-  "invariants": [{"id": "", "description": "", "enforced_by": "", "status": "", "evidence": []}],
-  "change_impacts": [{
-    "id": "", "change": "",
-    "before": {"id": "", "behavior": "", "status": "", "evidence": []},
-    "after": {"id": "", "behavior": "", "status": "", "evidence": []},
-    "affected": [{"target": "", "reason": "", "evidence": []}],
-    "unaffected": [{"target": "", "reason": "", "evidence": []}],
-    "requires_verification": [{"target": "", "reason": ""}]
-  }],
-  "glossary": [{"id": "", "concept": "", "preferred": "", "code_terms": [], "aliases": [], "avoid": [], "meaning": "", "evidence": []}],
-  "unknowns": [{"id": "", "about": "", "question": "", "reason": "", "how_to_resolve": ""}],
-  "evidence": [{"id": "", "kind": "code|test|doc|config|commit|diff|issue", "revision": "", "file": "", "symbol": "", "line": 0, "note": ""}]
-}
-```
+実際に検証できる全項目の例は [auth-model.json](../../../tests/fixtures/presentation/auth-model.json) を参照する。入力契約の正本は [JSON Schema](../schemas/explanation-model.schema.json) と TypeScript domain types。以下の表で `?` は省略可能な field を示す。配列自体は必須で、該当要素がなければ `[]` を入れる。すべての object は未知の property を拒否する。
+
+| 要素 | 必須 field | 省略可能な field |
+| --- | --- | --- |
+| `subject` | `title`, `question`, `scope`（`in`, `out`） | なし |
+| `source` | `root`, `revision`, `materials` | `base_revision` |
+| `audience` | `profile`, `familiarity`, `goal` | `inferred_from` |
+| `purpose` | `problem`, `responsibility`, `status`, `evidence` | `id` |
+| `context` | `actors`, `external_systems`, `boundaries` | なし |
+| actor / external | `id`, `name`, `status`, `evidence` と actor の `role` / external の `interaction` | なし |
+| boundary | `id`, `kind`, `contains` | なし |
+| component | `id`, `name`, `level`, `responsibility`, `depends_on`, `code_locations`, `status`, `evidence` | なし |
+| dependency / code location | `target`, `meaning` / `file` | code location の `symbol`, `line` |
+| runtime scenario | `id`, `name`, `trigger`, `steps`, `exceptional_paths` | なし |
+| runtime step / exceptional path | `from`, `to`, `action`, `status`, `evidence` / `at_step`, `condition`, `result`, `status`, `evidence` | それぞれ `id` |
+| state / transition | `id`, `owner`, `name`, `transitions` / `event`, `guard`, `to`, `evidence` | なし |
+| data | `id`, `name`, `stored_in`, `written_by`, `read_by`, `evidence` | なし |
+| decision / rationale | `id`, `context`, `decision`, `status`, `evidence`, `rationale`, `tradeoffs`, `alternatives` / `text`, `status`, `evidence` | rationale の `id` |
+| invariant | `id`, `description`, `enforced_by`, `status`, `evidence` | なし |
+| change impact | `id`, `change`, `before`, `after`, `affected`, `unaffected`, `requires_verification` | なし |
+| before / after、affected / unaffected、requires verification | `id`, `behavior`, `status`, `evidence` / `target`, `reason`, `evidence` / `target`, `reason` | なし |
+| glossary | `id`, `concept`, `preferred`, `code_terms`, `aliases`, `avoid`, `meaning`, `evidence` | なし |
+| unknown | `id`, `about`, `question`, `reason`, `how_to_resolve` | なし |
+| evidence | `id`, `kind`, `revision` | `file`, `symbol`, `line`, `note` |
+
+`status` は `observed` / `inferred` / `unknown`。`profile` は `newcomer` / `implementer` / `reviewer` / `architect` / `debugger`。component `level` は `system` / `container` / `module` / `class` / `function`。boundary `kind` は `app` / `module` / `process` / `data` / `external` / `trust`。Evidence `kind` は `code` / `test` / `doc` / `config` / `commit` / `diff` / `issue`。`line` は 1 以上の整数で、該当行がなければ field を省略する。
 
 ## 要素の定義
 
@@ -79,6 +62,8 @@ Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Q
 | Code | `code_locations` と `evidence` による file / symbol / line | 不要な場合はない |
 | Change Impact | 変更を起点にした affected / unaffected / requires verification | 読者の目的に変更理解が含まれない（newcomer の初回 orientation など） |
 | Unknown | Source Truth から判断できない問い | 判断できない点がない場合だけ空にする |
+
+State と Data は独立した Claim ではなく、`status` を持たない。State は状態の定義と Evidence 付き transition、Data は保存先・書き手・読み手と解決可能な `evidence` を持つ。`status` を持たない要素の Evidence はその要素の出所を示し、Claim の Observed / Inferred / Unknown とは別である。Change Impact の affected / unaffected もこの扱いに含む。Renderer はこれらを「根拠あり」と表示し、Evidence がない場合は model error とする。推論や不明点は対応する Claim または `unknowns` で表す。Data Flow の矢印ラベルには glossary の preferred term を使い、「セッションを書き込む」のように対象を明示する。
 
 ## Component の粒度
 
