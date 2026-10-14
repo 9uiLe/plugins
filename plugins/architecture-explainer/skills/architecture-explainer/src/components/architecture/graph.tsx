@@ -1,21 +1,27 @@
 import React from "react"
-import { layoutGraph, type GraphEdge, type GraphNode } from "../../renderer/layout/graph"
+import type { GraphLayout, GraphNode } from "../../renderer/layout/graph"
+import { BoxText, Connector, DiagramFrame, Label } from "./diagram"
 
-export function ArchitectureGraph({id,question,caption,nodes,edges}:{id:string;question:string;caption:string;nodes:GraphNode[];edges:GraphEdge[]}) {
-  const graph=layoutGraph(nodes,edges), titleId=`svg-${id}-title`, markerId=`arrow-${id}`
-  return <svg className="graph" viewBox={`0 0 ${graph.width} ${graph.height}`} width={graph.width} role="img" aria-labelledby={titleId}>
-    <title id={titleId}>{question}</title><desc>{caption}</desc>
-    <defs><marker id={markerId} markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0 0 L9 3.5 L0 7 Z" fill="var(--muted-foreground)"/></marker></defs>
-    {graph.edges.map((edge,i)=><g key={`${edge.from}-${edge.to}-${i}`}>
-      <polyline className="graph-edge" points={edge.points.map(point=>`${point.x},${point.y}`).join(" ")} markerEnd={`url(#${markerId})`}/>
-      <rect className="graph-label-bg" x={edge.x-edge.width/2} y={edge.y-edge.height/2} width={edge.width} height={edge.height} rx="4"/>
-      <text className="graph-edge-text arrow-label" x={edge.x} y={edge.y-(edge.lines.length-1)*8} textAnchor="middle">{edge.lines.map((line,j)=><tspan key={j} x={edge.x} dy={j?17:0}>{line}</tspan>)}</text>
-    </g>)}
-    {graph.nodes.map(node=><g key={node.id} className="node" data-kind={node.kind} data-evidence={node.status} data-evidence-backed={node.evidenceBacked?"true":undefined} data-evidence-ids={node.evidence?.join(" ")}>
-      <title data-concept={node.concept}>{node.label}</title>
-      <rect className={`graph-node ${node.kind}`} x={node.x-node.width/2} y={node.y-node.height/2} width={node.width} height={node.height} rx={node.kind==="actor"?28:10}/>
-      {node.kind==="data"&&<line x1={node.x-node.width/2+6} x2={node.x+node.width/2-6} y1={node.y-node.height/2+6} y2={node.y-node.height/2+6} stroke="var(--architecture-data)"/>}
-      <text className="graph-text" x={node.x} y={node.y-node.height/2+25} textAnchor="middle">{node.lines.map((line,i)=><tspan key={i} x={node.x} dy={i?20:0}>{line}</tspan>)}{node.detailLines.map((line,i)=><tspan key={`d${i}`} x={node.x} dy="18" fontSize="11">{line}</tspan>)}</text>
-    </g>)}
-  </svg>
+export function ArchitectureGraph({id,question,caption,graph}:{id:string;question:string;caption:string;graph:GraphLayout}) {
+  return <DiagramFrame id={id} question={question} caption={caption} width={graph.width} height={graph.height}>
+    {graph.edges.map((edge,i)=><Connector key={`${edge.from}-${edge.to}-${i}`} id={id} points={edge.points}/>)}
+    {graph.edges.map((edge,i)=><Label key={`${edge.from}-${edge.to}-${i}`} className="arrow-label" x={edge.x} y={edge.y} lines={edge.lines}/>)}
+    {graph.nodes.map(node=>{
+      const left=node.x-node.width/2, top=node.y-node.height/2
+      return <g key={node.id} className="node" data-kind={node.kind} data-evidence={node.status} data-evidence-backed={node.evidenceBacked?"true":undefined} data-evidence-ids={node.evidence?.join(" ")}>
+        <title data-concept={node.concept}>{node.label}</title>
+        <rect className={node.kind==="system"?"diagram-box accent":"diagram-box"} x={left} y={top} width={node.width} height={node.height} rx={node.kind==="actor"?node.height/2:0}/>
+        {node.kind==="system"&&<path className="diagram-corner" d={[[left,top],[left+node.width,top],[left,top+node.height],[left+node.width,top+node.height]].map(([x,y])=>`M${x-5.5} ${y}h11M${x} ${y-5.5}v11`).join("")}/>}
+        {node.kind==="data"&&<line className="diagram-rule" x1={left} x2={left+node.width} y1={top+6} y2={top+6}/>}
+        <BoxText x={node.x} y={node.kind==="data"?node.y+3:node.y} nameLines={node.nameLines} bodyLines={node.bodyLines}/>
+      </g>
+    })}
+  </DiagramFrame>
+}
+const kindNames:Record<GraphNode["kind"],string>={system:"対象",component:"構成要素",actor:"利用者",external:"外部",data:"データ"}
+export function GraphLegend({kinds}:{kinds:GraphNode["kind"][]}) {
+  return <p className="legend">凡例: {kinds.map(kind=><span key={kind} className="legend-item" data-kind={kind}><svg className="legend-swatch" width="28" height="16" viewBox="0 0 28 16" aria-hidden="true">
+    <rect className={kind==="system"?"diagram-box accent":"diagram-box"} x="1" y="1" width="26" height="14" rx={kind==="actor"?7:0}/>
+    {kind==="data"&&<line className="diagram-rule" x1="1" x2="27" y1="4" y2="4"/>}
+  </svg>{kindNames[kind]}</span>)}</p>
 }

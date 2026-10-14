@@ -1,6 +1,6 @@
 import type { ExplanationModel } from "../domain/explanation-model"
 import type { Findings } from "../domain/evidence"
-import { attr, line, textContent, type HtmlFacts } from "./html"
+import { attr, line, proseText, textContent, type HtmlFacts } from "./html"
 
 const abstractLabels=new Set(["使用","呼び出し","依存","通信","連携","参照","利用","書き込む","読み出す","保存","取得"])
 const ambiguous=/^(?:これ|それ|この処理|その値|該当するもの|前述のもの)(?:は|が|を|に|で|も|について|、)/
@@ -18,9 +18,9 @@ export function checkJapanese(facts:HtmlFacts,findings:Findings,model?:Explanati
         ;(other?findings.errors:findings.warnings).push({code:"LANG004",message:`${label} differs from preferred term ${entry.preferred}`,line:line(node)})
       }
     }
-    for(const node of facts.prose){const prose=textContent(node);for(const entry of model.glossary)for(const word of entry.avoid)if(word&&prose.includes(word))findings.warnings.push({code:"LANG007",message:`${word} is discouraged for ${entry.concept}`,line:line(node)})}
+    for(const node of facts.prose){const prose=proseText(node);for(const entry of model.glossary)for(const word of entry.avoid)if(word&&prose.includes(word))findings.warnings.push({code:"LANG007",message:`${word} is discouraged for ${entry.concept}`,line:line(node)})}
   }
-  for(const node of facts.prose){const block=textContent(node).trim(),sentences=block.split(/(?<=[。！？])/).map(s=>s.trim()).filter(Boolean)
+  for(const node of facts.prose){const block=proseText(node).trim(),sentences=block.split(/(?<=[。！？])/).map(s=>s.trim()).filter(Boolean)
     for(const sentence of sentences){if(ambiguous.test(sentence)||/(?:、|。)(?:これ|それ|この処理|その値)(?:は|が|を|に)/.test(sentence))findings.warnings.push({code:"LANG003",message:`ambiguous reference: ${sentence.slice(0,24)}`,line:line(node)})
       if((sentence.match(/場合|ため|ので/g)||[]).length>=3)findings.warnings.push({code:"LANG008",message:"several conditions or reasons in one sentence",line:line(node)})
       if(sentence.length>120&&((sentence.match(/、/g)||[]).length>=3||(sentence.match(/場合/g)||[]).length>=2))findings.hints.push({code:"LANG001",message:"long sentence with several clauses",line:line(node)})

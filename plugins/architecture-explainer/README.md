@@ -70,7 +70,7 @@ plugin 自体の改善では `plugins/architecture-explainer/**` を変更しま
 | `references/evaluation-rubric.md` | Hard Gate、評価次元、severity、修正優先順位、完了条件 |
 | `src/components/ui/` | 公式 shadcn CLI から取り込んで所有する Card、Badge、Alert、Separator、Table |
 | `src/components/architecture/` | Overview、graph、runtime、decision、impact、code map 等の意味付き view |
-| `src/renderer/` / `styles/globals.css` | TSX 静的描画、Dagre 配置、日本語ラベル計測、inline CSS と theme token |
+| `src/renderer/` / `styles/globals.css` | TSX 静的描画、ELK による図の配置、日本語ラベル計測、inline CSS と theme token |
 | `src/validator/` | HTML を外部契約として検査する独立 validator |
 | `src/cli.ts` | `render`、`validate`、`inspect`、`lint` の入口 |
 
@@ -89,6 +89,10 @@ dist/architecture-explainer validate path/to/index.html --source-root path/to/re
 ## Component の所有と更新
 
 `components.json` は開発時に必要な component だけを公式 shadcn CLI から取り込む設定です。Card、Badge、Alert、Separator、Table は shadcn CLI 4.21.1 で 2026-10-05 に取得しました。現在の source はこの repository が所有します。Badge の Slot と variant、Alert の live region、Separator の Radix dependency、未使用の Card / Table subcomponent を削り、静的資料と accessibility に合わせました。上流の更新は自動適用せず、上流 source と所有 source の diff を確認して手動で取り込みます。コピー元のライセンスは [SHADCN-LICENSE.md](skills/architecture-explainer/src/components/ui/SHADCN-LICENSE.md) にあります。
+
+## 同梱する第三者コード
+
+図の配置に使う [elkjs](https://github.com/kieler/elkjs) 0.12.0（Eclipse Layout Kernel の JavaScript 版）を、配布 executable に同梱しています。ライセンスは EPL-2.0 OR GPL-3.0-or-later で、本文は [ELKJS-LICENSE.md](skills/architecture-explainer/src/renderer/layout/ELKJS-LICENSE.md) にあります。ソースは [kieler/elkjs](https://github.com/kieler/elkjs) と [eclipse-elk/elk](https://github.com/eclipse-elk/elk) から入手できます。コードの抜粋の色分けに使う [highlight.js](https://github.com/highlightjs/highlight.js) 11.12.0 も同梱しています。ライセンスは BSD-3-Clause で、本文は [HIGHLIGHTJS-LICENSE.md](skills/architecture-explainer/src/renderer/HIGHLIGHTJS-LICENSE.md) にあります。どちらも依存がなく、版は `package.json` と `bun.lock`（integrity hash 付き）で固定しています。
 
 ## 制約
 

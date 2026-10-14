@@ -53,12 +53,14 @@ test("cross-band steps cannot share one scenario",()=>{
 
 test("model source kinds select only their documented section types",()=>{
   const {model}=scenario([["actor-client","system-a"]])
+  model.references=[{id:"ref-python",topic:"Python のクラス",title:"The Python Tutorial: Classes",url:"https://docs.python.org/3/tutorial/classes.html",note:"クラスとメソッドの定義"}]
   const cases:Record<string,string[]>={
+    "ref-python":["references"],
     purpose:["overview","callout","takeaway"],
     "actor-client":["overview","system_context"],
     external:["overview","system_context"],
     "cmp-auth":["overview","component_map","code_map","callout","takeaway"],
-    "rt-refresh":["overview","sequence","runtime_flow"],
+    "rt-refresh":["overview","sequence","runtime_flow","annotated_code"],
     "st-active":["state_transition"],
     "data-session":["data_flow"],
     "dec-rotate":["decision","callout","takeaway"],

@@ -20,7 +20,7 @@ Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Q
 
 ## Schema
 
-実際に検証できる全項目の例は [auth-model.json](../../../tests/fixtures/presentation/auth-model.json) を参照する。入力契約の正本は [JSON Schema](../schemas/explanation-model.schema.json) と TypeScript domain types。以下の表で `?` は省略可能な field を示す。配列自体は必須で、該当要素がなければ `[]` を入れる。すべての object は未知の property を拒否する。
+実際に検証できる全項目の例は [auth-model.json](../../../tests/fixtures/presentation/auth-model.json) を参照する。入力契約の正本は [JSON Schema](../schemas/explanation-model.schema.json) と TypeScript domain types。以下の表で `?` は省略可能な field を示す。配列自体は必須で（`findings` と `references` は省略可能）、該当要素がなければ `[]` を入れる。すべての object は未知の property を拒否する。
 
 | 要素 | 必須 field | 省略可能な field |
 | --- | --- | --- |
@@ -31,11 +31,11 @@ Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Q
 | `context` | `actors`, `external_systems`, `boundaries` | なし |
 | actor / external | `id`, `name`, `status`, `evidence` と actor の `role` / external の `interaction` | なし |
 | boundary | `id`, `kind`, `contains` | なし |
-| component | `id`, `name`, `level`, `responsibility`, `depends_on`, `code_locations`, `status`, `evidence` | なし |
+| component | `id`, `name`, `level`, `responsibility`, `depends_on`, `code_locations`, `status`, `evidence` | `summary` |
 | dependency / code location | `target`, `meaning` / `file` | code location の `symbol`, `line` |
 | runtime scenario | `id`, `name`, `trigger`, `steps`, `exceptional_paths` | なし |
 | runtime step / exceptional path | `from`, `to`, `action`, `status`, `evidence` / `at_step`, `condition`, `result`, `status`, `evidence` | それぞれ `id` |
-| state / transition | `id`, `owner`, `name`, `transitions` / `event`, `guard`, `to`, `evidence` | なし |
+| state / transition | `id`, `owner`, `name`, `transitions` / `event`, `guard`, `to`, `evidence` | transition の `action` |
 | data | `id`, `name`, `stored_in`, `written_by`, `read_by`, `evidence` | なし |
 | decision / rationale | `id`, `context`, `decision`, `status`, `evidence`, `rationale`, `tradeoffs`, `alternatives` / `text`, `status`, `evidence` | rationale の `id` |
 | invariant | `id`, `description`, `enforced_by`, `status`, `evidence` | なし |
@@ -43,7 +43,9 @@ Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Q
 | before / after、affected / unaffected、requires verification | `id`, `behavior`, `status`, `evidence` / `target`, `reason`, `evidence` / `target`, `reason` | なし |
 | glossary | `id`, `concept`, `preferred`, `code_terms`, `aliases`, `avoid`, `meaning`, `evidence` | なし |
 | unknown | `id`, `about`, `question`, `reason`, `how_to_resolve` | なし |
-| evidence | `id`, `kind`, `revision` | `file`, `symbol`, `line`, `note` |
+| finding | `id`, `statement`, `status`, `evidence` | なし |
+| reference | `id`, `topic`, `title`, `url`（https）, `note` | なし |
+| evidence | `id`, `kind`, `revision` | `file`, `symbol`, `line`, `end_line`, `note`, `references`, `annotations` |
 
 `status` は `observed` / `inferred` / `unknown`。`profile` は `newcomer` / `implementer` / `reviewer` / `architect` / `debugger`。component `level` は `system` / `container` / `module` / `class` / `function`。boundary `kind` は `app` / `module` / `process` / `data` / `external` / `trust`。Evidence `kind` は `code` / `test` / `doc` / `config` / `commit` / `diff` / `issue`。`line` は 1 以上の整数で、該当行がなければ field を省略する。
 
@@ -62,12 +64,26 @@ Source Truth → Evidence → Explanation Model（用語を含む）→ Reader Q
 | Code | `code_locations` と `evidence` による file / symbol / line | 不要な場合はない |
 | Change Impact | 変更を起点にした affected / unaffected / requires verification | 読者の目的に変更理解が含まれない（newcomer の初回 orientation など） |
 | Unknown | Source Truth から判断できない問い | 判断できない点がない場合だけ空にする |
+| Finding | 1 つの図から読者が持ち帰る結論。図の上に見出しとして表示する claim | 図が結論を持たない、または結論を Source Truth で裏付けられない |
+| Reference | コードを読むための前提知識と、その公式ドキュメント。claim ではない（[evidence-rules.md](evidence-rules.md) の「公式ドキュメントへのリンク」） | 読者が対象の言語・ライブラリを知っている、または公式ドキュメントを確かめられない |
+
+State の `name` と transition の `event` はコード上の値（`prepared`、`start_run` など）を書く。読者向けの名前と説明は別に持つ。
+
+- 状態の読者向けの名前は glossary に、`concept` を State の `id`、`preferred` を読者向けの名前（「送信前」）、`code_terms` を `name` にして置く。renderer は「送信前 `prepared`」と並べて表示する。
+- 遷移先にしかならない状態（終点）も、読者向けの名前を付けるなら `transitions` が空の State として置き、section の `sources` に加える。
+- transition の `action` は、その遷移で何が起きるかを読者の言葉で 1 文に書く（「人の指示で、保存したプロンプトをエージェントに送る」）。renderer は `action` を見出しと全体像の矢印に使い、`event` が識別子ならその横に添える。`action` がなければ `event` を見出しにする。
 
 State と Data は独立した Claim ではなく、`status` を持たない。State は状態の定義と Evidence 付き transition、Data は保存先・書き手・読み手と解決可能な `evidence` を持つ。`status` を持たない要素の Evidence はその要素の出所を示し、Claim の Observed / Inferred / Unknown とは別である。Change Impact の affected / unaffected もこの扱いに含む。Renderer はこれらを「根拠あり」と表示し、Evidence がない場合は model error とする。推論や不明点は対応する Claim または `unknowns` で表す。Data Flow の矢印ラベルには glossary の preferred term を使い、「セッションを書き込む」のように対象を明示する。
 
 ## Component の粒度
 
 `level` を必ず付ける。同じ view に並べる要素は同じ `level` にそろえる（[visualization-selection.md](visualization-selection.md) の抽象度規則）。`responsibility` は「何を担うか」を一文で書き、名前の言い換え（`UserRepository` → 「User のリポジトリ」）にしない。
+
+`summary` は図の箱に入れる短い説明で、`responsibility` と同じ claim を、箱の中で 1〜2 行に収まるように短くしたものにする。新しい事実を足さない。省略すると箱に `responsibility` を表示し、長い文が複数行に折り返される。`summary` がある component では、`responsibility` は図の下の一覧に表示する。
+
+evidence の `annotations` は `[{"from": 行, "to": 行, "text": "その行が裏づける内容"}]` で、抜粋の中の行に番号付きの注釈を付ける。範囲は `line`〜`end_line` の内側にし、文はその行から読み取れる事実だけにする（[evidence-rules.md](evidence-rules.md)）。注釈がある抜粋は、注釈の前後の行だけを表示し、残りを折りたたむ。
+
+`statement` は話題ではなく結論を書く（「区切りは送信前に必ず再検証される」。「区切りの流れ」とは書かない）。他の claim と同じく `status` と `evidence` を付ける。
 
 `depends_on.meaning` には、依存の意味（「認証済み user id を要求」「refresh token を保存」）を書く。HTML の矢印ラベルはここから作る。
 
