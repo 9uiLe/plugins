@@ -28,6 +28,29 @@ def fixture(parts=None):
             '<div class="slide-transcript"><a href="https://files.speakerdeck.com/b.jpg"></a></div>')
 
 
+def source_with_transcripts(parts, transcript_blocks):
+    """An offline SpeakerDeck fixture with explicit ordered transcript evidence."""
+    meta = {"name": "Test deck", "hasPart": parts}
+    return (
+        '<meta property="og:url" content="' + URL + '">'
+        '<script type="application/ld+json">' + json.dumps(meta) + '</script>'
+        + "".join(
+            '<div class="slide-transcript">' + content + '</div>'
+            for content in transcript_blocks
+        )
+    )
+
+
+def transcript_link(page, *, placeholder=False, text=None):
+    marker = ' class="text-muted font-italic"' if placeholder else ""
+    if text is None:
+        text = "None" if placeholder else f"Transcript {page}"
+    return (
+        f'<a{marker} href="https://files.speakerdeck.com/slide_{page}.jpg">'
+        f'{text}</a>'
+    )
+
+
 class FetchDeckTests(unittest.TestCase):
     def test_order_full_text_and_empty_image_page(self):
         deck = fetch.parse_deck(fixture(), URL)
@@ -60,6 +83,93 @@ class FetchDeckTests(unittest.TestCase):
         for parts in [[{'position': 2}], [{'position': 1}], [{'position': 1}, {'position': 1}]]:
             with self.subTest(parts=parts), self.assertRaises(ValueError):
                 fetch.parse_deck(fixture(parts), URL)
+
+    def test_structured_gaps_only_for_image_only_placeholders(self):
+        for missing in (1, 2, 3):
+            with self.subTest(missing=missing):
+                positions = [number for number in range(1, 4) if number != missing]
+                parts = [{"position": i, "text": f"Structured {i}"} for i in positions]
+                blocks = [
+                    transcript_link(i, placeholder=(i == missing))
+                    for i in range(1, 4)
+                ]
+                deck = fetch.parse_deck(source_with_transcripts(parts, blocks), URL)
+                self.assertEqual(deck["page_count"], 3)
+                self.assertEqual(deck["count_basis"], "transcript_blocks")
+                self.assertEqual([p["page"] for p in deck["pages"]], [1, 2, 3])
+                self.assertEqual(deck["pages"][missing - 1]["text"], "")
+                self.assertEqual(
+                    deck["pages"][missing - 1]["image_url"],
+                    f"https://files.speakerdeck.com/slide_{missing}.jpg",
+                )
+                for index in positions:
+                    self.assertEqual(deck["pages"][index - 1]["text"],
+                                     f"Structured {index}")
+                with tempfile.TemporaryDirectory() as directory:
+                    out = Path(directory)
+                    fetch.write_evidence(deck, out)
+                    saved = json.loads((out / "deck.json").read_text())
+                    self.assertEqual(saved["page_count"], 3)
+                    transcript = (out / "transcript.md").read_text()
+                    self.assertIn(f"## Page {missing}\n\n", transcript)
+                    self.assertIn("[No text]", transcript)
+
+    def test_multiple_image_only_gaps_and_complete_structured_basis(self):
+        blocks = [
+            transcript_link(1),
+            transcript_link(2, placeholder=True),
+            transcript_link(3, placeholder=True),
+            transcript_link(4),
+        ]
+        parts = [{"position": 1, "text": "First"},
+                 {"position": 4, "text": "Last"}]
+        deck = fetch.parse_deck(source_with_transcripts(parts, blocks), URL)
+        self.assertEqual(deck["page_count"], 4)
+        self.assertEqual(deck["count_basis"], "transcript_blocks")
+        self.assertEqual([p["text"] for p in deck["pages"]],
+                         ["First", "", "", "Last"])
+        complete = [{"position": i, "text": f"Text {i}"} for i in range(1, 5)]
+        full_deck = fetch.parse_deck(
+            source_with_transcripts(complete, blocks), URL)
+        self.assertEqual(full_deck["count_basis"], "hasPart")
+
+    def test_missing_structured_page_needs_an_explicit_matching_sentinel(self):
+        parts = [{"position": 1, "text": "First"},
+                 {"position": 3, "text": "Third"}]
+        for middle in (
+            transcript_link(2, text=""),            # ordinary empty transcript
+            transcript_link(2, text="None"),        # literal None, not a sentinel
+            transcript_link(2, placeholder=True, text="Different"),
+            transcript_link(2, text="Visible"),     # substantive omitted page
+        ):
+            with self.subTest(middle=middle), self.assertRaisesRegex(
+                ValueError, "Source page positions are incomplete"
+            ):
+                fetch.parse_deck(
+                    source_with_transcripts(
+                        parts, [transcript_link(1), middle, transcript_link(3)]
+                    ), URL
+                )
+
+    def test_conflicting_sparse_sources_remain_invalid(self):
+        placeholder = transcript_link(2, placeholder=True)
+        for parts, blocks in (
+            # Position points past the available transcript.
+            ([{"position": 1}, {"position": 4}],
+             [transcript_link(1), placeholder, transcript_link(3)]),
+            # No transcripts: never assume missing positions are image-only.
+            ([{"position": 1}, {"position": 3}], []),
+            # Duplicate positions do not describe an unambiguous page.
+            ([{"position": 1}, {"position": 1}],
+             [transcript_link(1), placeholder]),
+            # Leading position absent without an explicit placeholder.
+            ([{"position": 2}, {"position": 3}],
+             [transcript_link(1), placeholder, transcript_link(3)]),
+        ):
+            with self.subTest(parts=parts, blocks=blocks), self.assertRaises(
+                ValueError
+            ):
+                fetch.parse_deck(source_with_transcripts(parts, blocks), URL)
 
     def test_description_only_is_not_a_deck(self):
         with self.assertRaises(ValueError):
