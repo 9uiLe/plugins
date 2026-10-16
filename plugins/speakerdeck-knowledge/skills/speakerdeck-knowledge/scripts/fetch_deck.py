@@ -85,9 +85,15 @@ class DeckParser(HTMLParser):
     def finish_transcript(self):
         """Keep image-only pages; only the site's missing-text link is a sentinel."""
         text = " ".join(" ".join(self.current["chunks"]).split())
-        if self.current["placeholder_link"] and text == "None":
+        # A blank transcript alone is not proof of SpeakerDeck's missing-text
+        # sentinel: only its explicit placeholder link with text "None" is.
+        placeholder = self.current["placeholder_link"] and text == "None"
+        if placeholder:
             text = ""
-        self.slides.append({"text": text, "image_url": self.current["image_url"]})
+        self.slides.append({
+            "text": text, "image_url": self.current["image_url"],
+            "placeholder": placeholder,
+        })
         self.current = None
 
 
@@ -101,7 +107,7 @@ def objects(value):
 
 
 def index_structured_pages(parts):
-    """Validate one-based structured page positions before joining image links."""
+    """Index positive one-based positions, rejecting duplicates."""
     indexed = {}
     for item in parts:
         position = item.get("position")
@@ -109,8 +115,6 @@ def index_structured_pages(parts):
             if position in indexed:
                 raise ValueError("Duplicate page positions in source")
             indexed[position] = item.get("text", "")
-    if indexed and sorted(indexed) != list(range(1, max(indexed) + 1)):
-        raise ValueError("Source page positions are incomplete")
     return indexed
 
 
@@ -124,9 +128,27 @@ def parse_deck(html, url):
 
     metadata = next((item for item in objects(parser.blocks) if "hasPart" in item), {})
     indexed = index_structured_pages(metadata.get("hasPart", []))
-    if indexed and parser.slides and len(indexed) != len(parser.slides):
-        raise ValueError("Transcript and structured page counts disagree")
     count = len(indexed) or len(parser.slides)
+    count_basis = "hasPart" if indexed else "transcript_blocks"
+    if indexed:
+        if parser.slides:
+            # Structured text intentionally omits image-only slides. Allow a
+            # gap only when that exact transcript block is a known placeholder.
+            if max(indexed) > len(parser.slides):
+                raise ValueError("Transcript and structured page counts disagree")
+            missing = [
+                page for page in range(1, len(parser.slides) + 1)
+                if page not in indexed
+            ]
+            if any(not parser.slides[page - 1]["placeholder"] for page in missing):
+                raise ValueError("Source page positions are incomplete")
+            if missing:
+                count = len(parser.slides)
+                count_basis = "transcript_blocks"
+        elif sorted(indexed) != list(range(1, max(indexed) + 1)):
+            # Without transcript evidence, a missing structured position is
+            # unknown rather than a verified image-only slide.
+            raise ValueError("Source page positions are incomplete")
     if not count:
         raise ValueError("No slide evidence found; use public images/PDF or request source files")
     pages = []
@@ -147,7 +169,7 @@ def parse_deck(html, url):
         "published": metadata.get("datePublished", ""),
         "retrieved_at": datetime.now(timezone.utc).isoformat(),
         "page_count": count,
-        "count_basis": "hasPart" if indexed else "transcript_blocks",
+        "count_basis": count_basis,
         "pdf_url": metadata.get("associatedMedia", {}).get("contentUrl"),
         "pages": pages,
     }
