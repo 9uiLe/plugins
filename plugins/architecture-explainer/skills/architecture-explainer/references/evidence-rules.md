@@ -8,11 +8,11 @@ Observed / Inferred / Unknown は Claim の分類である。Data、State transi
 
 | Status | 条件 | HTML での表示 |
 | --- | --- | --- |
-| Observed | コード・テスト・設定・設計資料・commit から直接確認できる | evidence へのリンク（code ref）を付ける。badge は任意 |
-| Inferred | Observed から合理的に導ける。推論の元にした Observed を示せる | 必ず `inferred` badge を付け、推論の元にした Observed を示す |
-| Unknown | 提供された Source Truth から判断できない | 必ず `unknown` badge を付け、Known unknowns に問いと解消方法を置く |
+| Observed | コード・テスト・設定・設計資料・commit から直接確認できる | evidence のコード（抜粋または code ref）を付ける。ラベルは出さない（`data-evidence="observed"` 属性だけを持つ） |
+| Inferred | Observed から合理的に導ける。推論の元にした Observed を示せる | 必ず「推論」のラベル（破線の枠）を付け、推論の元にした Observed を示す |
+| Unknown | 提供された Source Truth から判断できない | 必ず「不明」のラベル（点線の枠）を付け、Known unknowns に問いと解消方法を置く |
 
-HTML で badge も evidence リンクもない architecture claim は、Review では `unsupported` として扱う。
+HTML で status の属性も evidence のコード・リンクもない architecture claim は、Review では `unsupported` として扱う。確認済みにラベルを出さないのは、すべてのカードに付くとノイズになり、例外（推論・不明）が埋もれるため。
 
 ### Observed の条件
 
@@ -42,13 +42,15 @@ Unknown には `question`、`reason`（なぜ判断できないか）、`how_to_
 ## Evidence の記録
 
 ```json
-{"id": "ev-token-rotate", "kind": "code", "revision": "<commit SHA>", "file": "app/auth/session_store.py", "symbol": "SessionStore.rotate", "line": 41, "note": "古い refresh token を失効させてから新しい token を保存"}
+{"id": "ev-token-rotate", "kind": "code", "revision": "<commit SHA>", "file": "app/auth/session_store.py", "symbol": "SessionStore.rotate", "line": 41, "end_line": 52, "note": "古い refresh token を失効させてから新しい token を保存", "references": ["ref-python-with"]}
 ```
 
 - `file` は対象リポジトリのルートからの相対パスにする。
 - `symbol` は file 内で検索できる識別子にする（class、関数、method、設定キー、テスト名）。`Class.method` のように限定してよい。
 - `line` は分かる場合だけ書く。行番号は変わりやすいため、symbol を主な参照にする。
-- `note` には、その evidence が claim のどこを支えるかを書く。コードの全文は写さない。
+- `end_line` は抜粋の最終行。`line`〜`end_line` を、render 時に `--source-root` からそのまま読んで表示する。範囲は claim が述べている処理の行だけにし、関係のない前後の行やメソッド全体を含めない。1 つの関数が複数の step にまたがる場合は、step ごとに範囲を分けた evidence を作る。
+- `note` には、その evidence が claim のどこを支えるかを書く。抜粋の上に表示される。コードの全文は model に写さない（抜粋は render 時にソースから読む）。
+- `references` には、その抜粋を読むのに必要な言語機能・ライブラリ・プロトコルの公式ドキュメント（model の `references` の ID）を指定する。
 - 変更の説明では commit を evidence にできる（`kind: "commit"`、`symbol` に short SHA）。
 - `revision` は変更前後の根拠を区別できる版（commit SHA、旧実装の資料名など）にする。Before / After では `source.base_revision` / `source.revision` と対応させる。git diff は `kind: "diff"` とし、`note` に比較した base / head を記録する。両側の claim に使う場合は、同じ diff を指す旧側・新側の evidence 行を分ける。旧実装をユーザーが提供した場合は `kind: "doc"` でその資料名を記録してよい。
 
@@ -62,18 +64,19 @@ Unknown には `question`、`reason`（なぜ判断できないか）、`how_to_
 
 ```html
 <p>access token の期限切れ時は、同時に来た要求の refresh を 1 回にまとめる。
-  <a class="code-ref" href="#ev-single-flight"
+  <a class="code-ref" href="#code-ev-single-flight"
      data-file="app/client/token_manager.py" data-symbol="TokenManager._refresh_once">token_manager.py · _refresh_once</a></p>
 ```
 
 - `data-file` と `data-symbol` は `architecture-explainer validate --source-root` の検査対象になる。file が存在し、symbol が file 内に現れることを確認する。
-- code ref の `href` は、Code Map または evidence 一覧の該当行（`id`）を指す。リポジトリの Web URL が分かっている場合は、そこから外部リンクを追加してよい。
-- 推論・不明の表示は次の markup にする。
+- code ref の `href` は、そのコードの抜粋（`id="code-<evidence-id>"`）を指す。リポジトリの Web URL が分かっている場合は、そこから外部リンクを追加してよい。
+- renderer は根拠を折りたたまず、claim の隣にコードの抜粋（見出しは `a.code-ref`）として表示する。同じ evidence は文書で 1 回だけ抜粋し、2 回目以降は、同じ抜粋をウィンドウに表示する「同じコード」のボタンにする。抜粋の表示規則は [visual-grammar.md](visual-grammar.md) の「コードの抜粋」が正本。
+- `annotations`（`{from, to, text}` の配列）は、抜粋のどの行が claim のどの部分を裏づけるかを書く。範囲は `line`〜`end_line` の内側に置き、文は該当行から読み取れる事実だけにする。原文コメントを根拠にする場合は「（原文コメント）」と添える。
+- 推論・不明の表示は次の markup にする（確認済みはラベルを出さない）。
 
 ```html
-<span class="badge" data-evidence="inferred">推論</span>
-<span class="badge" data-evidence="unknown">不明</span>
-<span class="badge" data-evidence="observed">確認済み</span>
+<span class="status" data-evidence="inferred"><i aria-hidden="true"></i>推論</span>
+<span class="status" data-evidence="unknown"><i aria-hidden="true"></i>不明</span>
 ```
 
 `data-evidence` の値は `observed` / `inferred` / `unknown` の 3 つだけを使う。色だけで区別せず、文字ラベルを必ず含める（[visual-grammar.md](visual-grammar.md)）。
@@ -90,3 +93,13 @@ Unknown には `question`、`reason`（なぜ判断できないか）、`how_to_
 | not-checkable | 提供範囲外（外部 system の内部など）で、資料も推論・不明として扱っている | — |
 
 照合結果には、確認した file / symbol を必ず書く。「コードと一致しない」とだけ書かない。
+
+## 公式ドキュメントへのリンク
+
+コードを読む読者がプログラミング言語やライブラリに詳しくない場合に備え、model の `references` に前提知識と公式ドキュメントを記録できる。
+
+- リンク先は、言語・ライブラリ・プロトコル・ツールの提供元が公開する公式ドキュメントだけにする（例: typescriptlang.org、nodejs.org、sqlite.org、git-scm.com、各ライブラリの公式サイト）。ブログ、Q&A サイト、解説記事、AI による要約は使わない。
+- URL は https に限る。資料を作るときに実際にページを開き、`note` に書く節の名前や API 名がページに存在することを確かめる。確かめられないアンカー（`#…`）は付けず、節の名前を `note` に書く。ネットワークがなく確かめられない場合は、リンクを作らない。
+- ページの本文は写さない。`note` には、そのページのどこを読むと何が分かるかを 1 文で書く。
+- 公式ドキュメントは Source Truth ではない。claim の `evidence` には使わず、抜粋を読むための補助として evidence の `references` と `references` view からだけ参照する。
+

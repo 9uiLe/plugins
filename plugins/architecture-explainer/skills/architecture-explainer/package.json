@@ -13,9 +13,10 @@
     "verify": "bash scripts/verify.sh"
   },
   "dependencies": {
-    "@dagrejs/dagre": "3.1.1",
     "ajv": "^8.17.1",
     "clsx": "^2.1.1",
+    "elkjs": "0.12.0",
+    "highlight.js": "11.12.0",
     "parse5": "^8.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -23,7 +24,7 @@
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.0",
-    "@types/bun": "latest",
+    "@types/bun": "1.4.2",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "tailwindcss": "^4.1.0",

@@ -29,7 +29,7 @@ Skill の振る舞い（説明の正確さ、Unknown の扱い、Review の指�
 
 2. 各 Case を、Skill を読み込んだ agent に実行させる。作業ディレクトリは `$RUN/case-<x>`。Case C は review を `$RUN/case-c/review.md` にも保存させる。
 3. `bun plugins/architecture-explainer/tests/eval/check-outputs.ts "$RUN"` で機械的な確認をする。Create の `index.html` は同じディレクトリの `explanation-model.json`、Improve の `architecture.improved.html` は `architecture.explanation-model.json` と組にして検査する。対応する model がない場合は `missing-model` と報告する。
-4. 生成 HTML ごとに `bun plugins/architecture-explainer/tests/eval/visual-check.ts <html> "$RUN/shots" 390 500 1024 1280` を実行する。横方向の overflow がないこと、`identifierWrap` で Code Map の識別子が区切り文字以外で折れていない（`nonSemanticBreaks`、`orphanLines` が 0）ことを確かめ、screenshot を読む。
+4. 生成 HTML ごとに `bun plugins/architecture-explainer/tests/eval/visual-check.ts <html> "$RUN/shots" 390 500 1024 1280` を実行する。横方向の overflow がないこと、`identifierWrap` で Code Map の識別子が区切り文字以外で折れていない（`nonSemanticBreaks`、`orphanLines` が 0）こと、`peek` が空である（「同じコード」のウィンドウがクリック位置のすぐ下か上に開き、押したボタンを覆わず、画面内に収まり、ドラッグと矢印キーで動く）ことを確かめ、screenshot を読む。exit code は overflow か `peek` の問題があると 1 になる。
 5. 下表の観点を、生成物を読んで確認する。`check-outputs.ts` の `fabrication_contexts` は、欠陥 HTML にしかない語が訂正・Unknown 以外の文脈で使われていないかを人が読むための抜粋である。
 
 ## Cases

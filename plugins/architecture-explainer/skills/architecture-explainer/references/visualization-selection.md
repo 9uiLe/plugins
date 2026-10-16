@@ -27,15 +27,16 @@ audience が指定されていなければ、依頼文の語（「新規参加�
 | これは何か | Overview | purpose, subject | 2〜3 行の説明 + 小さな HTML card 図 |
 | 誰・何と接続しているか | System Context | context.actors, external_systems, boundaries | `.map` と `.boundary`、または SVG。対象 system と外部を分け、境界を明示 |
 | 何が何を担当しているか | Component / Responsibility Map | components（同一 level）, depends_on | SVG または `.map` の格子。box に責務、矢印に意味 |
-| 実行時にどう動くか | Sequence / Runtime Flow | runtime_scenarios | `.seq` の lifeline 表または `.flow` の番号付き step。例外経路を分岐で示す |
-| 状態がどう変化するか | State Machine | states | `.states` の遷移表。event、guard、遷移先を表示 |
+| 実行時にどう動くか | Sequence / Runtime Flow | runtime_scenarios | 縦線（番号付き step と、例外経路の菱形の分岐・終点）。各行の隣にコード |
+| 状態がどう変化するか | State Machine | states | 状態と操作の全体像と、遷移ごとの縦線。操作は `action`（読者の言葉）、状態名は glossary の読者向けの名前で表示し、コード上の名前を添える |
 | データがどう流れるか | Data Flow | data | SVG。data store と、データ名つきの流れ |
 | なぜこの設計なのか | Decision / Trade-off View | decisions, unknowns | `.decision` カード。context / decision / rationale / trade-off / 根拠 |
 | コードのどこに存在するか | Code Map | components.code_locations, evidence | `.codemap` の表。component → file → symbol → 関連 claim |
 | 変更すると何に影響するか | Change Impact Map | change_impacts, invariants | `.impact` の木。affected / unaffected / requires verification を文字と線種で区別 |
 | 実装変更で振る舞いがどう変わったか | Before / After | change_impacts, runtime_scenarios, invariants, evidence | 変更前 → 変更後 → 変わらないこと → 確認が必要なこと。該当項目だけ表示 |
 | どこへ配置されるか | Deployment View | boundaries（process / node） | SVG。node と process の境界 |
-| アルゴリズムの内部を知りたい | Annotated Code / Step View | runtime_scenarios.steps, invariants | 抜粋コード + 番号付き注釈 |
+| アルゴリズムの内部を知りたい、コードから理解したい | Annotated Code（`annotated_code`） | runtime_scenarios.steps と各 step の evidence | 全体像のない縦線で、番号付き step ごとに説明とコードの抜粋を並べる |
+| 前提となる言語・ライブラリの知識が足りない | References（`references`） | references | 前提知識、公式ドキュメント、読む箇所の表 |
 
 同じ問いに複数の view が候補になる場合は、要素間の空間的な関係が理解の中心なら SVG、順序や対応表が中心なら HTML の表・リストを選ぶ。HTML の表・リストは折り返しと検索に強く、SVG より壊れにくい。
 
