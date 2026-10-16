@@ -32,6 +32,7 @@ class FetchDeckTests(unittest.TestCase):
     def test_order_full_text_and_empty_image_page(self):
         deck = fetch.parse_deck(fixture(), URL)
         self.assertEqual(deck['page_count'], 2)
+        self.assertEqual(deck['count_basis'], 'hasPart')
         self.assertEqual(deck['pages'][0]['text'], 'First & full text')
         self.assertEqual(deck['pages'][1]['text'], '')
         self.assertEqual(deck['pages'][1]['image_url'], 'https://files.speakerdeck.com/b.jpg')
@@ -57,9 +58,75 @@ class FetchDeckTests(unittest.TestCase):
         self.assertEqual(fetch.parse_deck(html, URL)['pages'][0]['text'], 'None')
 
     def test_incomplete_or_disagreeing_evidence_rejected(self):
-        for parts in [[{'position': 2}], [{'position': 1}], [{'position': 1}, {'position': 1}]]:
+        for parts in [[{'position': 2}], [{'position': 1}, {'position': 3}],
+                      [{'position': 1}, {'position': 1}]]:
             with self.subTest(parts=parts), self.assertRaises(ValueError):
                 fetch.parse_deck(fixture(parts), URL)
+
+    def test_sparse_parts_keep_blank_pages_order_images_and_markdown(self):
+        for blank_pages in [{1}, {2}, {3}, {1, 2, 3}]:
+            with self.subTest(blank_pages=blank_pages):
+                parts = [{'position': n, 'text': f'Structured {n}'}
+                         for n in range(1, 4) if n not in blank_pages]
+                # Structured entries need not arrive in page order.
+                html = ('<script type="application/ld+json">' +
+                        json.dumps({'hasPart': list(reversed(parts))}) + '</script>')
+                for n in range(1, 4):
+                    text = 'None' if n in blank_pages else f'Transcript {n}'
+                    style = ' class="text-muted font-italic"' if n in blank_pages else ''
+                    html += (f'<div class="slide-transcript"><a{style} '
+                             f'href="https://files.speakerdeck.com/{n}.jpg">{text}</a></div>')
+                with tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    source = root / 'input.html'
+                    source.write_text(html, encoding='utf-8')
+                    with patch.object(sys, 'argv', [str(SCRIPT), URL, '--html-file',
+                                                  str(source), '--out', str(root)]), \
+                            patch.object(fetch, 'fetch') as request, redirect_stdout(io.StringIO()):
+                        self.assertEqual(fetch.main(), 0)
+                    request.assert_not_called()
+                    deck = json.loads((root / 'deck.json').read_text(encoding='utf-8'))
+                    self.assertEqual(deck['page_count'], 3)
+                    self.assertEqual(deck['count_basis'], 'transcript_blocks')
+                    expected = [f'# {deck["title"]}', f'Source: {URL}',
+                                'Raw extraction for reading; downloaded does not mean visually reviewed.']
+                    for n, page in enumerate(deck['pages'], 1):
+                        text = '' if n in blank_pages else f'Structured {n}'
+                        self.assertEqual(page['page'], n)
+                        self.assertEqual(page['text'], text)
+                        self.assertEqual(page['url'], URL + f'?slide={n}')
+                        self.assertEqual(page['image_url'], f'https://files.speakerdeck.com/{n}.jpg')
+                        expected.extend([f'\n## Page {n}', URL + f'?slide={n}', text or '[No text]'])
+                    self.assertEqual((root / 'transcript.md').read_text(encoding='utf-8'),
+                                     '\n\n'.join(expected) + '\n')
+
+    def test_sparse_parts_require_blank_transcript_evidence(self):
+        for parts in [[{'position': 1}, {'position': 3}], [{'position': 2}],
+                      [{'position': 1}, {'position': 1}]]:
+            with self.subTest(parts=parts), self.assertRaises(ValueError):
+                fetch.parse_deck(fixture(parts), URL)
+        for parts in [[{'position': 2}], [{'position': 1}, {'position': 3}]]:
+            html = '<script type="application/ld+json">' + json.dumps({'hasPart': parts}) + '</script>'
+            with self.subTest(no_transcript=parts), self.assertRaises(ValueError):
+                fetch.parse_deck(html, URL)
+
+    def test_missing_part_with_literal_none_is_not_blank(self):
+        html = fixture([{'position': 1}]).replace(
+            'href="https://files.speakerdeck.com/b.jpg"></a>',
+            'href="https://files.speakerdeck.com/b.jpg">None</a>')
+        with self.assertRaisesRegex(ValueError, 'Source page positions are incomplete'):
+            fetch.parse_deck(html, URL)
+
+    def test_missing_part_with_unmarked_empty_transcript_is_rejected(self):
+        parts = [{'position': 1, 'text': 'First'}, {'position': 3, 'text': 'Third'}]
+        html = ('<script type="application/ld+json">' +
+                json.dumps({'hasPart': parts}) + '</script>')
+        for number, text in [(1, 'First'), (2, ''), (3, 'Third')]:
+            html += (f'<div class="slide-transcript"><a '
+                     f'href="https://files.speakerdeck.com/{number}.jpg">'
+                     f'{text}</a></div>')
+        with self.assertRaisesRegex(ValueError, 'Source page positions are incomplete'):
+            fetch.parse_deck(html, URL)
 
     def test_description_only_is_not_a_deck(self):
         with self.assertRaises(ValueError):
