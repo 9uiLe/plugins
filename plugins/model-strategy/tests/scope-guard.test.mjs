@@ -72,6 +72,37 @@ test("decideScopeGuard: glob 変換 — ** はパス区切りをまたぎ、* �
   assert.ok(decision, "* は '/' をまたがないため深い階層は範囲外");
 });
 
+test("decideScopeGuard: **/ は 0 階層以上のディレクトリに一致し、ファイル名の接頭辞を消費しない", async (t) => {
+  const cases = [
+    ["src/**/allowed.ts", "src/allowed.ts", false],
+    ["src/**/allowed.ts", "src/nested/allowed.ts", false],
+    ["src/**/allowed.ts", "src/a/b/allowed.ts", false],
+    ["src/**/allowed.ts", "src/notallowed.ts", true],
+    ["src/**/allowed.ts", "src/nested/notallowed.ts", true],
+    ["src/**/allowed.ts", "src/allowed.ts.bak", true],
+    ["src/**/allowed.ts", "other/allowed.ts", true],
+    ["**/allowed.ts", "allowed.ts", false],
+    ["**/allowed.ts", "nested/allowed.ts", false],
+    ["**/allowed.ts", "notallowed.ts", true],
+    ["src/**", "src/nested/notallowed.ts", false],
+    ["src/*.ts", "src/nested/allowed.ts", true]
+  ];
+  for (const [glob, filePath, shouldWarn] of cases) {
+    for (const absolute of [false, true]) {
+      const inputPath = absolute ? path.resolve(filePath) : filePath;
+      await t.test(`${glob}: ${inputPath}`, (subtest) => {
+        const dataDir = tmpDataDir();
+        subtest.after(() => fs.rmSync(dataDir, { recursive: true, force: true }));
+        writeBaseline(dataDir, "s1", { manifestId: "m1", globs: [glob], contractHash: "h1" });
+        const env = { ...CONDUCTOR_ENV_BASE, CLAUDE_PLUGIN_DATA: dataDir };
+        const decision = decideScopeGuard(editInput(inputPath), env);
+        assert.equal(decision !== null, shouldWarn);
+        if (shouldWarn) assert.match(decision.message, /SCOPE_EXPANSION/);
+      });
+    }
+  }
+});
+
 test("decideScopeGuard: 重複抑制 — 同一 (session, file_path) の 2 回目以降は warn しない", () => {
   const dataDir = tmpDataDir();
   writeBaseline(dataDir, "s1", { manifestId: "m1", globs: ["plugins/model-strategy/**"], contractHash: "h1" });

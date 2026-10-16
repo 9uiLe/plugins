@@ -39,9 +39,13 @@ function globToRegExp(glob) {
     const c = glob[i];
     if (c === "*") {
       if (glob[i + 1] === "*") {
-        pattern += ".*";
         i += 1;
-        if (glob[i + 1] === "/") i += 1; // '**/' は 0 階層にもマッチさせる
+        if (glob[i + 1] === "/") {
+          pattern += "(?:.*/)?";
+          i += 1;
+        } else {
+          pattern += ".*";
+        }
       } else {
         pattern += "[^/]*";
       }
