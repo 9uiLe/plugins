@@ -7,7 +7,7 @@
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Marketplace-8A6FE8)](https://claude.com/claude-code)
 [![Codex](https://img.shields.io/badge/Codex-Plugin-111827)](https://openai.com/codex)
 
-Claude Code / Codex で使う、AI エージェントの利用量管理、スライドからの実務知識抽出、コードとアーキテクチャの説明資料作成、変更しやすいコードの設計・レビューのためのプラグイン集です。Marketplace 名は `9uile-plugins` です。必要なプラグインを個別にインストールできます。
+Claude Code / Codex で使う、AI エージェントの利用量管理、スライドからの実務知識抽出、コードとアーキテクチャの説明資料作成、変更しやすいコードの設計・レビュー、日本語UI文言の作成・見直しのためのプラグイン集です。Marketplace 名は `9uile-plugins` です。必要なプラグインを個別にインストールできます。
 
 ## プラグインを選ぶ
 
@@ -17,6 +17,7 @@ Claude Code / Codex で使う、AI エージェントの利用量管理、スラ
 | [speakerdeck-knowledge](./plugins/speakerdeck-knowledge/README.md) | SpeakerDeck から実務知識を抽出し、AI 向け Markdown とチーム共有用の図解 HTML を作成 | `speakerdeck-knowledge` |
 | [architecture-explainer](./plugins/architecture-explainer/README.md) | コードとアーキテクチャを、根拠つきで目的・構成・実行時の動き・コード・設計理由・変更影響を辿れる HTML 説明資料にし、既存資料の評価・改善も行う | `architecture-explainer` |
 | [engineering-principles](./plugins/engineering-principles/README.md) | Test で仕様（What）、コードで実現方法（How）、Documentation で文脈（Context）を表し、状態設計・Test の責務・責務分離・結合・API と component 境界・Code と Documentation の整合を確認して、仕様変更を局所的にする実装・レビュー・改善 | `maintainable-code` |
+| [japanese-ui-copy](./plugins/japanese-ui-copy/README.md) | HTML・アプリ・可視化の日本語UI文言を、操作・状態・意味の保持・用語・表示と支援技術向け文言の観点で作成・見直し | `japanese-ui-copy` |
 
 スキルは、AI エージェントが依頼に応じて読み込む手順書です。`model-effort-guide` は、モデル選択・利用量・委譲方針を明示的に相談するときに使います。
 
@@ -52,6 +53,7 @@ codex plugin add <plugin-name>@9uile-plugins
 | スライドから知識を抽出 | 「この SpeakerDeck URL から実装に使える知識と、共有用の図解 HTML を作成して」 |
 | アーキテクチャの説明資料 | 「この Repository の認証アーキテクチャを、新規参加者向けに HTML で説明して」 |
 | 変更しやすさの観点でレビュー | 「maintainable-code の観点でこの変更をレビューして」 |
+| 日本語UI文言の作成・見直し | 「japanese-ui-copy を使い、この画面の文言を操作・状態・意味の保持・用語・アクセシビリティの観点で見直して」 |
 
 出力内容、必要なツール、任意機能の設定は各プラグインの README を参照してください。
 

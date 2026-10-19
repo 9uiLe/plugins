@@ -64,6 +64,20 @@
         "code-review",
         "refactoring"
       ]
+    },
+    {
+      "name": "japanese-ui-copy",
+      "source": "./plugins/japanese-ui-copy",
+      "description": "Create and review Japanese UI copy with clear actions, consistent terminology, preserved meaning, accessible names, and screen verification.",
+      "version": "0.1.0",
+      "category": "development",
+      "tags": [
+        "japanese",
+        "ui-copy",
+        "ux-writing",
+        "localization",
+        "accessibility"
+      ]
     }
   ]
 }

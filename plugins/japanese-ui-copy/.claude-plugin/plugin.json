@@ -1,0 +1,19 @@
+{
+  "name": "japanese-ui-copy",
+  "version": "0.1.0",
+  "description": "Create and review Japanese UI copy with clear actions, consistent terminology, preserved meaning, accessible names, and screen verification.",
+  "author": {
+    "name": "9uiLe",
+    "url": "https://github.com/9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins/tree/master/plugins/japanese-ui-copy",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": [
+    "japanese",
+    "ui-copy",
+    "ux-writing",
+    "localization",
+    "accessibility"
+  ]
+}

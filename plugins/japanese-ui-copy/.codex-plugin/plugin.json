@@ -1,0 +1,34 @@
+{
+  "name": "japanese-ui-copy",
+  "version": "0.1.0",
+  "description": "Create and review Japanese UI copy with clear actions, consistent terminology, preserved meaning, accessible names, and screen verification.",
+  "author": {
+    "name": "9uiLe",
+    "url": "https://github.com/9uiLe"
+  },
+  "homepage": "https://github.com/9uiLe/plugins/tree/master/plugins/japanese-ui-copy",
+  "repository": "https://github.com/9uiLe/plugins",
+  "license": "MIT",
+  "keywords": [
+    "japanese",
+    "ui-copy",
+    "ux-writing",
+    "localization",
+    "accessibility"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "日本語UI文言",
+    "shortDescription": "操作・状態が分かる日本語UI文言を作成・見直し",
+    "longDescription": "HTML・アプリ・可視化の日本語UI文言を、用語・意味・表示と支援技術向けの文言を揃えて作成・見直し、確認した範囲と未確認事項を報告します。",
+    "developerName": "9uiLe",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "この画面の日本語UI文言を、操作・状態・意味の保持・用語・アクセシビリティの観点で見直してください。"
+    ]
+  }
+}

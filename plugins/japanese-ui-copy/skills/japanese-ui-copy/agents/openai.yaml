@@ -1,0 +1,4 @@
+interface:
+  display_name: "日本語UI文言"
+  short_description: "日本語UIの操作・状態を分かりやすく表し、意味と用語の一貫性を保つ"
+  default_prompt: "$japanese-ui-copy を使い、この画面の日本語UI文言を操作・状態・意味の保持・用語・アクセシビリティの観点で見直してください。"
