@@ -7,6 +7,7 @@ export function walk(node:HtmlNode,visit:(node:HtmlNode)=>void):void { visit(nod
 export function attr(node:HtmlNode,name:string):string { return node.attrs?.find(item=>item.name===name)?.value||"" }
 export function hasAttr(node:HtmlNode,name:string):boolean { return !!node.attrs?.some(item=>item.name===name) }
 export function line(node:HtmlNode):number|undefined { return node.sourceCodeLocation?.startLine }
+export function proseText(node:HtmlNode):string { return node.tagName==="pre"||node.tagName==="details"||hasClass(node,"code-block")||hasClass(node,"code-head")?"":node.value||node.childNodes?.map(proseText).join("")||"" }
 export function textContent(node:HtmlNode):string { return node.value||node.childNodes?.map(textContent).join("")||"" }
 export function descendants(node:HtmlNode,tag:string):HtmlNode[] { const found:HtmlNode[]=[];walk(node,n=>{if(n.tagName===tag)found.push(n)});return found }
 export function ancestors(node:HtmlNode):HtmlNode[] {const result:HtmlNode[]=[];let p=node.parentNode;while(p){result.push(p);p=p.parentNode}return result}
@@ -31,11 +32,12 @@ export function checkHtml(html:string,findings:Findings):HtmlFacts {
   const root=parseHtml(html),nodes:HtmlNode[]=[],ids=new Map<string,number[]>(),anchors:{id:string;line?:number}[]=[],aria:{id:string;name:string;line?:number}[]=[]
   const figures:HtmlNode[]=[],codeRefs:HtmlNode[]=[],concepts:HtmlNode[]=[],prose:HtmlNode[]=[],responsibilities:HtmlNode[]=[],arrowLabels:{value:string;line?:number}[]=[],headings:{level:number;line?:number}[]=[]
   const evidenceMarkers:Record<string,number>={observed:0,inferred:0,unknown:0}
-  const backedMarkers:{ids:string[];line?:number}[]=[]
+  const backedMarkers:{ids:string[];line?:number}[]=[],evidenceRefs=new Set<string>()
   walk(root,node=>{
     const tag=node.tagName;if(!tag)return;nodes.push(node)
     const id=attr(node,"id");if(id)ids.set(id,[...(ids.get(id)||[]),line(node)||0])
     const href=attr(node,"href");if(href.startsWith("#")&&href.length>1)anchors.push({id:href.slice(1),line:line(node)})
+    const popover=attr(node,"popovertarget");if(popover)anchors.push({id:popover,line:line(node)})
     for(const name of ["aria-labelledby","aria-describedby"])for(const target of attr(node,name).split(/\s+/).filter(Boolean))aria.push({id:target,name,line:line(node)})
     if(tag==="figure")figures.push(node)
     if(tag==="h1"||/^h[2-6]$/.test(tag))headings.push({level:Number(tag[1]),line:line(node)})
@@ -44,6 +46,7 @@ export function checkHtml(html:string,findings:Findings):HtmlFacts {
     if(tag==="svg"&&ancestors(node).some(n=>n.tagName==="figure")&&!hasAttr(node,"width"))findings.warnings.push({code:"svg-width",message:"SVG in figure needs a width for mobile scrolling",line:line(node)})
     if(tag==="table"&&!ancestors(node).some(n=>n.tagName==="figure"||hasClass(n,"table-wrap")))findings.warnings.push({code:"table-scroll",message:"table may overflow on narrow screens",line:line(node)})
     if(hasAttr(node,"data-file"))codeRefs.push(node)
+    if(hasAttr(node,"data-evidence-ref"))evidenceRefs.add(attr(node,"data-evidence-ref"))
     if(hasAttr(node,"data-concept"))concepts.push(node)
     if(hasAttr(node,"data-responsibility"))responsibilities.push(node)
     if((tag==="p"||tag==="li")&&ancestors(node).some(n=>n.tagName==="main"))prose.push(node)
@@ -76,7 +79,7 @@ export function checkHtml(html:string,findings:Findings):HtmlFacts {
   for(const [id,lines] of ids)if(lines.length>1)findings.errors.push({code:"duplicate-id",message:`id ${id} appears ${lines.length} times`,line:lines[1]})
   for(const ref of anchors)if(!ids.has(ref.id))findings.errors.push({code:"broken-anchor",message:`#${ref.id} does not exist`,line:ref.line})
   for(const ref of aria)if(!ids.has(ref.id))findings.errors.push({code:"broken-aria-ref",message:`${ref.name} ${ref.id} does not exist`,line:ref.line})
-  for(const marker of backedMarkers)for(const ref of marker.ids)if(!ids.has(`source-${ref}`))findings.errors.push({code:"evidence-backed-ref",message:`evidence-backed marker references missing ${ref}`,line:marker.line})
+  for(const marker of backedMarkers)for(const ref of marker.ids)if(!ids.has(`code-${ref}`)&&!evidenceRefs.has(ref))findings.errors.push({code:"evidence-backed-ref",message:`evidence-backed marker references missing ${ref}`,line:marker.line})
   for(const figure of figures){const q=attr(figure,"data-question");if(!q.trim())findings.errors.push({code:"figure-question",message:"figure needs reader question",line:line(figure)});if(!descendants(figure,"figcaption").length)findings.errors.push({code:"figure-caption",message:"figure needs caption",line:line(figure)});const count=nodes.filter(n=>hasClass(n,"node")&&ancestors(n).includes(figure)).length;if(count>9)findings.warnings.push({code:"figure-density",message:`figure has ${count} nodes`,line:line(figure)})}
   if(figures.filter(f=>ancestors(f).some(n=>attr(n,"id")==="what"||hasClass(n,"first-view"))).length>1)findings.warnings.push({code:"first-view-figures",message:"first view has more than one figure"})
   for(const table of nodes.filter(n=>n.tagName==="table"&&hasClass(n,"codemap"))){if(descendants(table,"td").some(n=>!attr(n,"data-label")))findings.warnings.push({code:"codemap-label",message:"code map cell needs data-label",line:line(table)});if(!nodes.some(n=>ancestors(n).includes(table)&&hasClass(n,"src-file")))findings.warnings.push({code:"codemap-source",message:"code map has no file column",line:line(table)});if(nodes.some(n=>ancestors(n).includes(table)&&(hasClass(n,"src-file")&&missingBreak(n,"file")||hasClass(n,"src-symbol")&&missingBreak(n,"symbol"))))findings.warnings.push({code:"codemap-break",message:"code map identifier needs wrap opportunities",line:line(table)})}

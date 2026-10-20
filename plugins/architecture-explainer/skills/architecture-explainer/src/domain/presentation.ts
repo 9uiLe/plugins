@@ -1,11 +1,13 @@
 import type { ExplanationModel, ModelKind } from "./explanation-model"
 import { sourceIndex } from "./explanation-model"
 
-type BaseSection<T extends string> = { id: string; type: T; question: string; sources: string[]; density?: "comfortable" | "compact"; emphasis?: "normal" | "strong" }
+type BaseSection<T extends string> = { id: string; type: T; question: string; sources: string[]; density?: "comfortable" | "compact"; emphasis?: "normal" | "strong"; finding?: string; steps?: { first: number; last: number } }
 export type OverviewSection = BaseSection<"overview">
 export type ContextSection = BaseSection<"system_context">
 export type ComponentMapSection = BaseSection<"component_map">
 export type SequenceSection = BaseSection<"sequence" | "runtime_flow">
+export type AnnotatedCodeSection = BaseSection<"annotated_code">
+export type ReferencesSection = BaseSection<"references">
 export type StateSection = BaseSection<"state_transition">
 export type DataFlowSection = BaseSection<"data_flow">
 export type DecisionSection = BaseSection<"decision">
@@ -14,15 +16,15 @@ export type ChangeImpactSection = BaseSection<"change_impact">
 export type CodeMapSection = BaseSection<"code_map">
 export type UnknownsSection = BaseSection<"known_unknowns">
 export type CalloutSection = BaseSection<"callout" | "takeaway">
-export type PresentationSection = OverviewSection | ContextSection | ComponentMapSection | SequenceSection | StateSection | DataFlowSection | DecisionSection | BeforeAfterSection | ChangeImpactSection | CodeMapSection | UnknownsSection | CalloutSection
+export type PresentationSection = OverviewSection | ContextSection | ComponentMapSection | SequenceSection | AnnotatedCodeSection | ReferencesSection | StateSection | DataFlowSection | DecisionSection | BeforeAfterSection | ChangeImpactSection | CodeMapSection | UnknownsSection | CalloutSection
 export type Presentation = { version?: 1; title?: string; template: "doc"; theme: "technical" | "cards"; sections: PresentationSection[] }
 
 const allowed: Record<ModelKind, Set<PresentationSection["type"]>> = {
   purpose: new Set(["overview", "callout", "takeaway"]), actor: new Set(["overview", "system_context"]), external: new Set(["overview", "system_context"]),
-  component: new Set(["overview", "component_map", "code_map", "callout", "takeaway"]), scenario: new Set(["overview", "sequence", "runtime_flow"]),
+  component: new Set(["overview", "component_map", "code_map", "callout", "takeaway"]), scenario: new Set(["overview", "sequence", "runtime_flow", "annotated_code"]),
   state: new Set(["state_transition"]), data: new Set(["data_flow"]), decision: new Set(["decision", "callout", "takeaway"]),
   invariant: new Set(["change_impact", "callout", "takeaway"]), change: new Set(["overview", "before_after", "change_impact", "callout", "takeaway"]),
-  unknown: new Set(["known_unknowns", "callout", "takeaway"]), evidence: new Set(["code_map"])
+  unknown: new Set(["known_unknowns", "callout", "takeaway"]), evidence: new Set(["code_map"]), finding: new Set(), reference: new Set(["references"])
 }
 export function checkPresentation(p: Presentation, model: ExplanationModel): void {
   const index = sourceIndex(model), seen = new Set<string>()
@@ -36,7 +38,13 @@ export function checkPresentation(p: Presentation, model: ExplanationModel): voi
       if (!source) throw new Error(`unknown model ID: ${id}`)
       if (!allowed[source.kind].has(section.type)) throw new Error(`${id} cannot be used in ${section.type}`)
     }
-    if ((section.type === "sequence" || section.type === "runtime_flow") && section.sources.length !== 1) throw new Error(`${section.type} needs one scenario`)
+    if ((section.type === "sequence" || section.type === "runtime_flow" || section.type === "annotated_code") && section.sources.length !== 1) throw new Error(`${section.type} needs one scenario`)
+    if (section.finding !== undefined && index.get(section.finding)?.kind !== "finding") throw new Error(`${section.id} finding ${section.finding} is not a model finding`)
+    if (section.steps !== undefined) {
+      if (section.type !== "sequence" && section.type !== "runtime_flow" && section.type !== "annotated_code") throw new Error(`${section.id} selects steps but is not a sequence, runtime flow, or annotated code`)
+      const count = (index.get(section.sources[0])!.value as {steps:unknown[]}).steps.length, { first, last } = section.steps
+      if (first < 1 || first > last || last > count) throw new Error(`${section.id} steps ${first}..${last} are outside 1..${count}`)
+    }
     if (section.type === "component_map") {
       const levels = new Set(section.sources.map(id => (index.get(id)!.value as {level:string}).level))
       if (levels.size !== 1) throw new Error("component map mixes abstraction levels")

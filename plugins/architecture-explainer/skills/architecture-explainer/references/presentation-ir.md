@@ -33,6 +33,8 @@ Source Truth → Evidence → Explanation Model → Reader Questions → Explana
 - `question`: figure の `data-question` と caption、section heading の原文。
 - `type`: 下表の値。TypeScript では discriminated union であり、`sources` が指す model 要素との適合も renderer が検査する。
 - `sources`: Explanation Model の安定した ID の配列。`purpose` だけは固定 ID。`code_map` では evidence ID を source として選択できる。claim 本文、Evidence の内容、status、表示名を IR に書かない。表示順が必要な場合は配列順を使う。
+- `finding`（任意）: Explanation Model の `findings` の ID。図から分かることを 1 文で、figure の上に status と根拠つきで表示する。claim 本文は model に置き、IR は ID だけを持つ。
+- `steps`（任意、`sequence` / `runtime_flow` / `annotated_code` のみ）: `{"first": 1, "last": 4}` のように scenario の step 範囲（1 始まり、両端を含む）を選ぶ。長い scenario を複数の section に分けて描くときに使う。範囲外や他の type では renderer が拒否する。
 - `density`: 省略時 `comfortable`、任意で `compact`。`emphasis`: 省略時 `normal`、任意で `strong`。CSS 上の高レベル hint で、claim の選択には影響しない。
 
 Presentation IR は Explanation Plan を実行可能にした表示指示であり、audience policy engine ではない。audience から導出した「必要な問い」は Plan で決め、その結果だけを `sections` に記録する。IR に claim 本文、status、Evidence 本文、HTML、CSS、SVG 座標、audience ごとの必須 section 規則を複製しない。
@@ -42,18 +44,20 @@ Presentation IR は Explanation Plan を実行可能にした表示指示であ�
 | `overview` | `purpose`、最大 3 つの actor / external / component、Plan で選んだ scenario / change | first view の lede、HTML card、takeaway |
 | `system_context` | actor、external | 対象 system と接点の SVG graph |
 | `component_map` | 同一 level の component | 責務と意味付き依存の SVG graph |
-| `sequence` | scenario 1 つ | actor → action → target の順序付き HTML |
-| `runtime_flow` | scenario 1 つ | 番号付き HTML step と例外経路 |
-| `state_transition` | state | event、guard、遷移先の表 |
+| `sequence` | scenario 1 つ | 全体像と縦線（開始 → 番号付き step → 例外経路の分岐と終点）。各行に説明とコード。`--source-root` を渡すとコードの抜粋が入る |
+| `runtime_flow` | scenario 1 つ | `sequence` と同じ |
+| `annotated_code` | scenario 1 つ | 全体像のない縦線。`steps` で範囲を選べる。render に `--source-root` が必要 |
+| `references` | reference | 前提知識・公式ドキュメント・読む箇所の表 |
+| `state_transition` | state | 全体像（状態の四角と操作の矢印）と、状態と遷移の縦線（遷移ごとに action、event、guard、コード）、本線から外れる別の出口。終点の状態に名前を付けるには、`transitions` が空の State も `sources` に入れる |
 | `data_flow` | data | 書き手、data、読み手の SVG graph |
-| `decision` | decision | 判断、理由、trade-off と個別の Evidence status |
+| `decision` | decision | 判断ごとのカード。前提 → 判断 → 理由 → 失うもの（→ 代替案）の表と、判断・理由のコード |
 | `before_after` | change | 変更前と変更後を別 claim として表示 |
 | `change_impact` | change、invariant | 影響あり / なし / 要確認と不変条件 |
 | `code_map` | component、evidence | file と symbol の表 |
 | `known_unknowns` | unknown | 問い、判断できない理由、解消方法の表 |
 | `callout` / `takeaway` | purpose、component、decision、invariant、change、unknown の適合要素 | 強調カード |
 
-`system_context` / `component_map` / `data_flow` の node と edge の座標は `@dagrejs/dagre` が計算する。日本語と code identifier の表示幅を `renderer/layout/text.ts` で見積もって折り返し、node 高さと edge label の寸法を Dagre に渡す。狭い画面では SVG の文字を縮小せず figure 内で横スクロールする。最初の小規模 Overview は HTML card を使う。
+`system_context` / `component_map` / `data_flow` の node と edge の座標は `elkjs`（ELK Layered）が計算する。日本語と code identifier の表示幅を `renderer/layout/text.ts` で見積もって折り返し、node と edge label の寸法を ELK に渡す。`sequence` / `runtime_flow` / `annotated_code` / `state_transition` は SVG ではなく、HTML の縦線で描く。図の描き方は [visual-grammar.md](visual-grammar.md) が正本。狭い画面では SVG の文字を縮小せず figure 内で横スクロールする。最初の小規模 Overview は HTML card を使う。
 
 ## 実行
 

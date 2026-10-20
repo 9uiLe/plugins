@@ -19,13 +19,15 @@ try {
     assert.equal(result.status,0,`${args[0]} failed: ${result.stderr}\n${result.stdout}`)
     return result.stdout
   }
-  run(["render","--model","model.json","--presentation","presentation.json","--output","index.html"])
+  run(["render","--model","model.json","--presentation","presentation.json","--output","index.html","--source-root","source"])
   const html=readFileSync(join(temp,"index.html"),"utf8")
   const css=html.match(/<style>([\s\S]+)<\/style>/)?.[1]||""
   assert.ok(css.length>1000,"inline CSS is missing")
   assert.match(css,/\.gap-3\{/)
   assert.match(css,/\.overflow-x-auto\{/)
-  assert.doesNotMatch(html,/<script\b|__NEXT_DATA__|react-dom|<link[^>]+stylesheet/i)
+  assert.doesNotMatch(html,/<script[^>]*\ssrc=|__NEXT_DATA__|react-dom|<link[^>]+stylesheet/i)
+  assert.match(html,/<script>[\s\S]*code-peek-handle[\s\S]*<\/script>/)
+  assert.match(html,/class="code-block" id="code-[^"]+" data-language="python"/)
   const report=JSON.parse(run(["validate","index.html","--model","model.json","--source-root","source"]))
   assert.deepEqual(report.errors,[])
   assert.deepEqual(report.warnings,[])

@@ -19,7 +19,7 @@ const boundaryKinds=["app","module","process","data","external","trust"] as cons
 const evidenceKinds=["code","test","doc","config","commit","diff","issue"] as const satisfies readonly Evidence["kind"][]
 const audiences=["newcomer","implementer","reviewer","architect","debugger"] as const satisfies readonly ExplanationModel["audience"]["profile"][]
 const themes=["technical","cards"] as const satisfies readonly Presentation["theme"][]
-const sectionTypes=["overview","system_context","component_map","sequence","runtime_flow","state_transition","data_flow","decision","before_after","change_impact","code_map","known_unknowns","callout","takeaway"] as const satisfies readonly PresentationSection["type"][]
+const sectionTypes=["overview","system_context","component_map","sequence","runtime_flow","annotated_code","references","state_transition","data_flow","decision","before_after","change_impact","code_map","known_unknowns","callout","takeaway"] as const satisfies readonly PresentationSection["type"][]
 const completeCoverage:[Assert<Equal<Status,typeof statuses[number]>>,Assert<Equal<Component["level"],typeof levels[number]>>,Assert<Equal<BoundaryKind,typeof boundaryKinds[number]>>,Assert<Equal<Evidence["kind"],typeof evidenceKinds[number]>>,Assert<Equal<ExplanationModel["audience"]["profile"],typeof audiences[number]>>,Assert<Equal<Presentation["theme"],typeof themes[number]>>,Assert<Equal<PresentationSection["type"],typeof sectionTypes[number]>>]=[true,true,true,true,true,true,true]
 void completeCoverage
 
@@ -27,7 +27,7 @@ const fixtures=resolve(import.meta.dir,"../../../tests/fixtures/presentation")
 const rawModel=JSON.parse(readFileSync(resolve(fixtures,"auth-model.json"),"utf8"))
 const rawPresentation=JSON.parse(readFileSync(resolve(fixtures,"auth-presentation.json"),"utf8"))
 
-test("schema enum values match complete TypeScript domain unions",()=>{
+test("schema enum values match complete TypeScript domain unions",async()=>{
   expect(modelSchema.definitions.status.enum).toEqual([...statuses])
   expect(modelSchema.properties.components.items.properties.level.enum).toEqual([...levels])
   expect(modelSchema.properties.evidence.items.properties.kind.enum).toEqual([...evidenceKinds])
@@ -36,7 +36,7 @@ test("schema enum values match complete TypeScript domain unions",()=>{
   expect(presentationSchema.properties.theme.enum).toEqual([...themes])
   expect(Object.keys(presentationSchema.definitions).filter(key=>key!=="section")).toEqual([...sectionTypes])
 })
-test("all model object schemas reject accidental properties",()=>{
+test("all model object schemas reject accidental properties",async()=>{
   function walk(value:unknown):void {
     if(!value||typeof value!=="object")return
     if(Array.isArray(value)){for(const item of value)walk(item);return}
@@ -46,15 +46,15 @@ test("all model object schemas reject accidental properties",()=>{
   }
   walk(modelSchema)
 })
-test("representative JSON passes schema, semantic checks, renderer and HTML validator",()=>{
+test("representative JSON passes schema, semantic checks, renderer and HTML validator",async()=>{
   const model=parseModel(rawModel),presentation=parsePresentation(rawPresentation)
   expect(checkModel(model).errors).toEqual([])
   expect(()=>checkPresentation(presentation,model)).not.toThrow()
-  const html=render(model,presentation)
+  const html=await render(model,presentation)
   const sourceRoot=resolve(fixtures,"../auth-service/1-feature")
   expect(validateHtml(html,{model,sourceRoot}).errors).toEqual([])
 })
-test("schema permits declared optional fields",()=>{
+test("schema permits declared optional fields",async()=>{
   const model=structuredClone(rawModel)
   model.source.base_revision="previous"
   model.audience.inferred_from="reader interview"
@@ -67,7 +67,7 @@ test("schema permits declared optional fields",()=>{
   presentation.sections[0].emphasis="strong"
   expect(()=>parsePresentation(presentation)).not.toThrow()
 })
-test("nested typos and status on non-Claim structures are rejected",()=>{
+test("nested typos and status on non-Claim structures are rejected",async()=>{
   const mutations:Record<string,(model:any)=>void>={
     source:model=>{model.source.revison="typo"},
     audience:model=>{model.audience.profiel="reviewer"},
@@ -87,7 +87,7 @@ test("nested typos and status on non-Claim structures are rejected",()=>{
     expect(()=>parseModel(model)).toThrow("schema")
   }
 })
-test("presentation type is the strict section discriminator",()=>{
+test("presentation type is the strict section discriminator",async()=>{
   const section=rawPresentation.sections[0]
   const withSection=(value:unknown)=>({...rawPresentation,sections:[value]})
   expect(()=>parsePresentation(withSection({...section,type:"sequence"}))).not.toThrow()
@@ -97,7 +97,7 @@ test("presentation type is the strict section discriminator",()=>{
   expect(()=>parsePresentation(withSection({...section,type:undefined}))).toThrow("schema")
   expect(()=>parsePresentation(withSection({...section,extra:"typo"}))).toThrow("schema")
 })
-test("required reader-facing labels cannot be empty",()=>{
+test("required reader-facing labels cannot be empty",async()=>{
   const mutate=(change:(model:any)=>void)=>{const model=structuredClone(rawModel);change(model);expect(()=>parseModel(model)).toThrow("schema")}
   mutate(model=>{model.purpose.responsibility=""})
   mutate(model=>{model.context.actors[0].role=""})
@@ -112,7 +112,7 @@ test("required reader-facing labels cannot be empty",()=>{
   model.context.external_systems=[{id:"external",name:"外部",interaction:"",status:"observed",evidence:["ev-client"]}]
   expect(()=>parseModel(model)).toThrow("schema")
 })
-test("whitespace-only reader-facing labels fail semantic checks",()=>{
+test("whitespace-only reader-facing labels fail semantic checks",async()=>{
   const mutations=[
     (model:any)=>{model.purpose.responsibility=" "},
     (model:any)=>{model.context.actors[0].role=" "},

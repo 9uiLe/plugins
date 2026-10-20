@@ -26,7 +26,7 @@ export function checkModel(model: ExplanationModel): Findings {
     if(!value.trim())result.errors.push({code:"model-label",message:`${label} needs text`})
   }
   claim(model.purpose,"purpose")
-  for (const item of [...model.context.actors,...model.context.external_systems,...model.components,...model.invariants]) claim(item,item.id)
+  for (const item of [...model.context.actors,...model.context.external_systems,...model.components,...model.invariants,...(model.findings??[])]) claim(item,item.id)
   for (const item of model.runtime_scenarios) {
     for (const [i, step] of item.steps.entries()) claim(step,`${item.id}.step.${i}`)
     for (const [i, path] of item.exceptional_paths.entries()) claim(path,`${item.id}.exception.${i}`)
@@ -57,6 +57,14 @@ export function checkModel(model: ExplanationModel): Findings {
   for(const item of model.decisions){requireText(`${item.id} decision`,item.decision);requireText(`${item.id} rationale.text`,item.rationale.text)}
   for(const item of model.invariants)requireText(`${item.id} invariant.description`,item.description)
   for(const item of model.unknowns)requireText(`${item.id} unknown.question`,item.question)
+  const references=new Set((model.references??[]).map(item=>item.id))
+  for(const item of model.evidence)for(const ref of item.references??[])if(!references.has(ref))result.errors.push({code:"reference-link",message:`${item.id} points to missing reference ${ref}`})
+  for(const item of model.references??[]){requireText(`${item.id} reference.topic`,item.topic);requireText(`${item.id} reference.note`,item.note)}
+  for(const item of model.evidence)for(const note of item.annotations??[])if(item.line===undefined||note.from>note.to||note.from<item.line||note.to>(item.end_line??item.line))result.errors.push({code:"annotation-range",message:`${item.id} annotation ${note.from}-${note.to} is outside its excerpt`})
+  for(const item of model.evidence)if(item.end_line!==undefined&&(item.line===undefined||item.end_line<item.line))result.errors.push({code:"evidence-range",message:`${item.id} end_line needs a line at or before it`})
+  for(const item of model.findings??[])requireText(`${item.id} finding.statement`,item.statement)
+  for(const item of model.components)if(item.summary!==undefined)requireText(`${item.id} component.summary`,item.summary)
+  for(const item of model.states)for(const transition of item.transitions)if(transition.action!==undefined)requireText(`${item.id} transition.action`,transition.action)
   for(const item of model.data){
     structureEvidence(item.evidence,item.id)
     for(const id of [...item.written_by,...item.read_by])if(index.get(id)?.kind!=="component")result.errors.push({code:"model-endpoint",message:`${item.id} has missing component ${id}`})

@@ -270,6 +270,10 @@
             "type": "string",
             "minLength": 1
           },
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          },
           "depends_on": {
             "type": "array",
             "items": {
@@ -436,6 +440,9 @@
               ],
               "properties": {
                 "event": {
+                  "type": "string"
+                },
+                "action": {
                   "type": "string"
                 },
                 "guard": {
@@ -761,8 +768,106 @@
             "type": "integer",
             "minimum": 1
           },
+          "end_line": {
+            "type": "integer",
+            "minimum": 1
+          },
           "note": {
             "type": "string"
+          },
+          "references": {
+            "$ref": "#/definitions/strings"
+          },
+          "annotations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "from",
+                "to",
+                "text"
+              ],
+              "properties": {
+                "from": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "to": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "statement",
+          "status",
+          "evidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "$ref": "#/definitions/status"
+          },
+          "evidence": {
+            "$ref": "#/definitions/strings"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "topic",
+          "title",
+          "url",
+          "note"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "topic": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "url": {
+            "type": "string",
+            "pattern": "^https://[^\\s]+$"
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1
           }
         },
         "additionalProperties": false

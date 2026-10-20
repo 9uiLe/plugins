@@ -5,7 +5,7 @@ HTML は Presentation IR と Explanation Model を renderer が描いた最終�
 ## 技術方針
 
 - renderer は `styles/globals.css` から build 時に生成した Tailwind CSS と theme token を `<style>` に inline する。資料固有の CSS を IR に書かない。
-- 外部 CDN、外部 font、外部 script を読み込まない。React / TSX は build 時の静的 HTML 生成だけに使う。閲覧時の hydration は不要。
+- 外部 CDN、外部 font、外部 script を読み込まない。React / TSX は build 時の静的 HTML 生成だけに使う。閲覧時の hydration は不要。閲覧時の script は、「同じコード」のウィンドウがある文書にだけ inline で 1 つ置く（`src/renderer/peek.client.js`）。役目はウィンドウの位置決めと移動だけで、script がなくてもウィンドウは開閉できる。
 - ナビゲーションは anchor link で作る。追加の開閉には、重要情報を隠さない範囲で `<details>` を使える。
 
 ## Information Architecture
@@ -71,7 +71,7 @@ Explanation Plan の問いに対応する section だけを、次の順から選
 
 ## Overview と detail
 
-Overview には Plan が選んだ少数の要素だけを置く。後続の section は目次から辿れる。主要 claim の badge から根拠一覧の `#source-<evidence-id>` へ、Unknown の badge から不明点の `#unknown-<unknown-id>` へ移れる。責務文には `data-responsibility` を付け、validator が複数 claim を警告できるようにする。Component Map には同じ `level` の要素だけを置く。
+Overview には Plan が選んだ少数の要素だけを置く。後続の section は目次から辿れる。根拠の参照からそのコードの抜粋 `#code-<evidence-id>` へ、不明のラベルの「解消方法を見る」から不明点の `#unknown-<unknown-id>` へ移れる。責務文には `data-responsibility` を付け、validator が複数 claim を警告できるようにする。Component Map には同じ `level` の要素だけを置く。
 
 ## Figure
 
@@ -87,9 +87,9 @@ Overview には Plan が選んだ少数の要素だけを置く。後続の sect
 
 ## Code linking
 
-- 主要 claim には `a.code-ref`（`data-file`、`data-symbol`）を付ける（[evidence-rules.md](evidence-rules.md)）。
+- 主要 claim には `a.code-ref`（`data-file`、`data-symbol`、範囲がある場合は `data-line` と `data-end-line`）を付ける（[evidence-rules.md](evidence-rules.md)）。`--source-root` を渡して render した場合は、claim の隣にコードの抜粋を表示し（同じ evidence は最初の 1 回だけ抜粋し、2 回目以降は、同じ抜粋をウィンドウに表示する「同じコード」のボタンにする）、注釈のない行だけを `<details>` に折りたたむ（[visual-grammar.md](visual-grammar.md) の「コードの抜粋」）。抜粋（`.code-block`）、`<pre>`、`<details>` は validator の日本語 lint の対象外とする。
 - 主要 concept の表示名には `data-concept` を付け、model の `glossary.concept` と対応させる（[explanation-model.md](explanation-model.md)）。Graph の node 名は SVG 内の `<title data-concept>` に保持する。HTML に別の用語表を作らない。code identifier は初出で preferred term に添える。
-- Code Map の各セルには列見出しを `data-label` で付ける（`<td data-label="ファイル">`）。Code Map と Evidence Badge の参照は `#source-<evidence-id>` へ向ける。
+- Code Map の各セルには列見出しを `data-label` で付ける（`<td data-label="ファイル">`）。コードの見出し、「結論の根拠」などの根拠の参照、「同じコード」のウィンドウの中の「説明の場所へ移動」のリンクは `#code-<evidence-id>` へ向ける。「同じコード」は `<button popovertarget>` で、同じ抜粋を持つ `popover` 要素（`id` は `peek-<evidence-id>-<連番>`、抜粋自体に `id` は付けない）を開く。開閉は `popover` が行い、script は使わない。ウィンドウ上端の `button.code-peek-handle` は、ドラッグと矢印キー（Shift で大きく）でウィンドウを動かす。根拠の一覧（付録）は置かない。文書のどこにも抜粋がない evidence への参照はリンクにせず、ファイル名と行だけを表示する。参照の各項目は `data-evidence-ref="<evidence-id>"` を持つ。
 - Code Map の source セルでは、file と symbol の意味の区切りの後にだけ `<wbr>` を入れる。file は `/` の後、symbol は `.`・`::` の後と、英数字に続く `_` の後。`<wbr>` は文字を足さないので、表示上の折り返し位置だけが変わり、コピー・検索・`data-symbol` の値には影響しない。
 
   ```html
@@ -99,12 +99,12 @@ Overview には Plan が選んだ少数の要素だけを置く。後続の sect
 
 ## Known unknowns
 
-`known_unknowns` view には、Explanation Model の `unknowns` を問い / 判断できない理由 / 解消方法のカードで置く。文書末尾の不明点一覧にはすべての `unknowns` を置き、本文の `unknown` badge からその行へリンクする。
+`known_unknowns` view には、Explanation Model の `unknowns` を問い / 判断できない理由 / 解消方法のカードで置く。`known_unknowns` view に出ない `unknowns` は、文書末尾の不明点一覧に置く。本文の不明のラベルからその行へリンクする。
 
 ## Responsive と interaction
 
 - 本文の行長は約 72 文字幅に収め、図と表は横幅いっぱいまで使う。
-- 狭い画面では目次を本文の上へ移す。表は `<div class="table-wrap">` か `figure.view` の中に置き、収まらない場合はその中で横スクロールさせる。SVG の幅は [visual-grammar.md](visual-grammar.md) の規則に従う。
+- 狭い画面では目次を本文の上へ移す。表は `<div class="table-wrap">` の中に置き、収まらない場合はその中で横スクロールさせる。`figure.view` 自体はスクロールしない。SVG の幅は [visual-grammar.md](visual-grammar.md) の規則に従う。
 - interaction を作る場合は、`<button>` か `<a>` を使い、keyboard で操作でき、focus が見えるようにする。`div` に click handler を付けない。
 - `<details>` の中身は閉じたままでは印刷されない。印刷で読ませる必要がある情報は `<details>` の外に置く。
 

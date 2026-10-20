@@ -19,20 +19,20 @@ function checkOptions(args:string[],allowed:string[]):void {
 function read(path:string,kind:string):string {try{return readFileSync(path,"utf8")}catch{throw new Error(`cannot read ${kind}: ${path}`)}}
 function json(path:string):unknown {try{return JSON.parse(read(path,"JSON file"))}catch(error){if(error instanceof SyntaxError)throw new Error(`invalid JSON in ${path}: ${error.message}`);throw error}}
 const usageText=`Usage:
-  architecture-explainer render --model model.json --presentation presentation.json --output index.html
+  architecture-explainer render --model model.json --presentation presentation.json --output index.html [--source-root repo]
   architecture-explainer validate index.html [--model model.json] [--source-root dir]
   architecture-explainer inspect model.json
   architecture-explainer lint model.json
   architecture-explainer --help`
 function usage():never {throw new Error(usageText)}
-export function main(args:string[]):number {
+export async function main(args:string[]):Promise<number> {
   try {
     const [command,...rest]=args
     if(command==="--help"||command==="help"||rest.includes("--help")){console.log(usageText);return 0}
     if(command==="render"){
-      checkOptions(rest,["--model","--presentation","--output"])
+      checkOptions(rest,["--model","--presentation","--output","--source-root"])
       const model=parseModel(json(required(rest,"--model"))),presentation=parsePresentation(json(required(rest,"--presentation"))),output=required(rest,"--output")
-      const html=render(model,presentation);mkdirSync(dirname(output),{recursive:true});writeFileSync(output,html,"utf8");console.log(output);return 0
+      const html=await render(model,presentation,{sourceRoot:option(rest,"--source-root")});mkdirSync(dirname(output),{recursive:true});writeFileSync(output,html,"utf8");console.log(output);return 0
     }
     if(command==="validate"){
       if(!rest[0]||rest[0].startsWith("--"))usage()
@@ -50,4 +50,4 @@ export function main(args:string[]):number {
     usage()
   } catch(error){console.error(`Error: ${error instanceof Error?error.message:String(error)}`);return 1}
 }
-if(import.meta.main)process.exitCode=main(process.argv.slice(2))
+if(import.meta.main)process.exitCode=await main(process.argv.slice(2))

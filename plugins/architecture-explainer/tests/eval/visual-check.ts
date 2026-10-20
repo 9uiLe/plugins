@@ -1,6 +1,6 @@
 // Render an explainer HTML file at several viewport widths through the Chrome
-// DevTools Protocol; print overflow and Code Map identifier-wrap findings as JSON
-// and save one screenshot per section.
+// DevTools Protocol; print overflow, Code Map identifier-wrap and "同じコード" window findings
+// as JSON and save one screenshot per section.
 //
 // Usage: bun visual-check.ts <html> <out-dir> [width ...]   (default widths: 390 500 1280)
 // Requires Chrome (set CHROME to its binary if it is not in the default macOS location).
@@ -66,13 +66,16 @@ const OVERFLOW_PROBE = `(() => {
   }
   const scrollers = [...document.querySelectorAll('body *')]
     .filter((el) => /(auto|scroll)/.test(getComputedStyle(el).overflowX) && el.scrollWidth > el.clientWidth + 1)
-    .map((el) => ({ element: describe(el), clientWidth: el.clientWidth, scrollWidth: el.scrollWidth }));
+    .map((el) => ({ element: describe(el), section: el.closest('main section[id]')?.id ?? null, clientWidth: el.clientWidth, scrollWidth: el.scrollWidth }));
+  const verticalScrollers = [...document.querySelectorAll('body *')]
+    .filter((el) => /(auto|scroll)/.test(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight + 1)
+    .map((el) => ({ element: describe(el), section: el.closest('main section[id]')?.id ?? null, clientHeight: el.clientHeight, scrollHeight: el.scrollHeight }));
   const sections = [...document.querySelectorAll('main section[id]')].map((s) => {
     const r = s.getBoundingClientRect();
     return { id: s.id, y: Math.round(r.top + scrollY), height: Math.round(r.height) };
   });
   return { identifierWrap, viewport, documentScrollWidth: document.documentElement.scrollWidth, overflow: overflow.slice(0, 20),
-           overflowCount: overflow.length, scrollers, sections };
+           overflowCount: overflow.length, scrollers, verticalScrollers, sections };
 })()`;
 
 function launchChrome(profileDir) {
@@ -120,6 +123,58 @@ function connect(url) {
   });
 }
 
+// The "同じコード" window must open next to the clicked point without covering it, stay inside the viewport,
+// and move by its handle with the pointer and the arrow keys. Returns the problems found, or null when the page has no such window.
+async function checkPeek(cdp, width) {
+  const evaluate = async (expression) => (await cdp.send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })).result.value;
+  const mouse = (type, x, y, buttons) => cdp.send('Input.dispatchMouseEvent', { type, x, y, button: 'left', buttons, clickCount: 1 });
+  const windowRect = `(() => { const open = document.querySelector('.code-peek:popover-open'); if (!open) return null;
+    const r = open.getBoundingClientRect(), h = open.querySelector('.code-peek-handle').getBoundingClientRect();
+    return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height, handle: { x: h.left + 12, y: h.top + h.height / 2 },
+      viewport: { width: document.documentElement.clientWidth, height: innerHeight } }; })()`;
+  const point = await evaluate(`(async () => { const button = document.querySelector('.same-code'); if (!button) return null;
+    button.scrollIntoView({ block: 'center' }); await new Promise((r) => setTimeout(r, 150));
+    const r = button.getBoundingClientRect(); return { x: Math.round(r.left + r.width / 3), y: Math.round(r.top + r.height / 2) }; })()`);
+  if (!point) return null;
+  const problems = [];
+  const inside = (r) => r.left >= 0 && r.top >= 0 && r.right <= r.viewport.width + 0.5 && r.bottom <= r.viewport.height + 0.5;
+  await mouse('mousePressed', point.x, point.y, 1); await mouse('mouseReleased', point.x, point.y, 0);
+  await new Promise((r) => setTimeout(r, 300));
+  const opened = await evaluate(windowRect);
+  if (!opened) return ['the window does not open'];
+  // peek.client.js leaves a 12px gap between the click and the window edge.
+  if (Math.abs(opened.top - (point.y + 12)) > 1 && Math.abs(opened.bottom - (point.y - 12)) > 1) problems.push(`the window opens away from the click (click y=${point.y}, window ${Math.round(opened.top)}–${Math.round(opened.bottom)})`);
+  if (point.x >= opened.left && point.x <= opened.right && point.y >= opened.top && point.y <= opened.bottom) problems.push('the window covers the clicked button');
+  if (!inside(opened)) problems.push('the opened window leaves the viewport');
+  // Move toward the viewport centre so that a move is always possible without hitting an edge.
+  const toward = (from, to) => Math.max(-40, Math.min(40, Math.round(to - from)));
+  const dx = toward(opened.left + opened.width / 2, opened.viewport.width / 2), dy = toward(opened.top + opened.height / 2, opened.viewport.height / 2);
+  await mouse('mousePressed', opened.handle.x, opened.handle.y, 1);
+  await mouse('mouseMoved', opened.handle.x + dx, opened.handle.y + dy, 1);
+  await mouse('mouseReleased', opened.handle.x + dx, opened.handle.y + dy, 0);
+  await new Promise((r) => setTimeout(r, 100));
+  const dragged = await evaluate(windowRect);
+  if ((dx || dy) && dragged.left === opened.left && dragged.top === opened.top) problems.push('dragging the handle does not move the window');
+  if (!inside(dragged)) problems.push('the dragged window leaves the viewport');
+  const key = dy ? (dy > 0 ? ['ArrowDown', 40] : ['ArrowUp', 38]) : dx > 0 ? ['ArrowRight', 39] : ['ArrowLeft', 37];
+  await evaluate(`document.querySelector('.code-peek:popover-open .code-peek-handle').focus()`);
+  for (const type of ['rawKeyDown', 'keyUp']) await cdp.send('Input.dispatchKeyEvent', { type, key: key[0], code: key[0], windowsVirtualKeyCode: key[1] });
+  await new Promise((r) => setTimeout(r, 100));
+  const keyed = await evaluate(windowRect);
+  if ((dx || dy) && keyed.left === dragged.left && keyed.top === dragged.top) problems.push(`${key[0]} on the handle does not move the window`);
+  // A reader can narrow the browser while the window is open; the placed window must follow the new viewport.
+  // 320px is the narrowest width WCAG 2.1 SC 1.4.10 (Reflow) requires content to fit, so the check never goes below it.
+  const narrow = Math.max(320, Math.round(width * 0.75));
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: narrow, height: 900, deviceScaleFactor: 1, mobile: narrow < 700 });
+  await new Promise((r) => setTimeout(r, 150));
+  const narrowed = await evaluate(windowRect), pageWidth = await evaluate('document.documentElement.scrollWidth');
+  if (pageWidth > narrowed?.viewport.width) problems.push(`the page itself overflows at ${narrow}px (${pageWidth}px wide), so the window cannot be checked there`);
+  else if (narrowed && !inside(narrowed)) problems.push(`the window leaves the viewport after the viewport narrows to ${narrow}px`);
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 700 });
+  await evaluate(`document.querySelector('.code-peek:popover-open')?.hidePopover()`);
+  return problems;
+}
+
 async function check(cdp, url, width) {
   await cdp.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 700 });
   const loaded = cdp.once('Page.loadEventFired');
@@ -137,7 +192,8 @@ async function check(cdp, url, width) {
     writeFileSync(file, Buffer.from(data, 'base64'));
     shots.push(file);
   }
-  return { width, ...report, screenshots: shots };
+  const peek = await checkPeek(cdp, width);
+  return { width, ...report, peek, screenshots: shots };
 }
 
 const profileDir = mkdtempSync(join(tmpdir(), 'visual-check-'));
@@ -151,7 +207,7 @@ try {
   for (const width of widths) results.push(await check(cdp, url, width));
   cdp.close();
   console.log(JSON.stringify({ file: htmlArg, results }, null, 2));
-  process.exitCode = results.some((r) => r.overflowCount > 0) ? 1 : 0;
+  process.exitCode = results.some((r) => r.overflowCount > 0 || r.documentScrollWidth > r.viewport || r.peek?.length) ? 1 : 0;
 } finally {
   chrome.kill();
   rmSync(profileDir, { recursive: true, force: true, maxRetries: 3 });
