@@ -7,18 +7,17 @@
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Marketplace-8A6FE8)](https://claude.com/claude-code)
 [![Codex](https://img.shields.io/badge/Codex-Plugin-111827)](https://openai.com/codex)
 
-Claude Code / Codex で使う、AI エージェントの利用量管理、スライドからの実務知識抽出、コードとアーキテクチャの説明資料作成、変更しやすいコードの設計・レビューのためのプラグイン集です。Marketplace 名は `9uile-plugins` です。必要なプラグインを個別にインストールできます。
+Claude Code / Codex で使う、AI エージェントの利用量管理、スライドからの実務知識抽出、変更しやすいコードの設計・レビューのためのプラグイン集です。Marketplace 名は `9uile-plugins` です。必要なプラグインを個別にインストールできます。
 
 ## プラグインを選ぶ
 
 | プラグイン | 用途 | 収録スキル |
 | --- | --- | --- |
-| [model-strategy](./plugins/model-strategy/README.md) | 送信コンテキスト量、会話の往復回数、モデルの推論設定（effort）、他エージェントへの委譲を考慮した利用方針の選択 | `model-effort-guide` |
+| [model-strategy](./plugins/model-strategy/README.md) | 送信コンテキスト量、会話の往復回数、モデルの推論設定（effort）、他エージェントへの委譲を考慮した利用方針の選択 | なし（Agent 定義・hook・参照資料を収録） |
 | [speakerdeck-knowledge](./plugins/speakerdeck-knowledge/README.md) | SpeakerDeck から実務知識を抽出し、AI 向け Markdown とチーム共有用の図解 HTML を作成 | `speakerdeck-knowledge` |
-| [architecture-explainer](./plugins/architecture-explainer/README.md) | コードとアーキテクチャを、根拠つきで目的・構成・実行時の動き・コード・設計理由・変更影響を辿れる HTML 説明資料にし、既存資料の評価・改善も行う | `architecture-explainer` |
 | [engineering-principles](./plugins/engineering-principles/README.md) | Test で仕様（What）、コードで実現方法（How）、Documentation で文脈（Context）を表し、状態設計・Test の責務・責務分離・結合・API と component 境界・Code と Documentation の整合を確認して、仕様変更を局所的にする実装・レビュー・改善 | `maintainable-code` |
 
-スキルは、AI エージェントが依頼に応じて読み込む手順書です。`model-effort-guide` は、モデル選択・利用量・委譲方針を明示的に相談するときに使います。
+スキルは、AI エージェントが依頼に応じて読み込む手順書です。model-strategy はスキルを持たず、Agent 定義・hook・参照資料を提供します。
 
 ## インストール
 

@@ -52,7 +52,7 @@ body:
       label: 対象の Skill / コマンド
       description: |
         どの Skill・スラッシュコマンドで発生しましたか。
-        例: `model-effort-guide`, `speakerdeck-knowledge`
+        例: `maintainable-code`, `speakerdeck-knowledge`
       placeholder: "例: speakerdeck-knowledge"
     validations:
       required: false

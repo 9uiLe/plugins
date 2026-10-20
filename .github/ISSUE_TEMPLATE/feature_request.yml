@@ -47,7 +47,7 @@ body:
     attributes:
       label: 対象の Skill / コマンド
       description: 関連する Skill やコマンドがあれば記入してください。
-      placeholder: "例: model-effort-guide"
+      placeholder: "例: maintainable-code"
     validations:
       required: false
 

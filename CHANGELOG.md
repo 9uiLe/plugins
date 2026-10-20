@@ -5,27 +5,10 @@
 
 ## [Unreleased]
 
-### Changed
+### Removed
 
-- **architecture-explainer**: 説明資料の見た目を Claude Design で作成した仕様（Industry の線画）に置き換え。無彩色の地と鋼青の強調 1 色、直角、細い罫線、四隅の「+」のトンボで描く。ヘッダーに読み方の 3 項目、目次に番号を置き、section の h2 を結論（finding）の 1 文にして問いを小見出しに下げる。デザイントークン（面・文字・境界・強調・コード・余白・文字サイズ・形）を定義し、部品の CSS をトークンだけで書いた。書体は外部から読み込まずシステムフォントを使う。
-- **architecture-explainer**: sequence / runtime flow / annotated code / state transition を、縦線（レール）1 本に統合して HTML で描く。手順は番号の四角とカード（見出し、参加者・説明、コードの順に縦一列に並べる）、例外経路はひし形の分岐と終点のカード、状態遷移は状態と遷移の行と別の出口。runtime では全体像の図から各行へリンクする。フロー図の SVG は廃止。
-- **architecture-explainer**: 根拠の表示を変更。確認済みの claim にはラベルを出さず、推論は破線、不明は点線の枠とラベルで示す。根拠を折りたたまず、claim の隣にコードの抜粋を表示し、同じ evidence は文書で 1 回だけ抜粋し、以降は「同じコード」のボタンにする。ボタンはページを移動せず、同じ抜粋をクリックした位置のすぐ側のウィンドウ（HTML の `popover`）に表示するので、今の手順の説明を見たままコードを読める。ウィンドウは上端をドラッグするか、矢印キーで移動できる。位置決めと移動のために、ウィンドウがある文書にだけ小さな inline script を置く（開閉は script なしでも動く）。根拠の一覧（付録）は置かない。本文に抜粋がない evidence への参照はリンクにせず、ファイル名と行だけを表示する。
-- **architecture-explainer**: 設計判断を「前提 → 判断 → 理由 → 失うもの（→ 代替案）」の表のカードで示し、判断と理由の欄にコードを置く。不明点は点線の枠のカードで示す。
-- **architecture-explainer（API の変更）**: library の `render()` は ELK の配置を待つため `Promise<string>` を返す。CLI の使い方は変わらない。
-- **architecture-explainer**: graph の配置を dagre から elkjs 0.12.0（ELK Layered）に変更。線を縦と横の直角の経路で引き、同じ図の箱を同じ大きさにそろえる。ラベルは線から離して、水平な線では上、垂直な線では右に置く。利用者・外部 system の箱には名前だけを置き、役割は矢印のラベルに一本化する。本文の列を超える graph は上から下へ組み直す。elkjs は依存なし・install script なしで、trusted publisher による provenance 付き公開を確認し、`bun.lock` の integrity hash で固定した。ライセンス（EPL-2.0 OR GPL-3.0-or-later）の本文を同梱する。`@dagrejs/dagre` は削除。
-- **architecture-explainer**: 折り返しで、各行の長さを揃え、識別子を分割せず、句読点・中黒・小書き仮名・長音を行頭に置かない。コードの見出しと Code Map のファイルパスを `/` の後で折り返す。
-- **architecture-explainer**: コードの抜粋の長い行を、横スクロールではなく抜粋の中で折り返す（続きの行は、その行の先頭の字下げに 2 文字を足した位置から始め、幅 740px 以下では一律に 2 文字下げる）。`figure.view` と全体像をスクロール領域にせず、フローの section に縦・横のスクロールを作らない。SVG の図と表は、それぞれ `.graph-frame` と `.table-wrap` の中だけで横スクロールする。
-
-### Added
-
-- **architecture-explainer**: 状態遷移の section に全体像の図を追加。状態を四角、状態を変える操作を矢印で示し、本線から外れる操作は元の状態の下に枝分かれで示す。transition の任意 field `action`（読者の言葉での操作の説明）を追加し、見出しと矢印に使う。状態名は glossary の読者向けの名前（State の `id` を concept にする）とコード上の名前を並べて表示する。
-- **architecture-explainer**: 根拠をコードの抜粋で示す。Evidence に `end_line` を追加し、`render --source-root` で `line`〜`end_line` をソースから読み、行番号付きで highlight.js 11.12.0（依存なし・provenance 付き・integrity 照合済み）により色分けして表示する。抜粋は model に複製しない。
-- **architecture-explainer**: Evidence の任意 field `annotations`（`{from, to, text}`）を追加。抜粋の行に番号付きの帯を付け、注釈の説明を対象の行のすぐ下に差し込み、注釈の前後以外の行を折りたたむ。範囲外の注釈は model error。
-- **architecture-explainer**: `annotated_code` view（全体像のない縦線）を追加。
-- **architecture-explainer**: Explanation Model の任意配列 `references` と `references` view、Evidence の `references` を追加。コードを読むための前提知識を、https の公式ドキュメントだけに限ってリンクする。
-- **architecture-explainer**: component の任意 field `summary` を追加。図の箱には短い説明を表示し、完全な責務は縦線の行に表示する。
-- **architecture-explainer**: Explanation Model の任意配列 `findings` と、Presentation IR の section の任意 field `finding` を追加。section の h2 に結論の 1 文を置く。
-- **architecture-explainer**: Presentation IR の `sequence` / `runtime_flow` / `annotated_code` に任意 field `steps`（`first` / `last`）を追加。長い scenario を、通し番号を保ったまま複数の section に分けられる。範囲外の `at_step` は render を拒否する。
+- **architecture-explainer**: プラグインを削除。Claude Code / Codex の両 marketplace から登録を外し、CI と `scripts/verify.sh` から Bun の必須要件を外した。未リリースだった表示・Explanation Model・Presentation IR の変更も提供しない。
+- **model-strategy**: Skill `model-effort-guide` を削除。Agent 定義（`haiku-scout` / `sonnet-implementer` / `judge` / `judge-fable`）、hook、statusline スクリプト、参照資料は引き続き提供する。
 
 ## [0.9.0] - 2026-10-05
 

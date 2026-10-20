@@ -12,7 +12,7 @@ export SCRIPT_NAME="verify"
 # shellcheck source=lib/common.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 
-for cmd in jq git shellcheck node python3 bun; do
+for cmd in jq git shellcheck node python3; do
   require_cmd "$cmd"
 done
 
@@ -60,6 +60,7 @@ done
 for package in plugins/*/skills/*/package.json; do
   [[ -f "$package" ]] || continue
   if jq -e '.scripts.verify | type == "string"' "$package" >/dev/null; then
+    require_cmd bun
     check "${package%/package.json} (bun)" bash -c 'cd "$1" && bun run verify' _ "${package%/package.json}"
   fi
 done
