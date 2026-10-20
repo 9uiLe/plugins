@@ -16,6 +16,5 @@
     "subagents",
     "pricing",
     "token-economy"
-  ],
-  "skills": "./skills/"
+  ]
 }

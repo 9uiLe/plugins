@@ -17,7 +17,6 @@
     "pricing",
     "token-economy"
   ],
-  "skills": "./skills/",
   "interface": {
     "displayName": "Model Strategy",
     "shortDescription": "Control context, models, and delegation",
