@@ -5,11 +5,12 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-22
+
 ### Removed
 
 - **architecture-explainer**: プラグインを削除。Claude Code / Codex の両 marketplace から登録を外し、CI と `scripts/verify.sh` から Bun の必須要件を外した。未リリースだった表示・Explanation Model・Presentation IR の変更も提供しない。
 - **model-strategy**: Skill `model-effort-guide` を削除。Agent 定義（`haiku-scout` / `sonnet-implementer` / `judge` / `judge-fable`）、hook、statusline スクリプト、参照資料は引き続き提供する。
-
 ## [0.9.0] - 2026-10-05
 
 ### Changed
@@ -253,7 +254,8 @@
 - Issue / Pull Request テンプレート、`CONTRIBUTING.md`、`SECURITY.md` を整備。
 - MIT License を採用。
 
-[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/9uiLe/plugins/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/9uiLe/plugins/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/9uiLe/plugins/compare/v0.8.2...v0.9.0
 [0.8.2]: https://github.com/9uiLe/plugins/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/9uiLe/plugins/compare/v0.8.0...v0.8.1
