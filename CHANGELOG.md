@@ -7,10 +7,16 @@
 
 ## [0.10.0] - 2026-10-22
 
+### Fixed
+
+- **speakerdeck-knowledge** (v0.1.2): SpeakerDeck が本文なしと明示した画像のみのページを、構造化データの `hasPart` から欠けていても取得できるよう修正。本文欠損とページ順・画像 URL の対応を保ち、欠損の根拠がない不完全なデータは引き続き拒否する。
+- **model-strategy** (v0.6.0): scope-guard の `**/` を 0 階層以上のディレクトリに一致させるよう修正。`src/**/allowed.ts` が `src/notallowed.ts` まで許可していた誤判定を防ぎ、相対・絶対パスの両方で凍結範囲外の編集を警告する。
+
 ### Removed
 
 - **architecture-explainer**: プラグインを削除。Claude Code / Codex の両 marketplace から登録を外し、CI と `scripts/verify.sh` から Bun の必須要件を外した。未リリースだった表示・Explanation Model・Presentation IR の変更も提供しない。
-- **model-strategy**: Skill `model-effort-guide` を削除。Agent 定義（`haiku-scout` / `sonnet-implementer` / `judge` / `judge-fable`）、hook、statusline スクリプト、参照資料は引き続き提供する。
+- **model-strategy** (v0.6.0、破壊的変更): Skill `model-effort-guide` を削除。Agent 定義（`haiku-scout` / `sonnet-implementer` / `judge` / `judge-fable`）、hook、statusline スクリプト、参照資料は引き続き提供する。
+
 ## [0.9.0] - 2026-10-05
 
 ### Changed
